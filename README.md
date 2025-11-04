@@ -9,3 +9,4 @@ Canonical configs:
 ## Run (dev)
 - Ensure Python 3.11 is available.
 - Run `./scripts/dev` to bootstrap the venv and launch the shell app.
+- The app resolves the Audit Date from the MAR filename (previous Central day) when you run an audit.

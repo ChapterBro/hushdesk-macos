@@ -132,6 +132,7 @@ class MainWindow(QMainWindow):
         self._thread: Optional[QThread] = None
         self._audit_completed = False
         self._total_pages = 0
+        self._no_data_for_date = False
 
         self._load_settings()
         self._build_ui()
@@ -175,6 +176,24 @@ class MainWindow(QMainWindow):
         header_layout.addWidget(self.drop_area, 1, 0, 1, 2)
         header_layout.addWidget(self.browse_button, 1, 2, 1, 1)
 
+        self.status_banner = QLabel("No data for selected date")
+        self.status_banner.setObjectName("StatusBanner")
+        self.status_banner.setWordWrap(True)
+        self.status_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.status_banner.setStyleSheet(
+            """
+            QLabel#StatusBanner {
+                background-color: #fff4c2;
+                border: 1px solid #ffd166;
+                border-radius: 8px;
+                padding: 8px 12px;
+                color: #5c4400;
+                font-weight: 500;
+            }
+            """
+        )
+        self.status_banner.hide()
+
         progress_frame = QFrame()
         progress_layout = QVBoxLayout(progress_frame)
         progress_layout.setContentsMargins(12, 12, 12, 12)
@@ -210,6 +229,7 @@ class MainWindow(QMainWindow):
         self.results_placeholder.setPlaceholderText("Audit results will appear here.")
 
         central_layout.addWidget(header_frame)
+        central_layout.addWidget(self.status_banner)
         central_layout.addWidget(progress_frame)
         central_layout.addWidget(chips_frame)
         central_layout.addWidget(self.results_placeholder, stretch=1)
@@ -278,6 +298,8 @@ class MainWindow(QMainWindow):
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.audit_date_label.setText("--/--/---- — Central")
+        self.status_banner.hide()
+        self._no_data_for_date = False
         for chip in self._chips.values():
             chip.set_value(0)
 
@@ -294,6 +316,7 @@ class MainWindow(QMainWindow):
         worker.moveToThread(self._thread)
 
         worker.audit_date_resolved.connect(self._on_audit_date_resolved)
+        worker.no_data_for_date.connect(self._on_no_data_for_date)
         worker.progress_changed.connect(self._on_progress_changed)
         worker.finished.connect(self._on_audit_finished)
         worker.finished.connect(self._thread.quit)
@@ -318,9 +341,14 @@ class MainWindow(QMainWindow):
         self.run_button.setEnabled(True)
         self.copy_action.setEnabled(True)
         self.save_action.setEnabled(True)
-        self.results_placeholder.setPlainText(
-            f"Audit complete. Placeholder TXT saved to:\n{output_path}"
-        )
+        if self._no_data_for_date:
+            self.results_placeholder.setPlainText(
+                f"No data for selected date. Placeholder TXT saved to:\n{output_path}"
+            )
+        else:
+            self.results_placeholder.setPlainText(
+                f"Audit complete. Placeholder TXT saved to:\n{output_path}"
+            )
         self._settings["last_output_directory"] = str(output_path.parent)
         self._save_settings()
 
@@ -350,6 +378,13 @@ class MainWindow(QMainWindow):
     @Slot(str)
     def _on_audit_date_resolved(self, label_value: str) -> None:
         self.audit_date_label.setText(label_value)
+
+    @Slot()
+    def _on_no_data_for_date(self) -> None:
+        self._no_data_for_date = True
+        self.status_banner.setText("No data for selected date")
+        self.status_banner.show()
+        self.results_placeholder.setPlainText("No data for selected date.")
 
     def closeEvent(self, event) -> None:  # noqa: N802
         if self._thread and self._thread.isRunning():
