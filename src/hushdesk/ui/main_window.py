@@ -150,8 +150,12 @@ class MainWindow(QMainWindow):
         header_layout.setContentsMargins(12, 12, 12, 12)
         header_layout.setHorizontalSpacing(16)
         header_layout.setVerticalSpacing(8)
+        header_layout.setColumnStretch(1, 1)
 
-        self.audit_date_label = QLabel("Audit Date (Central): --/--/----")
+        self.audit_date_title = QLabel("Audit Date")
+        self.audit_date_title.setStyleSheet("font-size: 16px; font-weight: 600;")
+
+        self.audit_date_label = QLabel("--/--/---- — Central")
         self.audit_date_label.setStyleSheet("font-size: 16px; font-weight: 600;")
 
         self.drop_area = _DropArea()
@@ -165,7 +169,8 @@ class MainWindow(QMainWindow):
         self.run_button.setEnabled(False)
         self.run_button.clicked.connect(self._start_audit)
 
-        header_layout.addWidget(self.audit_date_label, 0, 0, 1, 2)
+        header_layout.addWidget(self.audit_date_title, 0, 0, 1, 1)
+        header_layout.addWidget(self.audit_date_label, 0, 1, 1, 1)
         header_layout.addWidget(self.run_button, 0, 2, 1, 1)
         header_layout.addWidget(self.drop_area, 1, 0, 1, 2)
         header_layout.addWidget(self.browse_button, 1, 2, 1, 1)
@@ -272,6 +277,7 @@ class MainWindow(QMainWindow):
         self.progress_label.setText("Page 0 of 0")
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
+        self.audit_date_label.setText("--/--/---- — Central")
         for chip in self._chips.values():
             chip.set_value(0)
 
@@ -287,6 +293,7 @@ class MainWindow(QMainWindow):
         worker = AuditWorker(input_pdf=self._selected_pdf, total_pages=10, delay=0.25)
         worker.moveToThread(self._thread)
 
+        worker.audit_date_resolved.connect(self._on_audit_date_resolved)
         worker.progress_changed.connect(self._on_progress_changed)
         worker.finished.connect(self._on_audit_finished)
         worker.finished.connect(self._thread.quit)
@@ -339,6 +346,10 @@ class MainWindow(QMainWindow):
         self._settings["last_output_directory"] = str(output_path.parent)
         self._save_settings()
         QMessageBox.information(self, "Save TXT", f"Placeholder TXT saved to:\n{output_path}")
+
+    @Slot(str)
+    def _on_audit_date_resolved(self, label_value: str) -> None:
+        self.audit_date_label.setText(label_value)
 
     def closeEvent(self, event) -> None:  # noqa: N802
         if self._thread and self._thread.isRunning():
