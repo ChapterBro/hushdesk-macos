@@ -1,0 +1,165 @@
+{
+  "version": "1.1.1",
+  "updated_at": "2025-11-04",
+  "timezone": "America/Chicago",
+  "text_normalization": [
+    "lowercase",
+    "collapse_whitespace",
+    "preserve_operators_<,>,/,x,\u221a,=,0-9",
+    "strip_punctuation_except_operators"
+  ],
+  "filename_date_patterns": [
+    "(?i)(?:^|\\D)(\\d{4})-(\\d{2})-(\\d{2})(?:\\D|$)",
+    "(?i)(\\d{2})-(\\d{2})-(\\d{4})",
+    "(?i)(\\d{2})_(\\d{2})_(\\d{4})",
+    "(?i)(\\d{4})_(\\d{2})_(\\d{2})"
+  ],
+  "date_policy": {
+    "strategy": "previous_day_of_filename",
+    "timezone": "America/Chicago",
+    "fallback": "yesterday_now",
+    "display_format": "MM/DD/YYYY",
+    "column_scope": "same_date_only",
+    "conflict_rule": "filename_wins"
+  },
+  "sbp_terms": [
+    "sbp",
+    "systolic"
+  ],
+  "hr_terms": [
+    "hr",
+    "pulse",
+    "heart rate"
+  ],
+  "operator_tokens": [
+    "<",
+    ">"
+  ],
+  "rule_prefix_terms": [
+    "hold for",
+    "hold if"
+  ],
+  "dual_rule_connectors": [
+    "and",
+    "or",
+    "and/or"
+  ],
+  "held_ok_codes": [
+    4,
+    6,
+    11,
+    12,
+    15
+  ],
+  "ignore_dbp_for_hold_decisions": true,
+  "vitals_presence_policy": {
+    "require_for_parametered_orders": true,
+    "exception_if_dcd": true,
+    "on_missing": "note_and_continue"
+  },
+  "vitals_source_preference": [
+    "bp_row",
+    "due_cell_inline_fallback"
+  ],
+  "accepted": {
+    "sbp": {
+      "below_patterns": [
+        "(?i)\\b(sbp|systolic)\\b.*\\b(below|less\\s*than)\\b\\s*(\\d+)",
+        "(?i)\\bsbp\\b\\s*<\\s*(\\d+)"
+      ],
+      "above_patterns": [
+        "(?i)\\b(sbp|systolic)\\b.*\\b(above|greater\\s*than)\\b\\s*(\\d+)",
+        "(?i)\\bsbp\\b\\s*>\\s*(\\d+)"
+      ]
+    },
+    "hr": {
+      "below_patterns": [
+        "(?i)\\b(hr|pulse|heart\\s*rate)\\b.*\\b(below|less\\s*than)\\b\\s*(\\d+)",
+        "(?i)\\b(hr|pulse)\\b\\s*<\\s*(\\d+)"
+      ],
+      "above_patterns": [
+        "(?i)\\b(hr|pulse|heart\\s*rate)\\b.*\\b(above|greater\\s*than)\\b\\s*(\\d+)",
+        "(?i)\\b(hr|pulse)\\b\\s*>\\s*(\\d+)"
+      ]
+    }
+  },
+  "rejected_phrases": [
+    "\u2264",
+    "\u2265",
+    "at or above",
+    "at or below",
+    "at least",
+    "at most",
+    "no less",
+    "no more",
+    "equal",
+    "="
+  ],
+  "administration": {
+    "given_tokens": [
+      "\u221a",
+      "check",
+      "time_hhmm"
+    ],
+    "dc_markers": [
+      "X",
+      "x"
+    ],
+    "numeric_code_is_not_given": true,
+    "allowed_hold_codes": [
+      4,
+      6,
+      11,
+      12,
+      15
+    ]
+  },
+  "administration_precedence": [
+    "DC_MARK",
+    "ALLOWED_NUMERIC_CODE_THEN_CONFIRM_RULE",
+    "GIVEN"
+  ],
+  "unexpected_code_policy": "note_only",
+  "decisions": {
+    "allowed_code_and_rule_triggers": "HELD-APPROPRIATE",
+    "given_and_rule_triggers": "HOLD-MISS",
+    "given_and_rule_not_triggered": "COMPLIANT"
+  },
+  "layout_detection": {
+    "left_rule_zone_hint": "rectangle_left_of_grid",
+    "row_labels": [
+      "bp",
+      "pulse",
+      "hr",
+      "am",
+      "pm"
+    ],
+    "row_label_match": "(?i)^(bp|pulse|hr|am|pm)\\b",
+    "header_day_regex": "^(?:\\s*(?:[1-9]|[12]\\d|3[01]))+\\s*$",
+    "column_builder": "midpoint_between_day_labels",
+    "vector_cross_detection": true,
+    "due_time_token": "^\\d{1,2}:\\d{2}$",
+    "bp_token_stitch": true,
+    "bp_regex": "(?i)\\b(\\d{2,3})\\s*/\\s*(\\d{2,3})\\b",
+    "hr_regex": "(?i)\\b(?:hr|pulse|p)\\s*(\\d{2,3})\\b"
+  },
+  "code_policy": {
+    "scope": "parametered_orders_only",
+    "code_implies_trigger_for_held_ok": false,
+    "confirm_rule_against_vitals": true,
+    "held_ok_line_requires_vital": true
+  },
+  "chips_labels_ui": {
+    "reviewed": "Reviewed",
+    "hold_miss": "Hold-Miss",
+    "held_ok": "Held-OK",
+    "compliant": "Compliant",
+    "dcd": "DC'D"
+  },
+  "notes": [
+    "Parse rule text only from the medication's left rule block; do not infer from grid text.",
+    "Build date columns by midpoints between printed day numbers; never hardcode widths.",
+    "For parametered orders, vitals must be present in the Audit Date column unless DC'D; include the vital in Held-OK/Hold-Miss lines.",
+    "TXT is the only user-facing output."
+  ]
+}
