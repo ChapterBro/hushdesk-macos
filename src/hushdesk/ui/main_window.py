@@ -7,9 +7,8 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import Qt, QThread, Signal, Slot
-from PySide6.QtGui import QDragEnterEvent, QDropEvent, QGuiApplication
+from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QGuiApplication
 from PySide6.QtWidgets import (
-    QAction,
     QFileDialog,
     QFrame,
     QGridLayout,
