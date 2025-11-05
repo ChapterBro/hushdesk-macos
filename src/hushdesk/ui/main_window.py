@@ -133,6 +133,7 @@ class MainWindow(QMainWindow):
         self._app_support_dir = app_support_dir
         self._settings_path = self._app_support_dir / self.SETTINGS_FILENAME
         self._selected_pdf: Optional[Path] = None
+        self.selected_pdf: Optional[Path] = None
         self._thread: Optional[QThread] = None
         self._audit_completed = False
         self._total_pages = 0
@@ -157,11 +158,13 @@ class MainWindow(QMainWindow):
         header_layout.setVerticalSpacing(8)
         header_layout.setColumnStretch(1, 1)
 
-        self.audit_date_title = QLabel("Audit Date")
-        self.audit_date_title.setStyleSheet("font-size: 16px; font-weight: 600;")
+        self.source_label = QLabel("Source: —")
+        self.source_label.setObjectName("SourceLabel")
+        self.source_label.setStyleSheet("font-size: 14px; color: #3c3c4399;")
 
-        self.audit_date_label = QLabel("--/--/---- — Central")
-        self.audit_date_label.setStyleSheet("font-size: 16px; font-weight: 600;")
+        self.audit_date_label = QLabel("Audit Date: — (pending) — Central")
+        self.audit_date_label.setObjectName("AuditDateLabel")
+        self.audit_date_label.setStyleSheet("font-size: 14px; color: #3c3c4399;")
 
         self.drop_area = _DropArea()
         self.drop_area.setMinimumHeight(120)
@@ -174,11 +177,11 @@ class MainWindow(QMainWindow):
         self.run_button.setEnabled(False)
         self.run_button.clicked.connect(self._start_audit)
 
-        header_layout.addWidget(self.audit_date_title, 0, 0, 1, 1)
-        header_layout.addWidget(self.audit_date_label, 0, 1, 1, 1)
+        header_layout.addWidget(self.source_label, 0, 0, 1, 2)
         header_layout.addWidget(self.run_button, 0, 2, 1, 1)
-        header_layout.addWidget(self.drop_area, 1, 0, 1, 2)
-        header_layout.addWidget(self.browse_button, 1, 2, 1, 1)
+        header_layout.addWidget(self.audit_date_label, 1, 0, 1, 3)
+        header_layout.addWidget(self.drop_area, 2, 0, 1, 2)
+        header_layout.addWidget(self.browse_button, 2, 2, 1, 1)
 
         self.status_banner = QLabel("No data for selected date")
         self.status_banner.setObjectName("StatusBanner")
@@ -276,7 +279,7 @@ class MainWindow(QMainWindow):
     # --- Actions --------------------------------------------------------------------
 
     def _browse_for_pdf(self) -> None:
-        start_dir = self._settings.get("last_output_directory", str(Path.home()))
+        start_dir = self._settings.get("last_open_dir", str(Path.home()))
         filename, _ = QFileDialog.getOpenFileName(
             self,
             "Select MAR PDF",
@@ -287,22 +290,27 @@ class MainWindow(QMainWindow):
             self._on_pdf_selected(Path(filename))
 
     def _on_pdf_selected(self, pdf_path: Path) -> None:
-        logger.debug("UI: selected file %s", pdf_path)
-        self._selected_pdf = pdf_path
-        self.drop_area.title.setText(pdf_path.name)
-        self.drop_area.subtitle.setText(str(pdf_path.parent))
+        absolute_path = pdf_path.resolve()
+        self._selected_pdf = absolute_path
+        self.selected_pdf = absolute_path
+        self.drop_area.title.setText(absolute_path.name)
+        self.drop_area.subtitle.setText(str(absolute_path.parent))
+        self.source_label.setText(f"Source: {absolute_path.name}")
+        self.audit_date_label.setText("Audit Date: (pending) — Central")
         self.run_button.setEnabled(True)
         self._audit_completed = False
         self.copy_action.setEnabled(False)
         self.save_action.setEnabled(False)
         self.results_placeholder.setPlainText("Ready to audit placeholder MAR.")
         self._reset_progress()
+        self._settings["last_open_dir"] = str(absolute_path.parent)
+        self._save_settings()
 
     def _reset_progress(self) -> None:
         self.progress_label.setText("Page 0 of 0")
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
-        self.audit_date_label.setText("--/--/---- — Central")
+        self.audit_date_label.setText("Audit Date: (pending) — Central")
         self.status_banner.hide()
         self._no_data_for_date = False
         for chip in self._chips.values():
