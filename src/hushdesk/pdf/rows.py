@@ -15,8 +15,6 @@ from .geometry import normalize_rect
 
 LabelBox = Tuple[float, float, float, float]
 
-_LEFT_GUTTER_FRACTION = 0.25
-_LEFT_GUTTER_ABSOLUTE = 96.0  # 1.33 inch
 _ROW_CLUSTER_TOLERANCE = 4.0
 _MIN_BAND_HALF_HEIGHT = 6.0
 
@@ -50,15 +48,8 @@ def find_row_bands_for_block(page: "fitz.Page", block_bbox: Tuple[float, float, 
     except RuntimeError:
         return RowBands()
 
-    width = max(0.0, x1 - x0)
-    left_gutter = x0 + min(_LEFT_GUTTER_ABSOLUTE, width * _LEFT_GUTTER_FRACTION)
-
     labels: Dict[str, List[LabelBox]] = {"bp": [], "hr": [], "am": [], "pm": []}
     for span_bbox, raw_text in _iter_spans_within(text, block_bbox):
-        span_x0, _, span_x1, _ = span_bbox
-        if span_x0 > left_gutter or span_x1 < x0:
-            continue
-
         label_key = _classify_label(raw_text)
         if label_key:
             labels[label_key].append(span_bbox)

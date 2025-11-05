@@ -52,7 +52,7 @@ class AuditWorkerDecisionTests(unittest.TestCase):
             return_value=[(block_bbox, rule_text)],
         ), patch(
             "hushdesk.workers.audit_worker.find_row_bands_for_block",
-            return_value=RowBands(bp=(300.0, 320.0), am=(330.0, 350.0)),
+            return_value=RowBands(bp=(300.0, 320.0)),
         ), patch(
             "hushdesk.workers.audit_worker.extract_vitals_in_band",
             side_effect=mock_vitals_returns,

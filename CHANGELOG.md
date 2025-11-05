@@ -16,6 +16,8 @@
 - test(rows|geometry): regression cases for inverted spans, block bounds, and row-band coverage.
 - fix(worker): decision loop consumes normalized row bands, counts reviewed per due-cell, and covers Held-OK code + trigger smoke test.
 - chore: remove temporary debug logging from rule parsing to keep logs concise.
+- fix(rows): accept BP/HR/AM/PM labels anywhere inside the block and extend rule bbox horizontally for vitals zones.
+- fix(worker): fallback to whole-block slot when AM/PM rows are absent and sample vitals/due marks with the extended x-span; smoke test updated.
 
 ## Phase 3 – Semantic Anchors
 - feat(layout): semantic day-header detection + per-page column bands in PDF user-space points.

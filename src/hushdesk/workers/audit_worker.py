@@ -169,36 +169,54 @@ class AuditWorker(QObject):
                 continue
 
             row_bands = find_row_bands_for_block(page, block_bbox)
-            am_band = self._expand_band(row_bands.am, block_bbox)
-            pm_band = self._expand_band(row_bands.pm, block_bbox)
-            if am_band is None and pm_band is None:
+            block_rect = normalize_rect(block_bbox)
+            slot_bands = {
+                "AM": self._expand_band(row_bands.am, block_rect),
+                "PM": self._expand_band(row_bands.pm, block_rect),
+            }
+            fallback_used = False
+            if not any(slot_bands.values()):
+                fallback_band = self._expand_band(
+                    (block_rect[1], block_rect[3]),
+                    block_rect,
+                )
+                if fallback_band is None:
+                    continue
+                slot_bands = {"AM": fallback_band}
+                fallback_used = True
+
+            slot_sequence = [(name, band) for name, band in slot_bands.items() if band is not None]
+            if not slot_sequence:
                 continue
 
-            bp_band = self._expand_band(row_bands.bp, block_bbox)
-            hr_band = self._expand_band(row_bands.hr, block_bbox)
+            bp_band = self._expand_band(row_bands.bp, block_rect)
+            hr_band = self._expand_band(row_bands.hr, block_rect)
 
             bp_value = None
             hr_value = None
+            slot_x0 = max(band.x0, block_rect[0])
+            slot_x1 = block_rect[2]
             if bp_band is not None:
-                bp_result = extract_vitals_in_band(page, band.x0, band.x1, *bp_band)
+                bp_result = extract_vitals_in_band(page, slot_x0, slot_x1, *bp_band)
                 bp_value = bp_result.get("bp")
             if hr_band is not None:
-                hr_result = extract_vitals_in_band(page, band.x0, band.x1, *hr_band)
+                hr_result = extract_vitals_in_band(page, slot_x0, slot_x1, *hr_band)
                 hr_value = hr_result.get("hr")
 
             room_bed = self._find_room_bed_label(page, block_bbox) or "Unknown"
+            if fallback_used:
+                self.log.emit(
+                    f"WARN — fallback slot band used — {room_bed}"
+                )
 
-            for slot_name, slot_band in (("AM", am_band), ("PM", pm_band)):
-                if slot_band is None:
-                    continue
-
-                slot_vitals = extract_vitals_in_band(page, band.x0, band.x1, *slot_band)
+            for slot_name, slot_band in slot_sequence:
+                slot_vitals = extract_vitals_in_band(page, slot_x0, slot_x1, *slot_band)
                 slot_bp = bp_value or slot_vitals.get("bp")
                 slot_hr = hr_value or slot_vitals.get("hr")
                 sbp_value = self._sbp_from_bp(slot_bp)
 
-                mark = detect_due_mark(page, band.x0, band.x1, *slot_band)
-                mark_text = self._collect_text(page, band.x0, band.x1, *slot_band)
+                mark = detect_due_mark(page, slot_x0, slot_x1, *slot_band)
+                mark_text = self._collect_text(page, slot_x0, slot_x1, *slot_band)
                 counts["reviewed"] += 1
                 if mark == DueMark.NONE:
                     self.log.emit(f"WARN — missing due mark — {room_bed} ({slot_name})")
@@ -269,11 +287,12 @@ class AuditWorker(QObject):
                 bbox = self._line_bbox(spans)
                 if bbox is None:
                     continue
+                extended_x1 = min(page.rect.width, band.x1 + 160.0)
                 block_bbox = normalize_rect(
                     (
                         max(0.0, min(band.x0 - 120.0, bbox[0] - 12.0)),
                         max(0.0, bbox[1] - 36.0),
-                        band.x1,
+                        extended_x1,
                         min(page.rect.height, bbox[3] + 140.0),
                     )
                 )
