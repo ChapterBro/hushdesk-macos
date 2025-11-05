@@ -9,4 +9,4 @@ Canonical configs:
 ## Run (dev)
 - Ensure Python 3.11 is available.
 - Run `./scripts/dev` to bootstrap the venv and launch the shell app.
-- Audit Date is resolved from filename (previous day, Central). Phase 3 detects per-page Audit-Date column bands, the UI surfaces Source/pending date headers with live log output and save toasts, and progress/Reviewed chips now follow the detected band pages with clean per-page logs.
+- Audit Date is resolved from filename (previous day, Central). Phase 3 detects per-page Audit-Date column bands and surfaces Source/pending headers with live logs, and Phase 4 inspects those bands for vitals + due-cell precedence so the log shows HELD-OK / HOLD-MISS / COMPLIANT / DC'D outcomes with the chips staying in sync.

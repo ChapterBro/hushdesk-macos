@@ -1,5 +1,15 @@
 # Changelog
 
+# Changelog
+
+## Phase 4 – Vitals & Due-Cell Precedence
+- feat(rows): semantic row-band detection for BP/HR and AM/PM lanes inside each med block.
+- feat(vitals): BP/HR token parsers with same-column extraction helpers.
+- feat(due): due-mark detection with precedence for DC'D, allowed codes, and given entries.
+- feat(engine): decision logic wired into the worker to emit HELD-OK / HOLD-MISS / COMPLIANT / DC'D summaries and chip counters.
+- test(decide|vitals|due|rows): unit coverage for rule triggers, vitals parsing, due marks, and row-band heuristics.
+- fix(worker): ensure no-data signal still fires when column bands are unavailable.
+
 ## Phase 3 – Semantic Anchors
 - feat(layout): semantic day-header detection + per-page column bands in PDF user-space points.
 - feat(ui): bind Source and pending Audit Date headers, add log panel with save toasts.
