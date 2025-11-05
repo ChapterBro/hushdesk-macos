@@ -1,5 +1,8 @@
 # Changelog
 
+## Phase 3 – Semantic Anchors
+- feat(layout): semantic day-header detection + per-page column bands in PDF user-space points.
+
 ## Phase 2 – Date Logic Clamp Stub
 - Resolved filename-first audit dates (Central previous day) and surfaced the formatted header value.
 - Stubbed audit column clamp wiring with a yellow “No data for selected date” banner when no data is found.
