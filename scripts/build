@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DIST_DIR="${REPO_ROOT}/dist"
+PYINSTALLER_BIN="${PYINSTALLER_BIN:-pyinstaller}"
+ICON_PATH="${REPO_ROOT}/assets/icons/hushdesk.icns"
+PLIST_BUDDY="/usr/libexec/PlistBuddy"
+
+if ! command -v "${PYINSTALLER_BIN}" >/dev/null 2>&1; then
+  echo "error: ${PYINSTALLER_BIN} is required (install PyInstaller)" >&2
+  exit 1
+fi
+
+if [ ! -f "${ICON_PATH}" ]; then
+  echo "error: ${ICON_PATH} not found. Run ./scripts/make_icns first." >&2
+  exit 1
+fi
+
+if [ ! -x "${PLIST_BUDDY}" ]; then
+  echo "error: PlistBuddy not found at ${PLIST_BUDDY}" >&2
+  exit 1
+fi
+
+cd "${REPO_ROOT}"
+
+echo "Cleaning ${DIST_DIR}"
+rm -rf "${DIST_DIR}"
+mkdir -p "${DIST_DIR}"
+
+"${PYINSTALLER_BIN}" -y --noconfirm --name "HushDesk" --windowed \
+  --add-data "hushdesk/config:config" \
+  --collect-all PySide6 \
+  --icon "${ICON_PATH}" \
+  --osx-bundle-identifier "com.chapterbro.hushdesk" \
+  src/hushdesk/app.py
+
+if [ ! -d "${DIST_DIR}/HushDesk.app" ]; then
+  echo "error: dist/HushDesk.app was not generated" >&2
+  exit 1
+fi
+
+PLIST="${DIST_DIR}/HushDesk.app/Contents/Info.plist"
+
+set_plist_value() {
+  local key="$1"
+  local value="$2"
+  if "${PLIST_BUDDY}" -c "Set :${key} ${value}" "${PLIST}" 2>/dev/null; then
+    return 0
+  fi
+  "${PLIST_BUDDY}" -c "Add :${key} string ${value}" "${PLIST}"
+}
+
+set_plist_value "CFBundleIconFile" "hushdesk"
+set_plist_value "CFBundleName" "HushDesk"
+set_plist_value "CFBundleDisplayName" "HushDesk"
+
+hdiutil create -volname "HushDesk" \
+  -srcfolder "${DIST_DIR}/HushDesk.app" \
+  -ov -format UDZO "${DIST_DIR}/HushDesk.dmg"
+
+if [ ! -f "${DIST_DIR}/HushDesk.dmg" ]; then
+  echo "error: dist/HushDesk.dmg was not generated" >&2
+  exit 1
+fi
+
+if [ "${DESKTOP_ALIAS:-0}" = "1" ]; then
+  "${REPO_ROOT}/scripts/desktop_alias"
+fi
+
+echo "Build artifacts ready:"
+echo "  App: ${DIST_DIR}/HushDesk.app"
+echo "  DMG: ${DIST_DIR}/HushDesk.dmg"

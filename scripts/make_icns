@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ICON_DIR="${REPO_ROOT}/assets/icons"
+SOURCE_PNG="${ICON_DIR}/hushdesk.png"
+TARGET_ICNS="${ICON_DIR}/hushdesk.icns"
+
+if [ ! -f "${SOURCE_PNG}" ]; then
+  echo "error: ${SOURCE_PNG} not found" >&2
+  exit 1
+fi
+
+if ! command -v sips >/dev/null 2>&1; then
+  echo "error: sips command not available (macOS required)" >&2
+  exit 1
+fi
+
+if ! command -v iconutil >/dev/null 2>&1; then
+  echo "error: iconutil command not available" >&2
+  exit 1
+fi
+
+ICONSET_DIR="${ICON_DIR}/hushdesk.iconset"
+rm -rf "${ICONSET_DIR}"
+mkdir -p "${ICONSET_DIR}"
+
+declare -a BASE_SIZES=(16 32 64 128 256 512)
+
+for size in "${BASE_SIZES[@]}"; do
+  base_name="icon_${size}x${size}.png"
+  sips -z "${size}" "${size}" "${SOURCE_PNG}" --out "${ICONSET_DIR}/${base_name}" >/dev/null
+
+  double=$((size * 2))
+  double_name="icon_${size}x${size}@2x.png"
+  sips -z "${double}" "${double}" "${SOURCE_PNG}" --out "${ICONSET_DIR}/${double_name}" >/dev/null
+done
+
+iconutil -c icns "${ICONSET_DIR}" -o "${TARGET_ICNS}"
+
+rm -rf "${ICONSET_DIR}"
+
+echo "Generated ${TARGET_ICNS}"

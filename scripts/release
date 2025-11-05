@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DMG_PATH="${REPO_ROOT}/dist/HushDesk.dmg"
+
+VERSION_VALUE="${VERSION:-}"
+
+if [ -z "${VERSION_VALUE}" ]; then
+  VERSION_VALUE="$(grep -E '__version__\s*=\s*\"' "${REPO_ROOT}/src/hushdesk/__init__.py" | head -n1 | sed -E 's/.*\"([^\"[:space:]]+)\".*/\1/')"
+fi
+
+if [ -z "${VERSION_VALUE}" ]; then
+  echo "error: VERSION not provided and could not be read from src/hushdesk/__init__.py" >&2
+  exit 1
+fi
+
+TAG="v${VERSION_VALUE}"
+
+if [ ! -f "${DMG_PATH}" ]; then
+  echo "error: ${DMG_PATH} not found. Run ./scripts/build (and sign/notarize) before release." >&2
+  exit 1
+fi
+
+if ! command -v gh >/dev/null 2>&1; then
+  echo "error: GitHub CLI (gh) is required to create releases" >&2
+  exit 1
+fi
+
+cd "${REPO_ROOT}"
+
+if git rev-parse "${TAG}" >/dev/null 2>&1; then
+  echo "info: git tag ${TAG} already exists"
+else
+  git tag -a "${TAG}" -m "HushDesk macOS ${VERSION_VALUE}"
+fi
+
+gh release create "${TAG}" "${DMG_PATH}" --notes "HushDesk macOS v${VERSION_VALUE}"
+
+RELEASE_URL="$(gh release view "${TAG}" --json url --jq '.url')"
+
+echo "Release created: ${RELEASE_URL}"

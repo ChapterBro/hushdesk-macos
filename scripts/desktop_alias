@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APP_PATH="${REPO_ROOT}/dist/HushDesk.app"
+ALIAS_PATH="${HOME}/Desktop/HushDesk.app"
+
+if [ ! -d "${APP_PATH}" ]; then
+  echo "error: ${APP_PATH} not found. Build the app before creating an alias." >&2
+  exit 1
+fi
+
+if ! command -v osascript >/dev/null 2>&1; then
+  echo "error: osascript is required to create Finder aliases" >&2
+  exit 1
+fi
+
+rm -rf "${ALIAS_PATH}"
+
+osascript <<OSA
+set appPath to POSIX file "${APP_PATH}" as alias
+tell application "Finder"
+  make new alias file to appPath at (path to desktop folder) with properties {name:"HushDesk.app"}
+end tell
+OSA
+
+echo "Desktop alias created at ${ALIAS_PATH}"
