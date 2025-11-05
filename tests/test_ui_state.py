@@ -22,15 +22,26 @@ class MainWindowSelectionTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_file_selection_updates_source_label_and_run_button(self) -> None:
+    def test_file_selection_updates_source_and_pending_state(self) -> None:
         with TemporaryDirectory() as tmpdir:
             window = MainWindow(app_support_dir=Path(tmpdir))
             selected_pdf = Path(tmpdir) / "example.pdf"
 
             window._on_pdf_selected(selected_pdf)
 
-            self.assertTrue(hasattr(window, "source_label"), "Expected Source label to be bound")
+            self.assertEqual(window.source_label.text(), "Source: example.pdf")
+            self.assertIn("(pending)", window.audit_date_label.text())
             self.assertTrue(window.run_button.isEnabled(), "Run button should enable after selection")
+
+            window.close()
+
+    def test_audit_date_signal_updates_label(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            window = MainWindow(app_support_dir=Path(tmpdir))
+
+            window._on_audit_date_text("11/03/2025 — Central")
+
+            self.assertEqual(window.audit_date_label.text(), "Audit Date: 11/03/2025 — Central")
 
             window.close()
 

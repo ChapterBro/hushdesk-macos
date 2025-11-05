@@ -9,7 +9,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 from unittest.mock import patch
 
-from PySide6.QtCore import QCoreApplication
+from PySide6.QtWidgets import QApplication
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = ROOT / "src"
@@ -23,7 +23,7 @@ from hushdesk.workers.audit_worker import AuditWorker  # noqa: E402
 class DateParsingTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls._app = QCoreApplication.instance() or QCoreApplication([])
+        cls._app = QApplication.instance() or QApplication([])
 
     def test_filename_previous_day(self) -> None:
         path = Path("Administration Record Report 2025-11-04.pdf")
@@ -40,7 +40,7 @@ class DateParsingTests(unittest.TestCase):
 class AuditWorkerSmokeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls._app = QCoreApplication.instance() or QCoreApplication([])
+        cls._app = QApplication.instance() or QApplication([])
 
     def test_worker_emits_audit_label_and_no_data_banner(self) -> None:
         with TemporaryDirectory() as tmpdir:
@@ -50,7 +50,7 @@ class AuditWorkerSmokeTests(unittest.TestCase):
             emitted_labels: List[str] = []
             banner_hits: List[bool] = []
 
-            worker.audit_date_resolved.connect(emitted_labels.append)
+            worker.audit_date_text.connect(emitted_labels.append)
             worker.no_data_for_date.connect(lambda: banner_hits.append(True))
 
             with patch("hushdesk.workers.audit_worker.time.sleep", return_value=None), patch(
