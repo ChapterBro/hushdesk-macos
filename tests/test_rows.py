@@ -1,0 +1,50 @@
+"""Row band detection tests."""
+
+from __future__ import annotations
+
+import sys
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC_PATH = ROOT / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
+
+from hushdesk.pdf.rows import RowBands, find_row_bands_for_block  # noqa: E402
+
+
+class DummyPage:
+    def __init__(self, text_dict: dict) -> None:
+        self._text_dict = text_dict
+
+    def get_text(self, kind: str) -> dict:  # noqa: D401
+        return self._text_dict
+
+
+class RowBandDetectionTests(unittest.TestCase):
+    def test_detects_row_bands_within_block(self) -> None:
+        spans = [
+            {"text": "BP", "bbox": [10.0, 100.0, 30.0, 112.0]},
+            {"text": "Pulse", "bbox": [12.0, 120.0, 48.0, 132.0]},
+            {"text": "AM", "bbox": [14.0, 140.0, 32.0, 152.0]},
+            {"text": "PM", "bbox": [15.0, 158.0, 33.0, 170.0]},
+        ]
+        text_dict = {"blocks": [{"lines": [{"spans": spans}]}]}
+        page = DummyPage(text_dict)
+
+        with patch("hushdesk.pdf.rows.fitz", SimpleNamespace()):
+            bands = find_row_bands_for_block(page, (0.0, 90.0, 200.0, 190.0))
+
+        self.assertIsInstance(bands, RowBands)
+        self.assertIsNotNone(bands.bp)
+        self.assertIsNotNone(bands.hr)
+        self.assertIsNotNone(bands.am)
+        self.assertIsNotNone(bands.pm)
+        self.assertLess(bands.bp[0], bands.hr[0])
+
+
+if __name__ == "__main__":
+    unittest.main()

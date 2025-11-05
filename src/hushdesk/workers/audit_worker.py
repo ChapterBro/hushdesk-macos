@@ -73,6 +73,7 @@ class AuditWorker(QObject):
         missing_headers: List[int] = []
         counters = self._empty_summary()
         doc_pages = 0
+        no_data_emitted = False
         if fitz is None:
             message = "PyMuPDF is not available; skipping column band detection."
             logger.warning(message)
@@ -107,6 +108,7 @@ class AuditWorker(QObject):
                             self.progress.emit(index, total_steps)
                     else:
                         self.no_data_for_date.emit()
+                        no_data_emitted = True
                         warning_message = "No data for selected date"
                         self.warning.emit(warning_message)
             except Exception as exc:  # pragma: no cover - defensive guard
@@ -121,6 +123,10 @@ class AuditWorker(QObject):
         output_path = self._input_pdf.with_suffix(".txt")
 
         logger.info("Column selection result for %s: %s", audit_date.isoformat(), column_bands)
+
+        if not column_bands and not no_data_emitted:
+            self.no_data_for_date.emit()
+            no_data_emitted = True
 
         self.summary_counts.emit(counters)
         if self._write_placeholder(output_path):
