@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable, List, Optional
@@ -25,6 +26,8 @@ def write_report(
 ) -> None:
     """Write the binder-ready TXT report to ``out_path``."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    split_used = any("split" in _normalize_record_notes(record.notes) for record in records)
 
     hall_upper = hall.upper()
     header = f"{audit_date_mmddyyyy} · Hall: {hall_upper} · Source: {source_basename}"
@@ -57,15 +60,38 @@ def write_report(
             if record.kind == kind:
                 lines.append(_format_record_line(record))
 
-    if notes:
-        lines.append("")
-        seen: set[str] = set()
-        for note in notes:
-            text = str(note).strip()
-            if not text or text in seen:
+    note_lines: List[str] = []
+    seen_notes: set[str] = set()
+    vitals_seen: set[tuple[str, str]] = set()
+    split_noted = False
+
+    for note in notes or []:
+        raw = str(note).strip()
+        if not raw:
+            continue
+        sanitized, had_split = _sanitize_note_text(raw)
+        if had_split:
+            split_noted = True
+        vitals_key = _vitals_note_key(sanitized)
+        if vitals_key:
+            if vitals_key in vitals_seen:
                 continue
+            vitals_seen.add(vitals_key)
+        if sanitized in seen_notes:
+            continue
+        note_lines.append(sanitized)
+        seen_notes.add(sanitized)
+
+    if split_used or split_noted:
+        aggregate = "AM/PM labels missing (split)"
+        if aggregate not in seen_notes:
+            note_lines.append(aggregate)
+            seen_notes.add(aggregate)
+
+    if note_lines:
+        lines.append("")
+        for text in note_lines:
             lines.append(f"Notes — {text}")
-            seen.add(text)
 
     lines.append("")
     generated_stamp = datetime.now(_CENTRAL).strftime("%m/%d/%Y %H:%M")
@@ -88,17 +114,13 @@ def _record_sort_key(record: DecisionRecord) -> tuple:
 
 def _format_record_line(record: DecisionRecord) -> str:
     dose_label = record.dose
-    note_tokens = _normalize_record_notes(record.notes)
-    if "split" in note_tokens:
-        dose_label = f"{dose_label} (split)"
-    elif "fallback" in note_tokens:
-        dose_label = f"{dose_label} (fallback)"
 
     if record.kind == "DC'D":
         reason = record.dcd_reason or "X in due cell"
         return f"{record.kind} — {record.room_bed} ({dose_label}) — {reason}"
 
-    base = f"{record.kind} — {record.room_bed} ({dose_label}) — {record.rule_text}"
+    rule_text = _strip_source_suffix(record.rule_text)
+    base = f"{record.kind} — {record.room_bed} ({dose_label}) — {rule_text}"
     detail_parts: List[str] = []
     vital_text = record.vital_text.strip()
     if vital_text:
@@ -133,6 +155,51 @@ def _normalize_record_notes(notes: Optional[str]) -> set[str]:
         if token:
             tokens.append(token)
     return set(tokens)
+
+
+def _sanitize_note_text(text: str) -> tuple[str, bool]:
+    """Return note text without inline ``(split)`` markers and whether one was removed."""
+
+    lower_text = text.lower()
+    has_split = "(split" in lower_text
+    if not has_split:
+        return text, False
+
+    cleaned = re.sub(r"\s*\(split\)", "", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
+    cleaned = cleaned.replace("( ", "(").replace(" )", ")")
+    return cleaned, True
+
+
+_SOURCE_SUFFIX_RE = re.compile(r"\s*(?:[;|])?\s*Source:\s*.+$", re.IGNORECASE)
+_VITALS_NOTE_RE = re.compile(
+    r"(?i)^vitals\s+missing\s*\(unexpected\)\s*—\s*(?P<room>[^()]+?)\s*\((?P<dose>[^)]+)\)"
+)
+
+
+def _strip_source_suffix(text: Optional[str]) -> str:
+    if not text:
+        return ""
+    stripped = _SOURCE_SUFFIX_RE.sub("", text).rstrip()
+    if stripped:
+        return stripped
+    if "source:" in text.lower():
+        return ""
+    return text
+
+
+def _vitals_note_key(text: str) -> Optional[tuple[str, str]]:
+    match = _VITALS_NOTE_RE.match(text)
+    if not match:
+        return None
+    room = match.group("room").strip()
+    dose_token = match.group("dose").strip()
+    if not room or not dose_token:
+        return None
+    dose = dose_token.split()[0].strip().upper()
+    if not dose:
+        return None
+    return (room, dose)
 
 
 __all__ = ["write_report"]
