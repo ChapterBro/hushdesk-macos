@@ -40,6 +40,13 @@ class RuleSpec:
     threshold: int
     description: str
 
+    @classmethod
+    def from_kwargs(cls, **kwargs: object) -> "RuleSpec":
+        """Temporary adapter to smooth over legacy keyword usage."""
+        if "rule_kind" in kwargs and "kind" not in kwargs:
+            kwargs["kind"] = kwargs.pop("rule_kind")
+        return cls(**kwargs)
+
 
 class AuditWorker(QObject):
     """Worker that simulates page-by-page progress in a background thread."""
@@ -302,7 +309,21 @@ class AuditWorker(QObject):
                 threshold = int(value)
             except ValueError:
                 continue
-            specs.append(RuleSpec(rule_kind=rule_kind, threshold=threshold, description=f"Hold if {measure} {comparator} {threshold}"))
+            logger.warning(
+                "DEBUG RuleSpec kwargs: %r",
+                {
+                    "kind": rule_kind,
+                    "threshold": threshold,
+                    "description": f"Hold if {measure} {comparator} {threshold}",
+                },
+            )
+            specs.append(
+                RuleSpec(
+                    kind=rule_kind,
+                    threshold=threshold,
+                    description=f"Hold if {measure} {comparator} {threshold}",
+                )
+            )
         return specs
 
     @staticmethod

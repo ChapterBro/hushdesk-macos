@@ -9,6 +9,7 @@
 - feat(engine): decision logic wired into the worker to emit HELD-OK / HOLD-MISS / COMPLIANT / DC'D summaries and chip counters.
 - test(decide|vitals|due|rows): unit coverage for rule triggers, vitals parsing, due marks, and row-band heuristics.
 - fix(worker): ensure no-data signal still fires when column bands are unavailable.
+- fix(worker): RuleSpec now uses the `kind` keyword, with an adapter for legacy `rule_kind` usage and dedicated unit tests.
 
 ## Phase 3 – Semantic Anchors
 - feat(layout): semantic day-header detection + per-page column bands in PDF user-space points.
