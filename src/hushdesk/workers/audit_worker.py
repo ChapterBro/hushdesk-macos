@@ -5,10 +5,9 @@ from __future__ import annotations
 import logging
 import re
 import time
-from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -18,6 +17,8 @@ except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
 from hushdesk.engine.decide import decide_for_dose
+from hushdesk.engine.rules import RuleSpec, parse_rule_text
+from hushdesk.id.rooms import load_building_master, resolve_room_from_block
 from hushdesk.pdf.columns import ColumnBand, select_audit_columns
 from hushdesk.pdf.dates import format_mmddyyyy, resolve_audit_date
 from hushdesk.pdf.duecell import DueMark, detect_due_mark
@@ -29,24 +30,10 @@ from hushdesk.placeholders import build_placeholder_output
 
 logger = logging.getLogger(__name__)
 
-ROOM_BED_RE = re.compile(r"\b\d{3}-\d\b")
-RULE_PATTERN = re.compile(r"(?i)(sbp|hr|pulse)\s*([<>])\s*(\d{2,3})")
+DEBUG_DECISION_DETAILS = False
+
 TIME_RE = re.compile(r"\b(?:[0-1]?\d|2[0-3]):[0-5]\d\b")
 ROW_PADDING = 4.0
-
-
-@dataclass(slots=True)
-class RuleSpec:
-    kind: str
-    threshold: int
-    description: str
-
-    @classmethod
-    def from_kwargs(cls, **kwargs: object) -> "RuleSpec":
-        """Temporary adapter to smooth over legacy keyword usage."""
-        if "rule_kind" in kwargs and "kind" not in kwargs:
-            kwargs["kind"] = kwargs.pop("rule_kind")
-        return cls(**kwargs)
 
 
 class AuditWorker(QObject):
@@ -67,6 +54,8 @@ class AuditWorker(QObject):
         self._input_pdf = input_pdf
         self._delay = max(0.05, delay)
         self._audit_date: date | None = None
+        self._building_master = load_building_master()
+        self._unknown_room_debug_warned = False
 
     @Slot()
     def run(self) -> None:
@@ -164,12 +153,42 @@ class AuditWorker(QObject):
 
         block_candidates = self._find_block_candidates(page, band, text_dict)
         for block_bbox, rule_text in block_candidates:
-            rule_specs = self._parse_rules(rule_text)
+            rule_specs = parse_rule_text(rule_text)
             if not rule_specs:
                 continue
 
             row_bands = find_row_bands_for_block(page, block_bbox)
             block_rect = normalize_rect(block_bbox)
+            room_info, room_spans = self._resolve_room_info(text_dict, block_rect)
+            if room_info:
+                room_bed, hall_name = room_info
+            else:
+                room_bed = "Unknown"
+                hall_name = "Unknown"
+                self.log.emit(
+                    "WARN — room-bed unresolved — "
+                    f"page {band.page_index + 1} y={block_rect[1]:.1f}-{block_rect[3]:.1f}"
+                )
+                if DEBUG_DECISION_DETAILS and not self._unknown_room_debug_warned:
+                    snippet = self._summarize_room_spans(room_spans)
+                    if snippet:
+                        self.log.emit(f"WARN — room parse sample — {snippet}")
+                        self._unknown_room_debug_warned = True
+            split_band_used = getattr(row_bands, "auto_am_pm_split", False)
+            if DEBUG_DECISION_DETAILS:
+                rule_parts = ", ".join(f"{spec.kind}@{spec.threshold}" for spec in rule_specs)
+                rows_desc = ", ".join(
+                    [
+                        f"bp={row_bands.bp}",
+                        f"hr={row_bands.hr}",
+                        f"am={row_bands.am}",
+                        f"pm={row_bands.pm}",
+                    ]
+                )
+                self.log.emit(
+                    "DEBUG — block=(%.1f, %.1f, %.1f, %.1f); room=%s; rules=[%s]; rows=[%s]"
+                    % (*block_rect, room_bed, rule_parts, rows_desc)
+                )
             slot_bands = {
                 "AM": self._expand_band(row_bands.am, block_rect),
                 "PM": self._expand_band(row_bands.pm, block_rect),
@@ -203,13 +222,22 @@ class AuditWorker(QObject):
                 hr_result = extract_vitals_in_band(page, slot_x0, slot_x1, *hr_band)
                 hr_value = hr_result.get("hr")
 
-            room_bed = self._find_room_bed_label(page, block_bbox) or "Unknown"
-            if fallback_used:
+            if split_band_used:
+                self.log.emit(
+                    f"WARN — AM/PM labels missing, using 50/50 split for block {room_bed}"
+                )
+            elif fallback_used:
                 self.log.emit(
                     f"WARN — fallback slot band used — {room_bed}"
                 )
 
             for slot_name, slot_band in slot_sequence:
+                slot_label = slot_name
+                if split_band_used:
+                    slot_label = f"{slot_name} (split)"
+                elif fallback_used:
+                    slot_label = f"{slot_name} (fallback)"
+
                 slot_vitals = extract_vitals_in_band(page, slot_x0, slot_x1, *slot_band)
                 slot_bp = bp_value or slot_vitals.get("bp")
                 slot_hr = hr_value or slot_vitals.get("hr")
@@ -217,26 +245,44 @@ class AuditWorker(QObject):
 
                 mark = detect_due_mark(page, slot_x0, slot_x1, *slot_band)
                 mark_text = self._collect_text(page, slot_x0, slot_x1, *slot_band)
+
+                if DEBUG_DECISION_DETAILS:
+                    self._emit_debug_bundle(
+                        block_rect,
+                        room_bed,
+                        hall_name,
+                        rule_specs,
+                        row_bands,
+                        slot_label,
+                        mark,
+                        mark_text,
+                        slot_bp,
+                        slot_hr,
+                        split_band_used,
+                        fallback_used,
+                    )
                 counts["reviewed"] += 1
                 if mark == DueMark.NONE:
-                    self.log.emit(f"WARN — missing due mark — {room_bed} ({slot_name})")
+                    self.log.emit(f"WARN — missing due mark — {room_bed} ({slot_label})")
 
+                dcd_counted = False
                 for rule in rule_specs:
                     vital_value: Optional[int]
                     if rule.kind.startswith("SBP"):
                         vital_value = sbp_value
                         if vital_value is None:
                             self.log.emit(
-                                f"WARN — SBP missing — {room_bed} ({slot_name})"
+                                f"WARN — SBP missing — {room_bed} ({slot_label})"
                             )
                     else:
                         vital_value = slot_hr
                         if vital_value is None:
                             self.log.emit(
-                                f"WARN — HR missing — {room_bed} ({slot_name})"
+                                f"WARN — HR missing — {room_bed} ({slot_label})"
                             )
 
                     decision = decide_for_dose(rule.kind, rule.threshold, vital_value, mark)
+                    skip_message = False
                     if decision == "HELD_OK":
                         counts["held_ok"] += 1
                     elif decision == "HOLD_MISS":
@@ -244,23 +290,28 @@ class AuditWorker(QObject):
                     elif decision == "COMPLIANT":
                         counts["compliant"] += 1
                     elif decision == "DCD":
-                        counts["dcd"] += 1
+                        if not dcd_counted:
+                            counts["dcd"] += 1
+                            dcd_counted = True
+                        else:
+                            skip_message = True
                     elif decision == "NONE" and mark == DueMark.CODE_ALLOWED:
                         self.log.emit(
-                            f"WARN — allowed code without trigger — {room_bed} ({slot_name})"
+                            f"WARN — allowed code without trigger — {room_bed} ({slot_label})"
                         )
 
-                    message = self._format_decision_log(
-                        decision,
-                        room_bed,
-                        slot_name,
-                        rule,
-                        slot_bp,
-                        slot_hr,
-                        mark,
-                        mark_text,
-                    )
-                    self.log.emit(message)
+                    if not skip_message:
+                        message = self._format_decision_log(
+                            decision,
+                            room_bed,
+                            slot_label,
+                            rule,
+                            slot_bp,
+                            slot_hr,
+                            mark,
+                            mark_text,
+                        )
+                        self.log.emit(message)
 
         return counts
 
@@ -282,7 +333,9 @@ class AuditWorker(QObject):
                 lowered = line_text.lower()
                 if "hold" not in lowered:
                     continue
-                if "<" not in line_text and ">" not in line_text:
+                has_symbol = "<" in line_text or ">" in line_text
+                has_words = "less" in lowered or "greater" in lowered
+                if not (has_symbol or has_words):
                     continue
                 bbox = self._line_bbox(spans)
                 if bbox is None:
@@ -319,27 +372,6 @@ class AuditWorker(QObject):
         merged.append((current_bbox, current_text))
         return merged
 
-    def _parse_rules(self, text: str) -> List[RuleSpec]:
-        specs: List[RuleSpec] = []
-        for match in RULE_PATTERN.finditer(text):
-            raw_measure, comparator, value = match.groups()
-            measure = raw_measure.upper()
-            if measure == "PULSE":
-                measure = "HR"
-            rule_kind = f"{measure}{comparator}"
-            try:
-                threshold = int(value)
-            except ValueError:
-                continue
-            specs.append(
-                RuleSpec(
-                    kind=rule_kind,
-                    threshold=threshold,
-                    description=f"Hold if {measure} {comparator} {threshold}",
-                )
-            )
-        return specs
-
     @staticmethod
     def _expand_band(
         band: Optional[Tuple[float, float]],
@@ -371,24 +403,149 @@ class AuditWorker(QObject):
         except ValueError:
             return None
 
-    def _find_room_bed_label(
-        self, page: "fitz.Page", block_bbox: Tuple[float, float, float, float]
-    ) -> Optional[str]:
-        block_x0, block_y0, block_x1, block_y1 = normalize_rect(block_bbox)
-        search_rect = fitz.Rect(
-            max(0.0, block_x0 - 160.0),
-            block_y0,
-            block_x0,
-            block_y1,
+    def _resolve_room_info(
+        self,
+        text_dict: dict,
+        block_bbox: Tuple[float, float, float, float],
+    ) -> Tuple[Optional[Tuple[str, str]], List[Dict[str, object]]]:
+        block_rect = normalize_rect(block_bbox)
+        gutter_x1 = block_rect[0]
+        gutter_x0 = max(0.0, gutter_x1 - 72.0)
+        top = block_rect[1]
+        bottom = block_rect[3]
+
+        spans = list(
+            self._collect_spans(text_dict, gutter_x0, gutter_x1, top, bottom)
         )
-        try:
-            text = page.get_text("text", clip=search_rect)
-        except RuntimeError:
-            return None
-        match = ROOM_BED_RE.search(text)
-        if match:
-            return match.group(0)
-        return None
+        if not spans:
+            spans = list(
+                self._collect_spans(text_dict, gutter_x0, gutter_x1 + 20.0, top, bottom)
+            )
+        if not spans:
+            spans = list(
+                self._collect_spans(text_dict, block_rect[0], block_rect[2], top, bottom)
+            )
+        if not spans:
+            return (None, [])
+        return resolve_room_from_block(spans, self._building_master), spans
+
+    @staticmethod
+    def _collect_spans(
+        text_dict: dict,
+        x0: float,
+        x1: float,
+        y0: float,
+        y1: float,
+    ) -> Iterable[Dict[str, object]]:
+        for block in text_dict.get("blocks", []):
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    text = span.get("text")
+                    bbox = span.get("bbox")
+                    if not text or not bbox:
+                        continue
+                    sx0, sy0, sx1, sy1 = normalize_rect(tuple(map(float, bbox)))
+                    if sx1 < x0 or sx0 > x1:
+                        continue
+                    if sy1 < y0 or sy0 > y1:
+                        continue
+                    yield {"text": text, "bbox": (sx0, sy0, sx1, sy1)}
+
+    @staticmethod
+    def _summarize_room_spans(spans: List[Dict[str, object]]) -> str:
+        texts = []
+        for span in spans:
+            raw = span.get("text")
+            if not raw:
+                continue
+            snippet = re.sub(r"\s+", " ", str(raw)).strip()
+            if snippet:
+                texts.append(snippet)
+            if len(texts) >= 6:
+                break
+        if not texts:
+            return ""
+        combined = " ".join(texts)
+        if len(combined) > 120:
+            combined = combined[:117].rstrip() + "..."
+        return f"left gutter text \"{combined}\""
+
+    def _emit_debug_bundle(
+        self,
+        block_rect: Tuple[float, float, float, float],
+        room_bed: str,
+        hall_name: str,
+        rule_specs: List[RuleSpec],
+        row_bands: "RowBands",
+        slot_label: str,
+        mark: DueMark,
+        mark_text: str,
+        slot_bp: Optional[str],
+        slot_hr: Optional[int],
+        split_band_used: bool,
+        fallback_used: bool,
+    ) -> None:
+        rules_desc = ", ".join(f"{spec.kind}@{spec.threshold}" for spec in rule_specs) or "none"
+        row_desc = ", ".join(
+            [
+                f"bp={self._band_summary(row_bands.bp)}",
+                f"hr={self._band_summary(row_bands.hr)}",
+                f"am={self._band_summary(row_bands.am)}",
+                f"pm={self._band_summary(row_bands.pm)}",
+            ]
+        )
+        mark_detail, code_detail = self._mark_details(mark, mark_text)
+        mark_summary = self._mark_debug_summary(mark, mark_detail, code_detail)
+        vitals_desc = f"BP={slot_bp or '—'} HR={slot_hr if slot_hr is not None else '—'}"
+        flags: List[str] = []
+        if split_band_used:
+            flags.append("split")
+        if fallback_used:
+            flags.append("fallback")
+        if getattr(row_bands, "auto_am_pm_split", False) and "split" not in flags:
+            flags.append("split")
+        flag_segment = f"; flags={','.join(flags)}" if flags else ""
+        self.log.emit(
+            "DEBUG — bundle block=(%.1f, %.1f, %.1f, %.1f) room=%s hall=%s slot=%s "
+            "rules=[%s] rows=[%s]; mark=%s; %s%s"
+            % (
+                block_rect[0],
+                block_rect[1],
+                block_rect[2],
+                block_rect[3],
+                room_bed,
+                hall_name,
+                slot_label,
+                rules_desc,
+                row_desc,
+                mark_summary,
+                vitals_desc,
+                flag_segment,
+            )
+        )
+
+    @staticmethod
+    def _band_summary(band: Optional[Tuple[float, float]]) -> str:
+        if band is None:
+            return "None"
+        top, bottom = band
+        return f"({top:.1f}-{bottom:.1f})"
+
+    @staticmethod
+    def _mark_debug_summary(
+        mark: DueMark,
+        mark_detail: Optional[str],
+        code_detail: Optional[str],
+    ) -> str:
+        if mark == DueMark.DCD:
+            return "X"
+        if mark == DueMark.CODE_ALLOWED:
+            return code_detail or "code"
+        if mark == DueMark.GIVEN_CHECK:
+            return "√"
+        if mark == DueMark.GIVEN_TIME:
+            return mark_detail or "time"
+        return "none"
 
     def _collect_text(self, page: "fitz.Page", x0: float, x1: float, y0: float, y1: float) -> str:
         nx0, ny0, nx1, ny1 = normalize_rect((x0, y0, x1, y1))
@@ -421,7 +578,7 @@ class AuditWorker(QObject):
         self,
         decision: str,
         room_bed: str,
-        slot_name: str,
+        slot_label: str,
         rule: RuleSpec,
         bp_value: Optional[str],
         hr_value: Optional[int],
@@ -429,61 +586,67 @@ class AuditWorker(QObject):
         mark_text: str,
     ) -> str:
         label = self._decision_label(decision)
+        mark_detail, code_detail = self._mark_details(mark, mark_text)
+
+        if label == "DC'D":
+            desc = mark_detail or "X in due cell"
+            return f"{label} — {room_bed} ({slot_label}) — {desc}"
+
+        base = f"{label} — {room_bed} ({slot_label}) — {rule.description}"
         detail_parts: List[str] = []
 
         if rule.kind.startswith("SBP"):
-            if bp_value:
-                detail_parts.append(f"BP {bp_value}")
-            else:
-                detail_parts.append("BP missing")
+            detail_parts.append(f"BP {bp_value}" if bp_value else "BP missing")
         else:
             if hr_value is not None:
                 detail_parts.append(f"HR {hr_value}")
             else:
                 detail_parts.append("HR missing")
 
-        mark_desc = self._describe_due_mark(mark, mark_text)
-        if mark_desc:
-            detail_parts.append(mark_desc)
+        if mark_detail:
+            detail_parts.append(mark_detail)
 
-        details = "; ".join(detail_parts) if detail_parts else ""
-        base = f"{label} — {room_bed} ({slot_name}) — {rule.description}"
-        if details:
-            return f"{base}; {details}"
-        return base
+        message = base
+        if detail_parts:
+            message = f"{base}; {'; '.join(detail_parts)}"
+        if code_detail:
+            message = f"{message} | {code_detail}"
+        return message
 
     @staticmethod
     def _decision_label(decision: str) -> str:
         if decision == "NONE":
             return "INFO"
+        if decision == "DCD":
+            return "DC'D"
         return decision.replace("_", "-")
 
     @staticmethod
-    def _describe_due_mark(mark: DueMark, mark_text: str) -> Optional[str]:
+    def _mark_details(mark: DueMark, mark_text: str) -> Tuple[Optional[str], Optional[str]]:
         if mark == DueMark.DCD:
-            return "X in due cell"
+            return "X in due cell", None
         if mark == DueMark.CODE_ALLOWED:
             code_match = re.search(r"\b(\d{1,2})\b", mark_text)
             if code_match:
-                return f"code {code_match.group(1)}"
-            return "allowed code"
+                return None, f"code {code_match.group(1)}"
+            return None, "allowed code"
         if mark == DueMark.GIVEN_CHECK:
-            return "check mark present"
+            return "check mark present", None
         if mark == DueMark.GIVEN_TIME:
             time_match = TIME_RE.search(mark_text)
             if time_match:
-                return f"time {time_match.group(0)}"
-            return "time recorded"
+                return f"time {time_match.group(0)}", None
+            return "time recorded", None
         if mark == DueMark.NONE:
-            return None
-        return None
+            return None, None
+        return None, None
 
     @staticmethod
     def _empty_summary() -> Dict[str, int]:
         return {
             "reviewed": 0,
-            "hold_miss": 0,
             "held_ok": 0,
+            "hold_miss": 0,
             "compliant": 0,
             "dcd": 0,
         }

@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from PySide6.QtCore import QCoreApplication
 
+from hushdesk.engine.rules import RuleSpec
 from hushdesk.pdf.columns import ColumnBand
 from hushdesk.pdf.duecell import DueMark
 from hushdesk.pdf.rows import RowBands
@@ -65,8 +66,8 @@ class AuditWorkerDecisionTests(unittest.TestCase):
             return_value="code 15",
         ), patch.object(
             AuditWorker,
-            "_find_room_bed_label",
-            return_value="101-1",
+            "_resolve_room_info",
+            return_value=(("101-1", "Mercer"), [{"text": "101-1"}]),
         ):
             counts = worker._evaluate_column_band(DummyPage(), band)
 
@@ -76,6 +77,42 @@ class AuditWorkerDecisionTests(unittest.TestCase):
         self.assertEqual(counts["hold_miss"], 0)
         self.assertEqual(counts["compliant"], 0)
         self.assertEqual(counts["dcd"], 0)
+
+    def test_format_decision_log_for_allowed_code(self) -> None:
+        worker = AuditWorker(Path("Administration Record Report 2025-11-04.pdf"))
+        rule = RuleSpec(kind="SBP<", threshold=110, description="Hold if SBP < 110")
+        message = worker._format_decision_log(
+            decision="HELD_OK",
+            room_bed="101-1",
+            slot_label="AM",
+            rule=rule,
+            bp_value="101/44",
+            hr_value=None,
+            mark=DueMark.CODE_ALLOWED,
+            mark_text="code 15",
+        )
+        self.assertEqual(
+            message,
+            "HELD-OK — 101-1 (AM) — Hold if SBP < 110; BP 101/44 | code 15",
+        )
+
+    def test_format_decision_log_for_dcd(self) -> None:
+        worker = AuditWorker(Path("Administration Record Report 2025-11-04.pdf"))
+        rule = RuleSpec(kind="SBP<", threshold=110, description="Hold if SBP < 110")
+        message = worker._format_decision_log(
+            decision="DCD",
+            room_bed="101-1",
+            slot_label="PM",
+            rule=rule,
+            bp_value=None,
+            hr_value=None,
+            mark=DueMark.DCD,
+            mark_text="X",
+        )
+        self.assertEqual(
+            message,
+            "DC'D — 101-1 (PM) — X in due cell",
+        )
 
 
 if __name__ == "__main__":
