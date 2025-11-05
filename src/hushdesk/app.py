@@ -5,7 +5,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from hushdesk.ui.main_window import MainWindow
@@ -20,11 +19,7 @@ def _ensure_application_support_dir() -> Path:
 
 def main() -> int:
     """Create the QApplication and launch the main window."""
-    if not QApplication.instance():
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
-
-    app = QApplication(sys.argv)
+    app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName("HushDesk")
     app.setOrganizationName("HushDesk")
 
