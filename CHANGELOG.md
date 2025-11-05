@@ -4,6 +4,10 @@
 - feat(layout): semantic day-header detection + per-page column bands in PDF user-space points.
 - feat(ui): bind Source and pending Audit Date headers, add log panel with save toasts.
 - feat(worker): started/progress/log/saved/warning signals with column band summaries per page.
+- fix(progress): progress bar + Reviewed chip track detected band pages with worker summary counts.
+- fix(columns): dedupe header centers, enforce minimum width, and add band-quality regression tests.
+- fix(ui): improve dark-theme header contrast and pending label styling.
+- refactor(logging): saved output messaging relies solely on the saved signal.
 - refactor(app): drop deprecated Qt6 HiDPI attributes from bootstrap.
 
 ## Phase 2 – Date Logic Clamp Stub

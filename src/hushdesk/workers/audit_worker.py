@@ -68,9 +68,6 @@ class AuditWorker(QObject):
                         on_page_without_header=missing_headers.append,
                     )
                     self.log.emit(
-                        f"DEBUG: doc_pages={doc_pages}, bands_found={len(column_bands)}"
-                    )
-                    self.log.emit(
                         f"Processing {len(column_bands)} band pages (of {doc_pages} total pages)"
                     )
             except Exception as exc:  # pragma: no cover - defensive guard
