@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import Qt, QThread, Signal, Slot
-from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QGuiApplication, QTextCursor
+from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QGuiApplication, QPalette, QTextCursor
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -19,12 +19,14 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
+    QSplitter,
     QVBoxLayout,
     QWidget,
 )
 
 from hushdesk.placeholders import build_placeholder_output
 from hushdesk.workers.audit_worker import AuditWorker
+from .review_explorer import ReviewExplorer
 
 
 class _Chip(QFrame):
@@ -120,6 +122,13 @@ class MainWindow(QMainWindow):
     """Main window assembly for HushDesk."""
 
     SETTINGS_FILENAME = "settings.json"
+    COUNT_KEYS = [
+        ("Reviewed", "reviewed"),
+        ("Hold-Miss", "hold_miss"),
+        ("Held-OK", "held_ok"),
+        ("Compliant", "compliant"),
+        ("DC'D", "dcd"),
+    ]
 
     def __init__(self, app_support_dir: Path, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -138,7 +147,16 @@ class MainWindow(QMainWindow):
         self._active_toasts: list[QMessageBox] = []
         self._header_text_color = "#E5E7EB"
         self._header_muted_color = "#9CA3AF"
+        self._latest_counts = {key: 0 for _, key in self.COUNT_KEYS}
+        self._last_saved_log: Optional[str] = None
+        self._audit_date_pending = True
+        self._records_payload: list[dict] = []
+        self._selected_record: Optional[dict] = None
 
+        self._refresh_header_colors()
+        palette_changed = getattr(QGuiApplication, "paletteChanged", None)
+        if callable(getattr(palette_changed, "connect", None)):
+            palette_changed.connect(self._refresh_header_colors)
         self._load_settings()
         self._build_ui()
         self._create_actions()
@@ -237,29 +255,57 @@ class MainWindow(QMainWindow):
         chips_layout.setContentsMargins(12, 12, 12, 12)
         chips_layout.setSpacing(12)
 
-        self._chips = {
-            "Reviewed": _Chip("Reviewed"),
-            "Hold-Miss": _Chip("Hold-Miss"),
-            "Held-OK": _Chip("Held-OK"),
-            "Compliant": _Chip("Compliant"),
-            "DC'D": _Chip("DC'D"),
-        }
-
-        for chip in self._chips.values():
+        self._chips: dict[str, _Chip] = {}
+        self._chips_by_key: dict[str, _Chip] = {}
+        for title, key in self.COUNT_KEYS:
+            chip = _Chip(title)
             chips_layout.addWidget(chip)
+            self._chips[title] = chip
+            self._chips_by_key[key] = chip
+
+        self.review_explorer = ReviewExplorer()
+        self.review_explorer.record_selected.connect(self._on_review_record_selected)
+
+        evidence_placeholder = QFrame()
+        evidence_layout = QVBoxLayout(evidence_placeholder)
+        evidence_layout.setContentsMargins(16, 16, 16, 16)
+        evidence_layout.setSpacing(12)
+        evidence_label = QLabel("Evidence Drawer")
+        evidence_label.setStyleSheet("font-size: 14px; font-weight: 600;")
+        evidence_hint = QLabel("Select a decision to view details.")
+        evidence_hint.setWordWrap(True)
+        evidence_hint.setStyleSheet("color: #6b7280;")
+        evidence_layout.addWidget(evidence_label)
+        evidence_layout.addWidget(evidence_hint)
+        evidence_layout.addStretch(1)
+        self._evidence_placeholder = evidence_placeholder
+        self._evidence_hint_label = evidence_hint
+
+        top_splitter = QSplitter(Qt.Orientation.Horizontal)
+        top_splitter.addWidget(self.review_explorer)
+        top_splitter.addWidget(self._evidence_placeholder)
+        top_splitter.setStretchFactor(0, 1)
+        top_splitter.setStretchFactor(1, 2)
 
         self.log_panel = QPlainTextEdit()
         self.log_panel.setObjectName("LogPanel")
         self.log_panel.setReadOnly(True)
         self.log_panel.setPlaceholderText("Audit log will appear here.")
 
+        content_splitter = QSplitter(Qt.Orientation.Vertical)
+        content_splitter.addWidget(top_splitter)
+        content_splitter.addWidget(self.log_panel)
+        content_splitter.setStretchFactor(0, 3)
+        content_splitter.setStretchFactor(1, 1)
+
         central_layout.addWidget(header_frame)
         central_layout.addWidget(self.status_banner)
         central_layout.addWidget(progress_frame)
         central_layout.addWidget(chips_frame)
-        central_layout.addWidget(self.log_panel, stretch=1)
+        central_layout.addWidget(content_splitter, stretch=1)
 
         self.setCentralWidget(central)
+        self._refresh_header_colors()
 
     def _create_actions(self) -> None:
         toolbar = self.addToolBar("Actions")
@@ -275,6 +321,29 @@ class MainWindow(QMainWindow):
 
         toolbar.addAction(self.copy_action)
         toolbar.addAction(self.save_action)
+
+    # --- Appearance helpers --------------------------------------------------
+
+    def _refresh_header_colors(self, palette: Optional[QPalette] = None) -> None:
+        palette_obj = palette or QGuiApplication.palette()
+        active_text = palette_obj.color(QPalette.Active, QPalette.WindowText)
+        disabled_text = palette_obj.color(QPalette.Disabled, QPalette.WindowText)
+        if active_text == disabled_text:
+            disabled_text = active_text.lighter(150)
+        self._header_text_color = active_text.name()
+        self._header_muted_color = disabled_text.name()
+        self._apply_header_styles()
+
+    def _apply_header_styles(self) -> None:
+        if hasattr(self, "source_label"):
+            self.source_label.setStyleSheet(
+                f"font-size: 14px; font-weight: 500; color: {self._header_text_color};"
+            )
+        if hasattr(self, "audit_date_label"):
+            color = self._header_text_color if not self._audit_date_pending else self._header_muted_color
+            self.audit_date_label.setStyleSheet(
+                f"font-size: 14px; font-weight: 500; color: {color};"
+            )
 
     # --- Settings -------------------------------------------------------------------
 
@@ -332,8 +401,16 @@ class MainWindow(QMainWindow):
         self._set_audit_date_pending_label()
         self.status_banner.hide()
         self._no_data_for_date = False
+        for key in self._latest_counts:
+            self._latest_counts[key] = 0
         for chip in self._chips.values():
             chip.set_value(0)
+        self._records_payload.clear()
+        self._selected_record = None
+        if hasattr(self, "review_explorer"):
+            self.review_explorer.clear()
+        if getattr(self, "_evidence_hint_label", None) is not None:
+            self._evidence_hint_label.setText("Select a decision to view details.")
         self.log_panel.moveCursor(QTextCursor.MoveOperation.End)
 
     def _start_audit(self) -> None:
@@ -355,6 +432,7 @@ class MainWindow(QMainWindow):
         worker.warning.connect(self._on_worker_warning)
         worker.audit_date_text.connect(self._on_audit_date_text)
         worker.summary_counts.connect(self._on_summary_counts)
+        worker.summary_payload.connect(self._on_summary_payload)
         worker.no_data_for_date.connect(self._on_no_data_for_date)
         worker.finished.connect(self._on_audit_finished)
         worker.finished.connect(self._thread.quit)
@@ -369,6 +447,7 @@ class MainWindow(QMainWindow):
     def _on_run_started(self, input_path: str) -> None:
         self.log_panel.clear()
         self._reset_progress()
+        self._last_saved_log = None
         self._append_log_line(f"Started audit: {input_path}")
 
     @Slot(int, int)
@@ -380,11 +459,43 @@ class MainWindow(QMainWindow):
 
     @Slot(dict)
     def _on_summary_counts(self, counts: dict) -> None:
-        self._chips["Reviewed"].set_value(int(counts.get("reviewed", 0)))
-        self._chips["Hold-Miss"].set_value(int(counts.get("hold_miss", 0)))
-        self._chips["Held-OK"].set_value(int(counts.get("held_ok", 0)))
-        self._chips["Compliant"].set_value(int(counts.get("compliant", 0)))
-        self._chips["DC'D"].set_value(int(counts.get("dcd", 0)))
+        for title, key in self.COUNT_KEYS:
+            value = int(counts.get(key, 0))
+            self._latest_counts[key] = value
+            chip = self._chips_by_key.get(key)
+            if chip:
+                chip.set_value(value)
+
+    @Slot(dict)
+    def _on_summary_payload(self, payload: dict) -> None:
+        counts_obj = payload.get("counts") if isinstance(payload, dict) else {}
+        records_obj = payload.get("records") if isinstance(payload, dict) else []
+        counts_dict: dict[str, int] = {}
+        if isinstance(counts_obj, dict):
+            for key, value in counts_obj.items():
+                try:
+                    counts_dict[str(key)] = int(value)
+                except (TypeError, ValueError):
+                    continue
+        if isinstance(records_obj, list):
+            self._records_payload = [
+                dict(record) for record in records_obj if isinstance(record, dict)
+            ]
+        else:
+            self._records_payload = []
+        if hasattr(self, "review_explorer"):
+            self.review_explorer.update_records(counts=counts_dict, records=self._records_payload)
+        if getattr(self, "_evidence_hint_label", None) is not None:
+            if not self._records_payload:
+                self._evidence_hint_label.setText("No decisions available.")
+            else:
+                self._evidence_hint_label.setText("Select a decision to view details.")
+
+    @Slot(dict)
+    def _on_review_record_selected(self, payload: dict) -> None:
+        self._selected_record = dict(payload)
+        if getattr(self, "_evidence_hint_label", None) is not None:
+            self._evidence_hint_label.setText(self._format_record_hint(payload))
 
     @Slot(str)
     def _on_worker_log(self, message: str) -> None:
@@ -392,7 +503,15 @@ class MainWindow(QMainWindow):
 
     @Slot(str)
     def _on_worker_saved(self, path: str) -> None:
+        self._dismiss_toasts_with_title("Saved")
         self._show_toast("Saved", f"Saved: {path}")
+        summary_parts = " · ".join(
+            f"{title}: {self._latest_counts[key]}" for title, key in self.COUNT_KEYS
+        )
+        saved_message = f"TXT saved to {path} — {summary_parts}"
+        if saved_message != self._last_saved_log:
+            self._append_log_line(saved_message)
+            self._last_saved_log = saved_message
 
     @Slot(str)
     def _on_worker_warning(self, message: str) -> None:
@@ -439,10 +558,9 @@ class MainWindow(QMainWindow):
 
     @Slot(str)
     def _on_audit_date_text(self, label_value: str) -> None:
+        self._audit_date_pending = False
         self.audit_date_label.setText(f"Audit Date: {label_value}")
-        self.audit_date_label.setStyleSheet(
-            f"font-size: 14px; font-weight: 500; color: {self._header_text_color};"
-        )
+        self._apply_header_styles()
 
     @Slot()
     def _on_no_data_for_date(self) -> None:
@@ -452,10 +570,24 @@ class MainWindow(QMainWindow):
         self._append_log_line("No data for selected date.")
 
     def _set_audit_date_pending_label(self) -> None:
+        self._audit_date_pending = True
         self.audit_date_label.setText("Audit Date: (pending) — Central")
-        self.audit_date_label.setStyleSheet(
-            f"font-size: 14px; font-weight: 500; color: {self._header_muted_color};"
-        )
+        self._apply_header_styles()
+
+    @staticmethod
+    def _format_record_hint(payload: dict) -> str:
+        kind = payload.get("kind") or "-"
+        room = payload.get("room_bed") or "Unknown"
+        dose = payload.get("dose") or "-"
+        rule_text = payload.get("rule_text") or ""
+        vital_text = payload.get("vital_text") or ""
+        mark_display = payload.get("mark_display") or ""
+        details = [segment for segment in (rule_text, vital_text, mark_display) if segment]
+        detail_line = " · ".join(details)
+        summary = f"{kind} — {room} ({dose})"
+        if detail_line:
+            return f"{summary}\n{detail_line}"
+        return summary
 
     def _append_log_line(self, message: str) -> None:
         if not message:
@@ -464,6 +596,11 @@ class MainWindow(QMainWindow):
         cursor = self.log_panel.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
         self.log_panel.setTextCursor(cursor)
+
+    def _dismiss_toasts_with_title(self, title: str) -> None:
+        for toast in list(self._active_toasts):
+            if toast.windowTitle() == title:
+                toast.close()
 
     def _show_toast(self, title: str, message: str) -> None:
         toast = QMessageBox(self)

@@ -7,6 +7,7 @@ import os
 import re
 import time
 from collections import Counter
+from copy import deepcopy
 from datetime import date
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
@@ -51,6 +52,7 @@ class AuditWorker(QObject):
     warning = Signal(str)
     audit_date_text = Signal(str)
     summary_counts = Signal(dict)
+    summary_payload = Signal(dict)
     no_data_for_date = Signal()
     finished = Signal(Path)
 
@@ -96,6 +98,7 @@ class AuditWorker(QObject):
         missing_headers: List[int] = []
         counters = self._empty_summary()
         records: List[DecisionRecord] = []
+        record_payloads: List[dict] = []
         hall_counts: Counter[str] = Counter()
         run_notes: List[str] = []
         notes_seen: set[str] = set()
@@ -145,6 +148,7 @@ class AuditWorker(QObject):
                                 audit_date_text,
                                 self._input_pdf.name,
                                 records,
+                                record_payloads,
                                 hall_counts,
                                 run_notes,
                                 notes_seen,
@@ -175,7 +179,15 @@ class AuditWorker(QObject):
             no_data_emitted = True
             self._add_note(run_notes, notes_seen, "No data for selected date")
 
-        self.summary_counts.emit(counters)
+        summary_counts_copy = dict(counters)
+        self.summary_counts.emit(summary_counts_copy)
+        self.summary_payload.emit(
+            {
+                "counts": summary_counts_copy,
+                "records": [deepcopy(payload) for payload in record_payloads],
+                "notes": list(run_notes),
+            }
+        )
         hall = self._resolve_report_hall(hall_counts)
         if hall == "UNKNOWN":
             self._add_note(run_notes, notes_seen, "Hall could not be resolved from room-bed tokens")
@@ -210,6 +222,7 @@ class AuditWorker(QObject):
         audit_date_text: str,
         source_basename: str,
         records: List[DecisionRecord],
+        record_payloads: List[dict],
         hall_counts: Counter[str],
         run_notes: List[str],
         notes_seen: set[str],
@@ -423,6 +436,8 @@ class AuditWorker(QObject):
                         "name": slot_name,
                         "label": slot_label,
                         "band": slot_band,
+                        "slot_x0": slot_x0,
+                        "slot_x1": slot_x1,
                         "bp": slot_bp,
                         "hr": slot_hr,
                         "sbp": sbp_value,
@@ -435,7 +450,10 @@ class AuditWorker(QObject):
                         "cluster": None,
                         "slot_mid": slot_mid,
                         "tolerance": slot_tolerance,
-                }
+                        "split_used": split_band_used,
+                        "fallback_used": fallback_used,
+                        "vitals": slot_vitals,
+                    }
                 )
 
             need_cluster_attachment = any(
@@ -533,9 +551,11 @@ class AuditWorker(QObject):
                     if rule.kind.startswith("SBP"):
                         vital_value = sbp_value
                         missing_label = "SBP"
+                        vital_for_trace = slot_bp or "-"
                     else:
                         vital_value = slot_hr
                         missing_label = "HR"
+                        vital_for_trace = str(slot_hr) if slot_hr is not None else "-"
 
                     if vital_value is None and explicit_mark and not cluster_assigned:
                         self.log.emit(
@@ -578,9 +598,10 @@ class AuditWorker(QObject):
 
                     decision_display = "DC'D" if decision == "DCD" else decision.replace("_", "-")
                     trigger_text = "True" if triggered else "False"
+                    rule_slug = f"{rule.kind}{rule.threshold}"
                     trace_message = (
-                        f"TRACE — slot {slot_name} y={y_summary} cluster_y={cluster_y_text} "
-                        f"assigned={assigned_text} bp={bp_text} hr={hr_text} "
+                        f"TRACE — slot {slot_name} rule={rule_slug} y={y_summary} cluster_y={cluster_y_text} "
+                        f"assigned={assigned_text} bp={bp_text} hr={hr_text} vital={vital_for_trace} "
                         f"given={given_text} code={code_text} triggered={trigger_text} "
                         f"→ decision={decision_display}"
                     )
@@ -606,6 +627,17 @@ class AuditWorker(QObject):
                     record_vital = self._format_vital_text(rule.kind, slot_bp, slot_hr)
                     record_notes_text = "; ".join(record_notes) if record_notes else None
                     dcd_reason = "X in due cell" if decision == "DCD" else None
+                    mark_display = self._format_mark_display(mark, mark_text, code_value)
+                    extras: Dict[str, object] = {
+                        "mark_display": mark_display,
+                        "mark_type": mark.name,
+                        "mark_text": mark_text.strip() if mark_text else "",
+                        "rule_kind": rule.kind,
+                        "rule_threshold": rule.threshold,
+                        "triggered": triggered,
+                        "decision_raw": decision,
+                        "exception": record_kind in {"HOLD-MISS", "HELD-OK"},
+                    }
                     decision_record = DecisionRecord(
                         hall=hall_name,
                         date_mmddyyyy=audit_date_text,
@@ -618,8 +650,12 @@ class AuditWorker(QObject):
                         code=code_value,
                         dcd_reason=dcd_reason,
                         notes=record_notes_text,
+                        extras=extras,
                     )
                     records.append(decision_record)
+                    record_payloads.append(
+                        self._record_payload(len(record_payloads), decision_record)
+                    )
 
         return counts
 
@@ -1283,6 +1319,59 @@ class AuditWorker(QObject):
         if rule_kind.startswith("SBP"):
             return f"BP {bp_value}" if bp_value else "BP missing"
         return f"HR {hr_value}" if hr_value is not None else "HR missing"
+
+    @staticmethod
+    def _format_mark_display(mark: DueMark, mark_text: str, code_value: Optional[int]) -> str:
+        if mark == DueMark.DCD:
+            return "X"
+        if mark == DueMark.CODE_ALLOWED:
+            if code_value is not None:
+                return f"code {code_value}"
+            parsed = AuditWorker._parse_allowed_code(mark_text)
+            if parsed is not None:
+                return f"code {parsed}"
+            return "code"
+        if mark == DueMark.GIVEN_CHECK:
+            return "√"
+        if mark == DueMark.GIVEN_TIME:
+            match = TIME_RE.search(mark_text)
+            if match:
+                return match.group(0)
+            text = mark_text.strip()
+            return text or "time"
+        return "—"
+
+    @staticmethod
+    def _record_payload(record_id: int, record: DecisionRecord) -> Dict[str, object]:
+        extras_copy = dict(record.extras) if record.extras else {}
+        mark_display = str(extras_copy.get("mark_display") or "")
+        exception_flag = bool(extras_copy.get("exception"))
+        search_parts = [
+            record.room_bed,
+            record.dose,
+            record.kind,
+            record.rule_text,
+            record.vital_text,
+            str(record.code) if record.code is not None else "",
+            mark_display,
+            record.notes or "",
+        ]
+        search_blob = " ".join(part for part in search_parts if part).lower()
+        return {
+            "id": record_id,
+            "kind": record.kind,
+            "room_bed": record.room_bed,
+            "dose": record.dose,
+            "rule_text": record.rule_text,
+            "vital_text": record.vital_text,
+            "code": record.code,
+            "dcd_reason": record.dcd_reason,
+            "notes": record.notes,
+            "mark_display": mark_display,
+            "exception": exception_flag,
+            "extras": extras_copy,
+            "search_blob": search_blob,
+        }
 
     @staticmethod
     def _merge_counts(target: Dict[str, int], delta: Dict[str, int]) -> None:

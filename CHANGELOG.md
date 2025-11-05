@@ -1,5 +1,8 @@
 # Changelog
 
+## Phase 7 – End-User Trust UI
+- feat(ui): Review Explorer panel with grouped decisions, search, and exception filters.
+
 ## Phase 6 – Release Tooling
 - chore(build): add macOS build/sign/notarize/release scripts and set package `__version__`.
 - docs(readme): document Quickstart, headless run, build/sign/notarize/release workflow.

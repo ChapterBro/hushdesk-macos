@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Literal, Optional
+from dataclasses import dataclass, field
+from typing import Dict, Literal, Optional
 
 DecisionKind = Literal["HOLD-MISS", "HELD-OK", "COMPLIANT", "DC'D"]
 
@@ -23,6 +23,7 @@ class DecisionRecord:
     code: Optional[int]
     dcd_reason: Optional[str]
     notes: Optional[str] = None
+    extras: Dict[str, object] = field(default_factory=dict)
 
 
 __all__ = ["DecisionRecord", "DecisionKind"]
