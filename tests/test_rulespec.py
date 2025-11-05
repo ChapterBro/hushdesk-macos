@@ -1,6 +1,6 @@
 """Tests for the RuleSpec helper used during rule parsing."""
 
-from hushdesk.workers.audit_worker import RuleSpec
+from hushdesk.engine.rules import RuleSpec
 
 
 def test_rulespec_construction_with_kind() -> None:
