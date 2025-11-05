@@ -312,14 +312,6 @@ class AuditWorker(QObject):
                 threshold = int(value)
             except ValueError:
                 continue
-            logger.warning(
-                "DEBUG RuleSpec kwargs: %r",
-                {
-                    "kind": rule_kind,
-                    "threshold": threshold,
-                    "description": f"Hold if {measure} {comparator} {threshold}",
-                },
-            )
             specs.append(
                 RuleSpec(
                     kind=rule_kind,
