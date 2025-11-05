@@ -136,6 +136,8 @@ class MainWindow(QMainWindow):
         self._total_bands = 0
         self._no_data_for_date = False
         self._active_toasts: list[QMessageBox] = []
+        self._header_text_color = "#E5E7EB"
+        self._header_muted_color = "#9CA3AF"
 
         self._load_settings()
         self._build_ui()
@@ -158,11 +160,13 @@ class MainWindow(QMainWindow):
 
         self.source_label = QLabel("Source: —")
         self.source_label.setObjectName("SourceLabel")
-        self.source_label.setStyleSheet("font-size: 14px; color: #3c3c4399;")
+        self.source_label.setStyleSheet(
+            f"font-size: 14px; font-weight: 500; color: {self._header_text_color};"
+        )
 
-        self.audit_date_label = QLabel("Audit Date: — (pending) — Central")
+        self.audit_date_label = QLabel()
         self.audit_date_label.setObjectName("AuditDateLabel")
-        self.audit_date_label.setStyleSheet("font-size: 14px; color: #3c3c4399;")
+        self._set_audit_date_pending_label()
 
         self.drop_area = _DropArea()
         self.drop_area.setMinimumHeight(120)
@@ -174,6 +178,22 @@ class MainWindow(QMainWindow):
         self.run_button = QPushButton("Run Audit")
         self.run_button.setEnabled(False)
         self.run_button.clicked.connect(self._start_audit)
+        self.run_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #2563EB;
+                color: #F9FAFB;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            QPushButton:disabled {
+                background-color: #1f2937;
+                color: #9CA3AF;
+            }
+            """
+        )
 
         header_layout.addWidget(self.source_label, 0, 0, 1, 2)
         header_layout.addWidget(self.run_button, 0, 2, 1, 1)
@@ -294,7 +314,7 @@ class MainWindow(QMainWindow):
         self.drop_area.title.setText(absolute_path.name)
         self.drop_area.subtitle.setText(str(absolute_path.parent))
         self.source_label.setText(f"Source: {absolute_path.name}")
-        self.audit_date_label.setText("Audit Date: (pending) — Central")
+        self._set_audit_date_pending_label()
         self.run_button.setEnabled(True)
         self._audit_completed = False
         self.copy_action.setEnabled(False)
@@ -309,7 +329,7 @@ class MainWindow(QMainWindow):
         self.progress_label.setText("Band 0 of 0")
         self.progress_bar.setRange(0, 1)
         self.progress_bar.setValue(0)
-        self.audit_date_label.setText("Audit Date: (pending) — Central")
+        self._set_audit_date_pending_label()
         self.status_banner.hide()
         self._no_data_for_date = False
         for chip in self._chips.values():
@@ -423,6 +443,9 @@ class MainWindow(QMainWindow):
     @Slot(str)
     def _on_audit_date_text(self, label_value: str) -> None:
         self.audit_date_label.setText(f"Audit Date: {label_value}")
+        self.audit_date_label.setStyleSheet(
+            f"font-size: 14px; font-weight: 500; color: {self._header_text_color};"
+        )
 
     @Slot()
     def _on_no_data_for_date(self) -> None:
@@ -430,6 +453,12 @@ class MainWindow(QMainWindow):
         self.status_banner.setText("No data for selected date")
         self.status_banner.show()
         self._append_log_line("No data for selected date.")
+
+    def _set_audit_date_pending_label(self) -> None:
+        self.audit_date_label.setText("Audit Date: (pending) — Central")
+        self.audit_date_label.setStyleSheet(
+            f"font-size: 14px; font-weight: 500; color: {self._header_muted_color};"
+        )
 
     def _append_log_line(self, message: str) -> None:
         if not message:
