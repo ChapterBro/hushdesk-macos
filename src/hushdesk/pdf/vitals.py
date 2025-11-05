@@ -10,6 +10,8 @@ try:  # pragma: no cover - PyMuPDF optional when tests run
 except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
+from .geometry import normalize_rect
+
 BP_RE = re.compile(r"(?i)\b(?:bp\s*)?(\d{2,3})\s*/\s*(\d{2,3})\b")
 HR_RE = re.compile(r"(?i)\b(?:hr|pulse|heart\s*rate|p)\s*(\d{2,3})\b")
 PLAIN_HR_RE = re.compile(r"\b(\d{2,3})\b")
@@ -61,7 +63,8 @@ def extract_vitals_in_band(
     if fitz is None:
         return {"bp": None, "hr": None}
 
-    rect = fitz.Rect(x0, y0, x1, y1)
+    nx0, ny0, nx1, ny1 = normalize_rect((x0, y0, x1, y1))
+    rect = fitz.Rect(nx0, ny0, nx1, ny1)
     try:
         text = page.get_text("dict", clip=rect)
     except RuntimeError:

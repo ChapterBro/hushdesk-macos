@@ -10,6 +10,7 @@ try:  # pragma: no cover - PyMuPDF optional in test environment
 except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
+from .geometry import normalize_rect
 
 class DueMark(Enum):
     DCD = auto()
@@ -29,7 +30,8 @@ def detect_due_mark(page: "fitz.Page", x0: float, x1: float, y0: float, y1: floa
     if fitz is None:
         return DueMark.NONE
 
-    rect = fitz.Rect(x0, y0, x1, y1)
+    nx0, ny0, nx1, ny1 = normalize_rect((x0, y0, x1, y1))
+    rect = fitz.Rect(nx0, ny0, nx1, ny1)
 
     text_content = _extract_text(page, rect)
     if _has_cross_mark(text_content) or _has_vector_cross(page, rect):

@@ -45,6 +45,24 @@ class RowBandDetectionTests(unittest.TestCase):
         self.assertIsNotNone(bands.pm)
         self.assertLess(bands.bp[0], bands.hr[0])
 
+    def test_inverted_span_coordinates_produce_bands(self) -> None:
+        spans = [
+            {"text": "BP", "bbox": [10.0, 132.0, 30.0, 120.0]},
+            {"text": "HR", "bbox": [12.0, 152.0, 32.0, 140.0]},
+            {"text": "AM", "bbox": [14.0, 172.0, 34.0, 160.0]},
+            {"text": "PM", "bbox": [16.0, 192.0, 36.0, 180.0]},
+        ]
+        text_dict = {"blocks": [{"lines": [{"spans": spans}]}]}
+        page = DummyPage(text_dict)
+
+        with patch("hushdesk.pdf.rows.fitz", SimpleNamespace()):
+            bands = find_row_bands_for_block(page, (0.0, 200.0, 200.0, 120.0))
+
+        self.assertIsNotNone(bands.am)
+        self.assertIsNotNone(bands.pm)
+        self.assertGreater(bands.am[1], bands.am[0])
+        self.assertGreater(bands.pm[1], bands.pm[0])
+
 
 if __name__ == "__main__":
     unittest.main()

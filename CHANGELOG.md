@@ -10,6 +10,10 @@
 - test(decide|vitals|due|rows): unit coverage for rule triggers, vitals parsing, due marks, and row-band heuristics.
 - fix(worker): ensure no-data signal still fires when column bands are unavailable.
 - fix(worker): RuleSpec now uses the `kind` keyword, with an adapter for legacy `rule_kind` usage and dedicated unit tests.
+- chore(geometry): add `normalize_rect` helper to ensure PDF rectangles obey x/y ordering.
+- fix(rows): normalized label detection, regex-tolerant anchors, and midpoint row-band construction with minimum height fallback.
+- fix(vitals|due): clip rectangles use normalized coordinates to avoid empty gathers.
+- test(rows|geometry): regression cases for inverted spans, block bounds, and row-band coverage.
 
 ## Phase 3 – Semantic Anchors
 - feat(layout): semantic day-header detection + per-page column bands in PDF user-space points.

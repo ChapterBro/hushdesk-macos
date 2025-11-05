@@ -1,32 +1,45 @@
-"""Band quality regression tests."""
+"""Band geometry regression tests."""
 
 from __future__ import annotations
 
-import sys
 import unittest
-from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[1]
-SRC_PATH = ROOT / "src"
-if str(SRC_PATH) not in sys.path:
-    sys.path.insert(0, str(SRC_PATH))
-
-from hushdesk.pdf.layout import bands_from_day_centers  # noqa: E402
+from hushdesk.pdf.geometry import normalize_rect
+from hushdesk.pdf.rows import RowBands, find_row_bands_for_block
 
 
-class BandQualityTests(unittest.TestCase):
-    def test_duplicate_centers_merge_without_zero_width(self) -> None:
-        centers = [(7, 391.1), (7, 391.1)]
-        bands = bands_from_day_centers(centers, page_width=612.0, page_height=792.0)
-        self.assertIn(7, bands, "Duplicate centers should still yield a band.")
-        x0, x1, _, _ = bands[7]
-        self.assertGreater(x1 - x0, 5.0, "Merged band width should exceed minimum threshold.")
+class DummyPage:
+    def __init__(self, text_dict: dict) -> None:
+        self._text_dict = text_dict
 
-    def test_narrow_first_band_filtered_out(self) -> None:
-        centers = [(1, 100.0), (2, 103.0), (3, 200.0)]
-        bands = bands_from_day_centers(centers, page_width=400.0, page_height=600.0)
-        self.assertNotIn(1, bands, "Bands narrower than the minimum width should be skipped.")
-        self.assertIn(2, bands, "Downstream bands should still be generated.")
+    def get_text(self, kind: str, clip=None) -> dict:  # noqa: D401
+        return self._text_dict
+
+
+class BandGeometryTests(unittest.TestCase):
+    def test_normalize_rect_orders_coordinates(self) -> None:
+        rect = (120.0, 220.0, 80.0, 180.0)
+        self.assertEqual(normalize_rect(rect), (80.0, 180.0, 120.0, 220.0))
+
+    def test_row_bands_exist_when_block_bbox_is_inverted(self) -> None:
+        spans = [
+            {"text": "AM", "bbox": [12.0, 200.0, 30.0, 188.0]},
+            {"text": "PM", "bbox": [14.0, 228.0, 34.0, 216.0]},
+        ]
+        text_dict = {"blocks": [{"lines": [{"spans": spans}]}]}
+        page = DummyPage(text_dict)
+
+        block_bbox = (0.0, 240.0, 160.0, 180.0)  # y1 < y0 before normalization
+        with patch("hushdesk.pdf.rows.fitz", SimpleNamespace()):
+            bands = find_row_bands_for_block(page, block_bbox)
+
+        self.assertIsInstance(bands, RowBands)
+        self.assertIsNotNone(bands.am)
+        self.assertIsNotNone(bands.pm)
+        self.assertGreater(bands.am[1], bands.am[0])
+        self.assertGreater(bands.pm[1], bands.pm[0])
 
 
 if __name__ == "__main__":
