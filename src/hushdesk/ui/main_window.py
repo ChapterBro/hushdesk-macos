@@ -392,7 +392,6 @@ class MainWindow(QMainWindow):
 
     @Slot(str)
     def _on_worker_saved(self, path: str) -> None:
-        self._append_log_line(f"Saved output: {path}")
         self._show_toast("Saved", f"Saved: {path}")
 
     @Slot(str)
