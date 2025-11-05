@@ -31,13 +31,13 @@ class AuditWorker(QObject):
     saved = Signal(str)
     warning = Signal(str)
     audit_date_text = Signal(str)
+    summary_counts = Signal(dict)
     no_data_for_date = Signal()
     finished = Signal(Path)
 
-    def __init__(self, input_pdf: Path, total_pages: int = 10, delay: float = 0.2) -> None:
+    def __init__(self, input_pdf: Path, delay: float = 0.2) -> None:
         super().__init__()
         self._input_pdf = input_pdf
-        self._total_pages = max(1, total_pages)
         self._delay = max(0.05, delay)
         self._audit_date: date | None = None
 
@@ -52,6 +52,7 @@ class AuditWorker(QObject):
 
         column_bands: list[ColumnBand] = []
         missing_headers: list[int] = []
+        doc_pages = 0
         if fitz is None:
             message = "PyMuPDF is not available; skipping column band detection."
             logger.warning(message)
@@ -68,6 +69,9 @@ class AuditWorker(QObject):
                     )
                     self.log.emit(
                         f"DEBUG: doc_pages={doc_pages}, bands_found={len(column_bands)}"
+                    )
+                    self.log.emit(
+                        f"Processing {len(column_bands)} band pages (of {doc_pages} total pages)"
                     )
             except Exception as exc:  # pragma: no cover - defensive guard
                 message = f"Unable to compute column bands for {self._input_pdf}: {exc}"
@@ -88,20 +92,39 @@ class AuditWorker(QObject):
             )
 
         output_path = self._input_pdf.with_suffix(".txt")
+        reviewed_count = 0
 
         if not column_bands:
             self.no_data_for_date.emit()
             warning_message = "No data for selected date"
             self.warning.emit(warning_message)
+            summary = {
+                "reviewed": reviewed_count,
+                "hold_miss": 0,
+                "held_ok": 0,
+                "compliant": 0,
+                "dcd": 0,
+            }
+            self.summary_counts.emit(summary)
             if self._write_placeholder(output_path):
                 self.saved.emit(str(output_path))
             self.finished.emit(output_path)
             return
 
-        for page in range(1, self._total_pages + 1):
+        total_steps = len(column_bands)
+        for index, _band in enumerate(column_bands, start=1):
             time.sleep(self._delay)
-            self.progress.emit(page, self._total_pages)
+            self.progress.emit(index, total_steps)
+            reviewed_count += 1
 
+        summary = {
+            "reviewed": reviewed_count,
+            "hold_miss": 0,
+            "held_ok": 0,
+            "compliant": 0,
+            "dcd": 0,
+        }
+        self.summary_counts.emit(summary)
         if self._write_placeholder(output_path):
             self.saved.emit(str(output_path))
 

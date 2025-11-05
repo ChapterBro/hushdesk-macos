@@ -133,7 +133,7 @@ class MainWindow(QMainWindow):
         self._thread: Optional[QThread] = None
         self._worker: Optional[AuditWorker] = None
         self._audit_completed = False
-        self._total_pages = 0
+        self._total_bands = 0
         self._no_data_for_date = False
         self._active_toasts: list[QMessageBox] = []
 
@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
         progress_layout.setContentsMargins(12, 12, 12, 12)
         progress_layout.setSpacing(8)
 
-        self.progress_label = QLabel("Page 0 of 0")
+        self.progress_label = QLabel("Band 0 of 0")
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
@@ -305,8 +305,8 @@ class MainWindow(QMainWindow):
         self._save_settings()
 
     def _reset_progress(self) -> None:
-        self._total_pages = 0
-        self.progress_label.setText("Page 0 of 0")
+        self._total_bands = 0
+        self.progress_label.setText("Band 0 of 0")
         self.progress_bar.setRange(0, 1)
         self.progress_bar.setValue(0)
         self.audit_date_label.setText("Audit Date: (pending) — Central")
@@ -324,7 +324,7 @@ class MainWindow(QMainWindow):
         self.log_panel.setPlainText("Preparing audit…")
 
         self._thread = QThread()
-        worker = AuditWorker(input_pdf=self._selected_pdf, total_pages=10, delay=0.25)
+        worker = AuditWorker(input_pdf=self._selected_pdf, delay=0.25)
         worker.moveToThread(self._thread)
         self._worker = worker
 
@@ -334,6 +334,7 @@ class MainWindow(QMainWindow):
         worker.saved.connect(self._on_worker_saved)
         worker.warning.connect(self._on_worker_warning)
         worker.audit_date_text.connect(self._on_audit_date_text)
+        worker.summary_counts.connect(self._on_summary_counts)
         worker.no_data_for_date.connect(self._on_no_data_for_date)
         worker.finished.connect(self._on_audit_finished)
         worker.finished.connect(self._thread.quit)
@@ -349,16 +350,23 @@ class MainWindow(QMainWindow):
         self.log_panel.clear()
         self._reset_progress()
         self._append_log_line(f"Started audit: {input_path}")
-        self._append_log_line("DEBUG: progress total set to 0 (reset)")
+        self._append_log_line("DEBUG: band progress total set to 0 (reset)")
 
     @Slot(int, int)
     def _on_progress_changed(self, current: int, total: int) -> None:
-        self._total_pages = total
-        self.progress_label.setText(f"Page {current} of {total}")
+        self._total_bands = total
+        self.progress_label.setText(f"Band {current} of {total}")
         self.progress_bar.setRange(0, total)
         self.progress_bar.setValue(current)
-        self._chips["Reviewed"].set_value(current)
-        self._append_log_line(f"DEBUG: progress tick current={current}, total={total}")
+        self._append_log_line(f"DEBUG: band progress tick current={current}, total={total}")
+
+    @Slot(dict)
+    def _on_summary_counts(self, counts: dict) -> None:
+        self._chips["Reviewed"].set_value(int(counts.get("reviewed", 0)))
+        self._chips["Hold-Miss"].set_value(int(counts.get("hold_miss", 0)))
+        self._chips["Held-OK"].set_value(int(counts.get("held_ok", 0)))
+        self._chips["Compliant"].set_value(int(counts.get("compliant", 0)))
+        self._chips["DC'D"].set_value(int(counts.get("dcd", 0)))
 
     @Slot(str)
     def _on_worker_log(self, message: str) -> None:

@@ -45,7 +45,7 @@ class AuditWorkerSmokeTests(unittest.TestCase):
     def test_worker_emits_audit_label_and_no_data_banner(self) -> None:
         with TemporaryDirectory() as tmpdir:
             pdf_path = Path(tmpdir) / "Administration Record Report 2025-11-04.pdf"
-            worker = AuditWorker(input_pdf=pdf_path, total_pages=2, delay=0.05)
+            worker = AuditWorker(input_pdf=pdf_path, delay=0.05)
 
             emitted_labels: List[str] = []
             banner_hits: List[bool] = []
