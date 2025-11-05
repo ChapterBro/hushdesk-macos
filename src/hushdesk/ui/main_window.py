@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
-    QCheckBox,
     QSplitter,
     QVBoxLayout,
     QWidget,
@@ -158,6 +157,7 @@ class MainWindow(QMainWindow):
         self._audit_date_pending = True
         self._current_pdf_path: Optional[Path] = None
         self._qa_mode_enabled = False
+        self.qa_action: Optional[QAction] = None
         self._records_payload: list[dict] = []
         self._anomalies_payload: list[dict] = []
         self._selected_record: Optional[dict] = None
@@ -273,9 +273,6 @@ class MainWindow(QMainWindow):
             self._chips_by_key[key] = chip
 
         chips_layout.addStretch(1)
-        self.qa_mode_toggle = QCheckBox("QA Mode")
-        self.qa_mode_toggle.stateChanged.connect(self._on_qa_mode_changed)
-        chips_layout.addWidget(self.qa_mode_toggle)
 
         self.review_explorer = ReviewExplorer()
         self.review_explorer.record_selected.connect(self._on_review_record_selected)
@@ -324,6 +321,13 @@ class MainWindow(QMainWindow):
 
         toolbar.addAction(self.copy_action)
         toolbar.addAction(self.save_action)
+
+        self.qa_action = QAction("QA Mode", self)
+        self.qa_action.setCheckable(True)
+        self.qa_action.setToolTip("Toggle inline QA diagnostics in Results")
+        self.qa_action.toggled.connect(self._on_qa_action_toggled)
+        toolbar.addSeparator()
+        toolbar.addAction(self.qa_action)
 
     # --- Appearance helpers --------------------------------------------------
 
@@ -416,8 +420,7 @@ class MainWindow(QMainWindow):
             self.review_explorer.clear()
             self.review_explorer.update_anomalies([])
             self.review_explorer.clear_anomaly_filter()
-        if getattr(self, "qa_mode_toggle", None) is not None:
-            self.qa_mode_toggle.setChecked(False)
+        self._set_qa_mode(False)
         if hasattr(self, "evidence_panel"):
             self.evidence_panel.clear()
         self.log_panel.moveCursor(QTextCursor.MoveOperation.End)
@@ -574,9 +577,18 @@ class MainWindow(QMainWindow):
         if hasattr(self, "review_explorer"):
             self.review_explorer.apply_anomaly_filter(anomaly)
 
-    @Slot(int)
-    def _on_qa_mode_changed(self, state: int) -> None:
-        self._qa_mode_enabled = state == Qt.CheckState.Checked
+    @Slot(bool)
+    def _on_qa_action_toggled(self, checked: bool) -> None:
+        self._set_qa_mode(bool(checked), sync_action=False)
+
+    def _set_qa_mode(self, enabled: bool, *, sync_action: bool = True) -> None:
+        if sync_action and self.qa_action is not None:
+            self.qa_action.blockSignals(True)
+            self.qa_action.setChecked(enabled)
+            self.qa_action.blockSignals(False)
+        if self._qa_mode_enabled == enabled:
+            return
+        self._qa_mode_enabled = bool(enabled)
         if hasattr(self, "review_explorer"):
             self.review_explorer.set_qa_mode(self._qa_mode_enabled)
             if not self._qa_mode_enabled:

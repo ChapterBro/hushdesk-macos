@@ -6,9 +6,11 @@ from functools import partial
 from typing import Dict, Iterable, List, Optional, Set
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
     QFrame,
+    QHeaderView,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -87,17 +89,20 @@ class ReviewExplorer(QWidget):
         layout.addWidget(search_frame)
 
         self.tree = QTreeWidget()
-        self.tree.setColumnCount(2)
+        self.tree.setColumnCount(3)
         self.tree.setHeaderHidden(True)
         self.tree.setRootIsDecorated(False)
         self.tree.setAlternatingRowColors(False)
         self.tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
         self.tree.itemSelectionChanged.connect(self._on_selection_changed)
         self.tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.tree.setColumnWidth(1, 60)
         header_view = self.tree.header()
         header_view.setStretchLastSection(False)
-        header_view.setDefaultSectionSize(60)
+        header_view.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header_view.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+        header_view.resizeSection(2, 52)
+        self.tree.setColumnHidden(1, True)
 
         decisions_container = QWidget()
         decisions_layout = QVBoxLayout(decisions_container)
@@ -140,6 +145,7 @@ class ReviewExplorer(QWidget):
         if self._qa_mode_enabled == enabled:
             return
         self._qa_mode_enabled = enabled
+        self.tree.setColumnHidden(1, not enabled)
         self._apply_filters()
 
     def apply_anomaly_filter(self, anomaly: dict) -> None:
@@ -223,13 +229,13 @@ class ReviewExplorer(QWidget):
                 continue
 
             header_text = f"{kind} ({total_count})"
-            header_item = QTreeWidgetItem([header_text, ""])
+            header_item = QTreeWidgetItem([header_text, "", ""])
             header_item.setFlags(header_item.flags() & ~Qt.ItemIsSelectable)
             header_item.setFirstColumnSpanned(True)
             self.tree.addTopLevelItem(header_item)
 
             if not filtered:
-                placeholder = QTreeWidgetItem(["(no matches)", ""])
+                placeholder = QTreeWidgetItem(["(no matches)", "", ""])
                 placeholder.setFlags(placeholder.flags() & ~Qt.ItemIsSelectable)
                 placeholder.setFirstColumnSpanned(True)
                 header_item.addChild(placeholder)
@@ -237,11 +243,12 @@ class ReviewExplorer(QWidget):
                 continue
 
             for record in filtered:
-                item = QTreeWidgetItem([self._format_row(record), ""])
+                item = QTreeWidgetItem(["", "", ""])
                 item.setData(0, Qt.ItemDataRole.UserRole, record)
+                self._decorate_record_item(item, record)
                 header_item.addChild(item)
                 button = self._make_preview_button(record)
-                self.tree.setItemWidget(item, 1, button)
+                self.tree.setItemWidget(item, 2, button)
 
             header_item.setExpanded(True)
 
@@ -267,6 +274,59 @@ class ReviewExplorer(QWidget):
         blob = record.get("search_blob") or ""
         return filter_text in blob
 
+    def _decorate_record_item(self, item: QTreeWidgetItem, record: dict) -> None:
+        item.setText(0, self._format_row(record))
+        if self._qa_mode_enabled:
+            qa_text, qa_color = self._qa_details(record)
+            item.setText(1, qa_text)
+            if qa_color is not None:
+                item.setForeground(1, qa_color)
+            else:
+                item.setData(1, Qt.ItemDataRole.ForegroundRole, None)
+        else:
+            item.setText(1, "")
+            item.setData(1, Qt.ItemDataRole.ForegroundRole, None)
+
+    def _qa_details(self, record: dict) -> tuple[str, Optional[QColor]]:
+        source_meta = record.get("source_meta") if isinstance(record.get("source_meta"), dict) else {}
+        extras = record.get("extras") if isinstance(record.get("extras"), dict) else {}
+
+        source = source_meta.get("vital_source") or record.get("source_type") or extras.get("source_type")
+        dy_value = source_meta.get("dy_px")
+        dy_px = float(dy_value) if isinstance(dy_value, (int, float)) else None
+
+        parts: List[str] = []
+        if source:
+            parts.append(f"source={source}")
+        if dy_px is not None:
+            parts.append(f"dy={dy_px:+.0f}px")
+
+        flags: List[str] = []
+        if record.get("vital_bbox") is None:
+            flags.append("NoVital")
+        code_value = record.get("code")
+        if code_value is not None and not record.get("triggered", False):
+            flags.append("Code-NoTrigger")
+        slot_boxes = record.get("slot_bboxes") if isinstance(record.get("slot_bboxes"), dict) else {}
+        if not slot_boxes or slot_boxes.get("AM") is None or slot_boxes.get("PM") is None:
+            flags.append("NoSlots")
+
+        if flags:
+            flag_blob = ", ".join(flags)
+            parts.append(f"flags: {flag_blob}")
+
+        text = " | ".join(parts)
+
+        color: Optional[QColor] = None
+        if "NoVital" in flags:
+            color = QColor("#DC2626")
+        elif "NoSlots" in flags:
+            color = QColor("#CA8A04")
+        elif "Code-NoTrigger" in flags:
+            color = QColor("#6B7280")
+
+        return text, color
+
     def _format_row(self, record: dict) -> str:
         room = record.get("room_bed") or "Unknown"
         dose = record.get("slot_label") or record.get("dose") or "-"
@@ -282,26 +342,7 @@ class ReviewExplorer(QWidget):
         if mark_display:
             parts.append(mark_display)
 
-        base = " · ".join(parts)
-        qa_suffix = self._qa_suffix(record) if self._qa_mode_enabled else ""
-        if qa_suffix:
-            return f"{base} | {qa_suffix}"
-        return base
-
-    @staticmethod
-    def _qa_suffix(record: dict) -> str:
-        extras = record.get("extras") if isinstance(record.get("extras"), dict) else {}
-        chips: List[str] = []
-        source = record.get("source_type") or extras.get("source_type")
-        if source:
-            chips.append(f"source={source}")
-        dy_val = extras.get("dy")
-        if isinstance(dy_val, (int, float)):
-            chips.append(f"dy={dy_val:+.0f}px")
-        cluster_val = extras.get("cluster_y")
-        if isinstance(cluster_val, (int, float)):
-            chips.append(f"cluster={cluster_val:.1f}")
-        return " | ".join(chips)
+        return " · ".join(parts)
 
     def _on_selection_changed(self) -> None:
         selected = self.tree.selectedItems()
