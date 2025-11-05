@@ -12,6 +12,7 @@ Current version: `0.1.0`
 - Use Python 3.11 and install tooling: `python -m pip install -r requirements-dev.txt`
 - Launch the desktop app: `./scripts/dev`
 - Default audit date follows the filename-first previous-day policy (America/Chicago)
+- GUI smoke: `HUSHDESK_AUDIT_DATE_MM_DD_YYYY=11/03/2025 ./scripts/dev_gui_smoke` then drag-and-drop your MAR; verify chips match headless counts and the Preview overlay highlights the expected bands.
 
 ## Optional Performance (Rust Accelerator)
 - Install Rust toolchain: `brew install rustup && rustup-init -y`
