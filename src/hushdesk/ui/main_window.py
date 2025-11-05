@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -25,6 +26,9 @@ from PySide6.QtWidgets import (
 
 from hushdesk.placeholders import build_placeholder_output
 from hushdesk.workers.audit_worker import AuditWorker
+
+
+logger = logging.getLogger(__name__)
 
 
 class _Chip(QFrame):
@@ -283,6 +287,7 @@ class MainWindow(QMainWindow):
             self._on_pdf_selected(Path(filename))
 
     def _on_pdf_selected(self, pdf_path: Path) -> None:
+        logger.debug("UI: selected file %s", pdf_path)
         self._selected_pdf = pdf_path
         self.drop_area.title.setText(pdf_path.name)
         self.drop_area.subtitle.setText(str(pdf_path.parent))
@@ -307,6 +312,7 @@ class MainWindow(QMainWindow):
         if not self._selected_pdf:
             return
 
+        logger.debug("UI: run requested; file=%s", self._selected_pdf)
         self.run_button.setEnabled(False)
         self._reset_progress()
         self.results_placeholder.setPlainText("Simulating audit…")
