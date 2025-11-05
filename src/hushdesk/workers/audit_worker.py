@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 import time
 from collections import Counter
 from datetime import date
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -17,17 +18,18 @@ try:  # pragma: no cover - optional dependency when tests run without PyMuPDF
 except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
-from hushdesk.engine.decide import decide_for_dose
+from hushdesk.engine.decide import decide_for_dose, rule_triggers
 from hushdesk.engine.rules import RuleSpec, parse_rule_text
 from hushdesk.id.rooms import load_building_master, resolve_room_from_block
 from hushdesk.pdf.columns import ColumnBand, select_audit_columns
-from hushdesk.pdf.dates import format_mmddyyyy, resolve_audit_date
+from hushdesk.pdf.dates import dev_override_date, format_mmddyyyy, resolve_audit_date
 from hushdesk.pdf.duecell import DueMark, detect_due_mark
 from hushdesk.pdf.geometry import normalize_rect
 from hushdesk.pdf.rows import find_row_bands_for_block
-from hushdesk.pdf.vitals import extract_vitals_in_band
+from hushdesk.pdf.vitals import attach_clusters_to_slots, extract_vitals_in_band
 from hushdesk.report.model import DecisionRecord
 from hushdesk.report.txt_writer import write_report
+from hushdesk.scout.scan import scan_candidates
 
 
 logger = logging.getLogger(__name__)
@@ -35,6 +37,7 @@ logger = logging.getLogger(__name__)
 DEBUG_DECISION_DETAILS = False
 
 TIME_RE = re.compile(r"\b(?:[0-1]?\d|2[0-3]):[0-5]\d\b")
+CHECKMARK_RE = re.compile(r"[\u221A\u2713\u2714]")
 ROW_PADDING = 4.0
 
 
@@ -51,7 +54,14 @@ class AuditWorker(QObject):
     no_data_for_date = Signal()
     finished = Signal(Path)
 
-    def __init__(self, input_pdf: Path, delay: float = 0.2) -> None:
+    def __init__(
+        self,
+        input_pdf: Path,
+        delay: float = 0.2,
+        *,
+        page_filter: Optional[Iterable[int]] = None,
+        trace: bool = False,
+    ) -> None:
         super().__init__()
         self._input_pdf = input_pdf
         self._delay = max(0.05, delay)
@@ -59,17 +69,28 @@ class AuditWorker(QObject):
         self._building_master = load_building_master()
         self._unknown_room_debug_warned = False
         self._page_room_cache: Dict[int, Optional[Tuple[str, str]]] = {}
+        self._page_filter = {int(index) for index in page_filter} if page_filter else None
+        self._trace = bool(trace)
 
     @Slot()
     def run(self) -> None:
         self.started.emit(str(self._input_pdf))
 
-        audit_date = resolve_audit_date(self._input_pdf)
+        override_date = dev_override_date()
+        if override_date:
+            audit_date = override_date
+            audit_date_text = format_mmddyyyy(audit_date)
+            label_value = f"{audit_date_text} — Central"
+            message = f"DEV: Audit Date overridden to {label_value}"
+            logger.info(message)
+            self.log.emit(message)
+        else:
+            audit_date = resolve_audit_date(self._input_pdf)
+            audit_date_text = format_mmddyyyy(audit_date)
+            label_value = f"{audit_date_text} — Central"
         self._audit_date = audit_date
-        label_value = f"{format_mmddyyyy(audit_date)} — Central"
-        audit_date_text = format_mmddyyyy(audit_date)
-        label_value = f"{audit_date_text} — Central"
         self.audit_date_text.emit(label_value)
+        scout_enabled = os.getenv("HUSHDESK_SCOUT") == "1"
 
         column_bands: List[ColumnBand] = []
         missing_headers: List[int] = []
@@ -94,9 +115,15 @@ class AuditWorker(QObject):
                         audit_date,
                         on_page_without_header=missing_headers.append,
                     )
+                    if self._page_filter is not None:
+                        column_bands = [
+                            band for band in column_bands if band.page_index in self._page_filter
+                        ]
                     self.log.emit(
                         f"Processing {len(column_bands)} band pages (of {doc_pages} total pages)"
                     )
+                    if scout_enabled and column_bands:
+                        self._emit_scout_candidates(doc, audit_date, column_bands)
                     for page_index in missing_headers:
                         self.log.emit(f"No header on page {page_index + 1} (skipped)")
                     for band in column_bands:
@@ -109,6 +136,9 @@ class AuditWorker(QObject):
                         for index, band in enumerate(column_bands, start=1):
                             time.sleep(self._delay)
                             page = doc.load_page(band.page_index)
+                            band_trace: Optional[List[Dict[str, object]]] = [] if self._trace else None
+                            if self._trace:
+                                self._emit_band_spans(page, band)
                             band_counts = self._evaluate_column_band(
                                 page,
                                 band,
@@ -118,7 +148,10 @@ class AuditWorker(QObject):
                                 hall_counts,
                                 run_notes,
                                 notes_seen,
+                                trace_log=band_trace,
                             )
+                            if self._trace and band_trace:
+                                self._emit_fallback_trace(band.page_index, band_trace)
                             self._merge_counts(counters, band_counts)
                             self.progress.emit(index, total_steps)
                     else:
@@ -180,6 +213,7 @@ class AuditWorker(QObject):
         hall_counts: Counter[str],
         run_notes: List[str],
         notes_seen: set[str],
+        trace_log: Optional[List[Dict[str, object]]] = None,
     ) -> Dict[str, int]:
         counts = self._empty_summary()
         try:
@@ -251,18 +285,37 @@ class AuditWorker(QObject):
             if not slot_sequence:
                 continue
 
+            dose_bounds_map = {name: band for name, band in slot_bands.items() if band is not None}
+
             bp_band = self._expand_band(row_bands.bp, block_rect)
             hr_band = self._expand_band(row_bands.hr, block_rect)
 
+            bp_result: Optional[Dict[str, object]] = None
+            hr_result: Optional[Dict[str, object]] = None
             bp_value = None
             hr_value = None
             slot_x0 = max(band.x0, block_rect[0])
             slot_x1 = block_rect[2]
             if bp_band is not None:
-                bp_result = extract_vitals_in_band(page, slot_x0, slot_x1, *bp_band)
+                bp_result = extract_vitals_in_band(
+                    page,
+                    slot_x0,
+                    slot_x1,
+                    *bp_band,
+                    dose_bands=dose_bounds_map,
+                )
+                self._extend_fallback_trace(trace_log, bp_result, context="BP")
                 bp_value = bp_result.get("bp")
             if hr_band is not None:
-                hr_result = extract_vitals_in_band(page, slot_x0, slot_x1, *hr_band)
+                hr_result = extract_vitals_in_band(
+                    page,
+                    slot_x0,
+                    slot_x1,
+                    *hr_band,
+                    allow_plain_hr=True,
+                    dose_bands=dose_bounds_map,
+                )
+                self._extend_fallback_trace(trace_log, hr_result, context="HR")
                 hr_value = hr_result.get("hr")
 
             if split_band_used:
@@ -274,6 +327,30 @@ class AuditWorker(QObject):
                     f"WARN — fallback slot band used — {room_bed}"
                 )
 
+            fallback_rows_pool: List[Dict[str, object]] = []
+            fallback_row_keys: set[Tuple[float, str, Optional[int]]] = set()
+
+            def _collect_fallback_rows(rows: object) -> None:
+                if not isinstance(rows, list):
+                    return
+                for row in rows:
+                    if not isinstance(row, dict):
+                        continue
+                    y_mid = float(row.get("y_mid", 0.0))
+                    bp_text = row.get("bp")
+                    hr_value = row.get("hr") if isinstance(row.get("hr"), int) else None
+                    key = (round(y_mid, 1), str(bp_text), hr_value)
+                    if key in fallback_row_keys:
+                        continue
+                    fallback_row_keys.add(key)
+                    fallback_rows_pool.append(dict(row))
+
+            if bp_result:
+                _collect_fallback_rows(bp_result.get("_fallback_rows"))
+            if hr_result:
+                _collect_fallback_rows(hr_result.get("_fallback_rows"))
+
+            slot_states: List[Dict[str, object]] = []
             for slot_name, slot_band in slot_sequence:
                 slot_label = slot_name
                 if split_band_used:
@@ -281,13 +358,40 @@ class AuditWorker(QObject):
                 elif fallback_used:
                     slot_label = f"{slot_name} (fallback)"
 
-                slot_vitals = extract_vitals_in_band(page, slot_x0, slot_x1, *slot_band)
-                slot_bp = bp_value or slot_vitals.get("bp")
-                slot_hr = hr_value or slot_vitals.get("hr")
+                slot_vitals = extract_vitals_in_band(
+                    page,
+                    slot_x0,
+                    slot_x1,
+                    *slot_band,
+                    dose_hint=slot_name,
+                    dose_bands=dose_bounds_map,
+                )
+                self._extend_fallback_trace(
+                    trace_log,
+                    slot_vitals,
+                    context=f"SLOT:{slot_name}",
+                    dose_label=slot_name,
+                )
+                _collect_fallback_rows(slot_vitals.get("_fallback_rows"))
+
+                slot_bp_raw = slot_vitals.get("bp")
+                slot_hr_raw = slot_vitals.get("hr")
+                slot_bp = slot_bp_raw or bp_value
+                slot_hr = slot_hr_raw or hr_value
                 sbp_value = self._sbp_from_bp(slot_bp)
+
+                if slot_band:
+                    slot_top, slot_bottom = sorted(slot_band)
+                    slot_mid = (slot_top + slot_bottom) / 2.0
+                    slot_half_height = abs(slot_bottom - slot_top) / 2.0
+                else:
+                    slot_mid = 0.0
+                    slot_half_height = 0.0
+                slot_tolerance = max(slot_half_height, 12.0) + 8.0
 
                 mark = detect_due_mark(page, slot_x0, slot_x1, *slot_band)
                 mark_text = self._collect_text(page, slot_x0, slot_x1, *slot_band)
+                code_value = self._parse_allowed_code(mark_text) if mark == DueMark.CODE_ALLOWED else None
 
                 if DEBUG_DECISION_DETAILS:
                     self._emit_debug_bundle(
@@ -314,28 +418,130 @@ class AuditWorker(QObject):
                 elif fallback_used:
                     record_notes.append("fallback")
 
+                slot_states.append(
+                    {
+                        "name": slot_name,
+                        "label": slot_label,
+                        "band": slot_band,
+                        "bp": slot_bp,
+                        "hr": slot_hr,
+                        "sbp": sbp_value,
+                        "mark": mark,
+                        "mark_text": mark_text,
+                        "code": code_value,
+                        "record_notes": record_notes,
+                        "bp_label_missing": slot_bp_raw is None,
+                        "hr_label_missing": slot_hr_raw is None,
+                        "cluster": None,
+                        "slot_mid": slot_mid,
+                        "tolerance": slot_tolerance,
+                }
+                )
+
+            need_cluster_attachment = any(
+                state.get("bp_label_missing")
+                or state.get("hr_label_missing")
+                or state["bp"] is None
+                or state["hr"] is None
+                for state in slot_states
+            )
+            slot_cluster_result: Dict[str, object] = {}
+            if need_cluster_attachment and fallback_rows_pool and dose_bounds_map:
+                slot_cluster_result = attach_clusters_to_slots(fallback_rows_pool, dose_bounds_map)
+
+            for state in slot_states:
+                cluster_info: Optional[Dict[str, object]] = None
+                cluster_assigned = False
+                if slot_cluster_result:
+                    candidate = slot_cluster_result.get(state["name"].upper())
+                    if isinstance(candidate, dict):
+                        cluster_info = dict(candidate)
+                        assigned_flag = cluster_info.get("assigned")
+                        if isinstance(assigned_flag, bool):
+                            cluster_assigned = assigned_flag
+                        else:
+                            cluster_assigned = bool(cluster_info.get("bp")) or isinstance(cluster_info.get("hr"), int)
+                state["cluster"] = cluster_info
+                state["cluster_assigned"] = cluster_assigned
+                state["cluster_y"] = cluster_info.get("y") if isinstance(cluster_info, dict) else None
+                if cluster_assigned and cluster_info:
+                    if (state["bp"] is None or state.get("bp_label_missing")) and isinstance(cluster_info.get("bp"), str):
+                        state["bp"] = cluster_info["bp"]
+                        state["sbp"] = self._sbp_from_bp(state["bp"])
+                        state["bp_label_missing"] = False
+                    if (state["hr"] is None or state.get("hr_label_missing")) and isinstance(cluster_info.get("hr"), int):
+                        state["hr"] = cluster_info["hr"]
+                        state["hr_label_missing"] = False
+
+            for state in slot_states:
+                slot_name = state["name"]
+                slot_label = state["label"]
+                slot_band = state["band"]
+                slot_bp = state["bp"]
+                slot_hr = state["hr"]
+                sbp_value = state["sbp"]
+                mark = state["mark"]
+                mark_text = state["mark_text"]
+                code_value = state["code"]
+                record_notes = state["record_notes"]
+                cluster_info = state["cluster"]
+                cluster_assigned = bool(state.get("cluster_assigned"))
+                given_detected = mark in (DueMark.GIVEN_CHECK, DueMark.GIVEN_TIME)
+
+                tolerance = float(state.get("tolerance", 0.0))
+                slot_mid = float(state.get("slot_mid", 0.0))
+                cluster_y_value = state.get("cluster_y")
+                cluster_y = None
+                if cluster_y_value is not None:
+                    try:
+                        cluster_y = float(cluster_y_value)  # type: ignore[arg-type]
+                    except (TypeError, ValueError):
+                        cluster_y = None
+
+                if tolerance > 0.0:
+                    detection = self._detect_given_with_tolerance(page, slot_x0, slot_x1, slot_mid, tolerance)
+                    if detection in (DueMark.GIVEN_CHECK, DueMark.GIVEN_TIME):
+                        given_detected = True
+                        if mark == DueMark.NONE:
+                            mark = detection
+                    if cluster_y is not None:
+                        detection = self._detect_given_with_tolerance(page, slot_x0, slot_x1, cluster_y, tolerance)
+                        if detection in (DueMark.GIVEN_CHECK, DueMark.GIVEN_TIME):
+                            given_detected = True
+                            if mark == DueMark.NONE:
+                                mark = detection
+
+                state["mark"] = mark
+                state["given_detected"] = given_detected
+                explicit_mark = mark in (DueMark.GIVEN_CHECK, DueMark.GIVEN_TIME, DueMark.CODE_ALLOWED)
+
+                if slot_band is not None:
+                    y_summary = f"[{slot_band[0]:.1f},{slot_band[1]:.1f}]"
+                else:
+                    y_summary = "[-, -]"
+                cluster_y_text = f"{float(cluster_y):.1f}" if cluster_y is not None else "-"
+                assigned_text = "True" if cluster_assigned else "False"
+                bp_text = str(slot_bp) if slot_bp else "-"
+                hr_text = str(slot_hr) if slot_hr is not None else "-"
+                code_text = str(code_value) if code_value is not None else "-"
+                given_text = "True" if given_detected else "False"
+
+                vitals_missing_noted = False
                 dcd_counted = False
+
                 for rule in rule_specs:
-                    vital_value: Optional[int]
                     if rule.kind.startswith("SBP"):
                         vital_value = sbp_value
-                        if vital_value is None:
-                            self.log.emit(
-                                f"WARN — SBP missing — {room_bed} ({slot_label})"
-                            )
-                            self._add_note(
-                                run_notes,
-                                notes_seen,
-                                f"Vitals missing (unexpected) — {room_bed} ({slot_label})",
-                            )
-                            if "vitals missing" not in record_notes:
-                                record_notes.append("vitals missing")
+                        missing_label = "SBP"
                     else:
                         vital_value = slot_hr
-                        if vital_value is None:
-                            self.log.emit(
-                                f"WARN — HR missing — {room_bed} ({slot_label})"
-                            )
+                        missing_label = "HR"
+
+                    if vital_value is None and explicit_mark and not cluster_assigned:
+                        self.log.emit(
+                            f"WARN — {missing_label} missing — {room_bed} ({slot_label})"
+                        )
+                        if not vitals_missing_noted:
                             self._add_note(
                                 run_notes,
                                 notes_seen,
@@ -343,7 +549,9 @@ class AuditWorker(QObject):
                             )
                             if "vitals missing" not in record_notes:
                                 record_notes.append("vitals missing")
+                            vitals_missing_noted = True
 
+                    triggered = rule_triggers(rule.kind, rule.threshold, vital_value)
                     decision = decide_for_dose(rule.kind, rule.threshold, vital_value, mark)
                     skip_message = False
                     if decision == "HELD_OK":
@@ -368,6 +576,16 @@ class AuditWorker(QObject):
                             f"Allowed code without trigger — {room_bed} ({slot_label})",
                         )
 
+                    decision_display = "DC'D" if decision == "DCD" else decision.replace("_", "-")
+                    trigger_text = "True" if triggered else "False"
+                    trace_message = (
+                        f"TRACE — slot {slot_name} y={y_summary} cluster_y={cluster_y_text} "
+                        f"assigned={assigned_text} bp={bp_text} hr={hr_text} "
+                        f"given={given_text} code={code_text} triggered={trigger_text} "
+                        f"→ decision={decision_display}"
+                    )
+                    self.log.emit(trace_message)
+
                     if not skip_message:
                         message = self._format_decision_log(
                             decision,
@@ -385,7 +603,6 @@ class AuditWorker(QObject):
                         continue
 
                     record_kind = self._decision_label(decision)
-                    record_code = self._parse_allowed_code(mark_text) if mark == DueMark.CODE_ALLOWED else None
                     record_vital = self._format_vital_text(rule.kind, slot_bp, slot_hr)
                     record_notes_text = "; ".join(record_notes) if record_notes else None
                     dcd_reason = "X in due cell" if decision == "DCD" else None
@@ -398,7 +615,7 @@ class AuditWorker(QObject):
                         kind=record_kind,
                         rule_text=rule.description,
                         vital_text=record_vital,
-                        code=record_code,
+                        code=code_value,
                         dcd_reason=dcd_reason,
                         notes=record_notes_text,
                     )
@@ -689,6 +906,182 @@ class AuditWorker(QObject):
             return ""
 
     @staticmethod
+    def _collect_spans_in_band(
+        page: "fitz.Page",
+        x0: float,
+        x1: float,
+        y0: float,
+        y1: float,
+    ) -> List[Tuple[str, Tuple[float, float, float, float]]]:
+        rect = normalize_rect((x0, y0, x1, y1))
+        try:
+            text_dict = page.get_text("dict")
+        except RuntimeError:
+            return []
+
+        spans: List[Tuple[str, Tuple[float, float, float, float]]] = []
+        for block in text_dict.get("blocks", []):
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    raw_text = span.get("text")
+                    bbox = span.get("bbox")
+                    if not raw_text or not bbox:
+                        continue
+                    sx0, sy0, sx1, sy1 = map(float, bbox)
+                    center_x = (sx0 + sx1) / 2.0
+                    if center_x < rect[0] or center_x > rect[2]:
+                        continue
+                    if sy1 < rect[1] or sy0 > rect[3]:
+                        continue
+                    spans.append((str(raw_text), (sx0, sy0, sx1, sy1)))
+        return spans
+
+    @staticmethod
+    def _detect_given_with_tolerance(
+        page: "fitz.Page",
+        x0: float,
+        x1: float,
+        center_y: Optional[float],
+        tolerance: float,
+    ) -> Optional[DueMark]:
+        if center_y is None or tolerance <= 0.0:
+            return None
+        top = center_y - tolerance
+        bottom = center_y + tolerance
+        if top > bottom:
+            top, bottom = bottom, top
+        spans = AuditWorker._collect_spans_in_band(page, x0, x1, top, bottom)
+        if not spans:
+            return None
+        for text, _ in spans:
+            if CHECKMARK_RE.search(text):
+                return DueMark.GIVEN_CHECK
+        for text, _ in spans:
+            if TIME_RE.search(text):
+                return DueMark.GIVEN_TIME
+        return None
+
+    @staticmethod
+    def _extend_fallback_trace(
+        trace_log: Optional[List[Dict[str, object]]],
+        result: Optional[Dict[str, object]],
+        *,
+        context: str,
+        dose_label: Optional[str] = None,
+    ) -> None:
+        if trace_log is None or not result or not dose_label:
+            return
+        rows = result.get("_fallback_rows")
+        if isinstance(rows, list):
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                y_mid = float(row.get("y_mid", 0.0))
+                if any(
+                    existing.get("dose") == dose_label
+                    and abs(float(existing.get("y_mid", 0.0)) - y_mid) < 0.1
+                    for existing in trace_log
+                ):
+                    continue
+                entry = dict(row)
+                entry["dose"] = dose_label
+                entry["context"] = context
+                trace_log.append(entry)
+        selected = result.get("_fallback_selected")
+        if isinstance(selected, dict):
+            entry = dict(selected)
+            y_mid = float(entry.get("y_mid", 0.0))
+            for existing in trace_log:
+                if (
+                    existing.get("dose") == dose_label
+                    and abs(float(existing.get("y_mid", 0.0)) - y_mid) < 0.1
+                ):
+                    existing["selected"] = True
+                    break
+            else:
+                entry["dose"] = dose_label
+                entry["context"] = context
+                entry["selected"] = True
+                trace_log.append(entry)
+
+    def _emit_band_spans(self, page: "fitz.Page", band: ColumnBand) -> None:
+        if fitz is None or not hasattr(page, "rect"):
+            return
+        try:
+            page_rect = page.rect
+        except Exception:  # pragma: no cover - defensive
+            return
+        clip_left = max(0.0, min(band.x0, band.x1))
+        clip_right = min(float(page_rect.x1), max(band.x0, band.x1))
+        if clip_right <= clip_left:
+            return
+        try:
+            clip_rect = fitz.Rect(clip_left, 0.0, clip_right, float(page_rect.y1))
+            text_dict = page.get_text("dict", clip=clip_rect)
+        except RuntimeError:
+            self.log.emit(f"TRACE — page {band.page_index + 1}: unable to collect spans for trace")
+            return
+
+        span_rows: List[Tuple[float, str]] = []
+        for block in text_dict.get("blocks", []):
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    raw_text = span.get("text")
+                    bbox = span.get("bbox")
+                    if not raw_text or not bbox:
+                        continue
+                    _, sy0, _, sy1 = map(float, bbox)
+                    y_mid = (sy0 + sy1) / 2.0
+                    snippet = re.sub(r"\s+", " ", str(raw_text)).strip()
+                    span_rows.append((y_mid, snippet))
+        span_rows.sort(key=lambda item: item[0])
+        summary = f"TRACE — page {band.page_index + 1} spans={len(span_rows)} x=({band.x0:.1f},{band.x1:.1f})"
+        self.log.emit(summary)
+        for y_mid, text in span_rows:
+            if not text:
+                continue
+            preview = text if len(text) <= 160 else text[:157].rstrip() + "..."
+            self.log.emit(f"TRACE —   y={y_mid:.1f} text=\"{preview}\"")
+
+    def _emit_fallback_trace(self, page_index: int, trace_rows: List[Dict[str, object]]) -> None:
+        if not trace_rows:
+            return
+        unique_rows: List[Dict[str, object]] = []
+        seen: set[Tuple[float, str, str]] = set()
+        for row in trace_rows:
+            y_mid = float(row.get("y_mid", 0.0))
+            text = str(row.get("text", "")).strip()
+            dose = str(row.get("dose", row.get("context", "")) or "")
+            key = (round(y_mid, 1), text, dose)
+            if key in seen:
+                continue
+            seen.add(key)
+            row_copy = dict(row)
+            row_copy.setdefault("dose", dose or "-")
+            row_copy.setdefault("text", text)
+            if "context" not in row_copy:
+                row_copy["context"] = ""
+            unique_rows.append(row_copy)
+        if not unique_rows:
+            return
+        self.log.emit(f"TRACE — fallback clusters page {page_index + 1}:")
+        for row in unique_rows:
+            y_mid = float(row.get("y_mid", 0.0))
+            bp_value = row.get("bp") or "—"
+            if not isinstance(bp_value, str):
+                bp_value = str(bp_value)
+            hr_value = row.get("hr")
+            hr_text = hr_value if isinstance(hr_value, int) else "—"
+            dose = row.get("dose") or "-"
+            preview = str(row.get("text", "")).strip()
+            if len(preview) > 160:
+                preview = preview[:157].rstrip() + "..."
+            star = "*" if row.get("selected") else " "
+            self.log.emit(
+                f"TRACE —   {star} y={y_mid:.1f} dose={dose} bp={bp_value} hr={hr_text} text=\"{preview}\""
+            )
+
+    @staticmethod
     def _line_bbox(spans: List[dict]) -> Optional[Tuple[float, float, float, float]]:
         xs0: List[float] = []
         ys0: List[float] = []
@@ -774,6 +1167,45 @@ class AuditWorker(QObject):
             return None, None
         return None, None
 
+    def _emit_scout_candidates(
+        self,
+        doc: "fitz.Document",
+        audit_date: date,
+        bands: Sequence[ColumnBand],
+    ) -> None:
+        try:
+            candidates = scan_candidates(doc, audit_date, bands)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("Scout scan failed for %s: %s", self._input_pdf, exc, exc_info=True)
+            self.log.emit(f"SCOUT — error during scan: {exc}")
+            return
+
+        if not candidates:
+            self.log.emit("SCOUT — no rule candidates detected")
+            return
+
+        ranked = sorted(
+            candidates,
+            key=lambda item: (
+                1 if (item.has_code or item.has_time) else 0,
+                1 if item.has_code else 0,
+                len(item.rule_kinds),
+                -item.page,
+            ),
+            reverse=True,
+        )
+
+        for candidate in ranked[:10]:
+            rules_segment = ", ".join(candidate.rule_kinds)
+            room = candidate.room_bed or "Unknown"
+            dose = candidate.dose or "-"
+            message = (
+                f"SCOUT — p={candidate.page} room={room} dose={dose} "
+                f"code={candidate.has_code} time={candidate.has_time} "
+                f"rules=[{rules_segment}]"
+            )
+            self.log.emit(message)
+
     @staticmethod
     def _empty_summary() -> Dict[str, int]:
         return {
@@ -809,8 +1241,31 @@ class AuditWorker(QObject):
         text = message.strip()
         if not text or text in seen:
             return
+        vitals_key = AuditWorker._vitals_note_key(text)
+        if vitals_key:
+            sentinel = f"__vitals__{vitals_key[0]}__{vitals_key[1]}"
+            if sentinel in seen:
+                return
+            seen.add(sentinel)
         notes.append(text)
         seen.add(text)
+
+    @staticmethod
+    def _vitals_note_key(message: str) -> Optional[Tuple[str, str]]:
+        match = re.match(
+            r"(?i)^vitals\s+missing\s*\(unexpected\)\s*—\s*(?P<room>[^()]+?)\s*\((?P<dose>[^)]+)\)",
+            message,
+        )
+        if not match:
+            return None
+        room = match.group("room").strip()
+        dose_token = match.group("dose").strip()
+        if not room or not dose_token:
+            return None
+        base_dose = dose_token.split()[0].strip().upper()
+        if not base_dose:
+            return None
+        return room, base_dose
 
     @staticmethod
     def _parse_allowed_code(mark_text: str) -> Optional[int]:
