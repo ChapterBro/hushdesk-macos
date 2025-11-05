@@ -20,8 +20,8 @@ _MIN_BAND_HALF_HEIGHT = 6.0
 
 _BP_LABEL_RE = re.compile(r"(?i)^\s*B\s*P\b")
 _HR_LABEL_RE = re.compile(r"(?i)^\s*(?:HR|PULSE)\b")
-_AM_LABEL_RE = re.compile(r"(?i)^\s*A\.?\s*M\.?\b")
-_PM_LABEL_RE = re.compile(r"(?i)^\s*P\.?\s*M\.?\b")
+_AM_LABEL_RE = re.compile(r"(?i)^(?:a\.?m\.?|a\s*m\b|morning)")
+_PM_LABEL_RE = re.compile(r"(?i)^(?:p\.?m\.?|p\s*m\b|evening)")
 
 
 @dataclass(slots=True)
@@ -32,6 +32,7 @@ class RowBands:
     hr: Optional[Tuple[float, float]] = None
     am: Optional[Tuple[float, float]] = None
     pm: Optional[Tuple[float, float]] = None
+    auto_am_pm_split: bool = False
 
 
 def find_row_bands_for_block(page: "fitz.Page", block_bbox: Tuple[float, float, float, float]) -> RowBands:
@@ -80,11 +81,41 @@ def find_row_bands_for_block(page: "fitz.Page", block_bbox: Tuple[float, float, 
             y1,
         )
 
+    auto_am_pm_split = False
+    if row_bands["am"] is None and row_bands["pm"] is None and row_bands["bp"] is not None:
+        bp_band = row_bands["bp"]
+        dose_top = max(y0, min(y1, bp_band[1]))
+        dose_bottom = y1
+        if dose_bottom > dose_top:
+            height = dose_bottom - dose_top
+            midpoint = dose_top + height / 2.0
+
+            am_top = dose_top
+            am_bottom = max(am_top + _MIN_BAND_HALF_HEIGHT, midpoint)
+            am_bottom = min(am_bottom, dose_bottom)
+
+            pm_top = max(am_bottom, midpoint)
+            pm_bottom = dose_bottom
+            if pm_bottom - pm_top < _MIN_BAND_HALF_HEIGHT:
+                pm_top = max(dose_top, pm_bottom - _MIN_BAND_HALF_HEIGHT)
+
+            if am_bottom > pm_top:
+                overlap = am_bottom - pm_top
+                pm_top += overlap
+                if pm_top >= pm_bottom:
+                    pm_top = am_bottom
+
+            if am_bottom <= pm_top and pm_top < pm_bottom:
+                row_bands["am"] = (am_top, am_bottom)
+                row_bands["pm"] = (pm_top, pm_bottom)
+                auto_am_pm_split = True
+
     return RowBands(
         bp=row_bands["bp"],
         hr=row_bands["hr"],
         am=row_bands["am"],
         pm=row_bands["pm"],
+        auto_am_pm_split=auto_am_pm_split,
     )
 
 
