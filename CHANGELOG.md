@@ -1,6 +1,7 @@
 # Changelog
 
-# Changelog
+## Phase 6 – Release Tooling
+- chore(build): add macOS build/sign/notarize/release scripts and set package `__version__`.
 
 ## Phase 4 – Vitals & Due-Cell Precedence
 - feat(rows): semantic row-band detection for BP/HR and AM/PM lanes inside each med block.

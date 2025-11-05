@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DIST_DIR="${REPO_ROOT}/dist"
+PYINSTALLER_BIN="${PYINSTALLER_BIN:-pyinstaller}"
+
+if ! command -v "${PYINSTALLER_BIN}" >/dev/null 2>&1; then
+  echo "error: ${PYINSTALLER_BIN} is required (install PyInstaller)" >&2
+  exit 1
+fi
+
+cd "${REPO_ROOT}"
+
+echo "Cleaning ${DIST_DIR}"
+rm -rf "${DIST_DIR}"
+mkdir -p "${DIST_DIR}"
+
+"${PYINSTALLER_BIN}" -y --noconfirm --name "HushDesk" --windowed \
+  --add-data "hushdesk/config:config" \
+  --collect-all PySide6 \
+  --osx-bundle-identifier "com.chapterbro.hushdesk" \
+  src/hushdesk/app.py
+
+if [ ! -d "${DIST_DIR}/HushDesk.app" ]; then
+  echo "error: dist/HushDesk.app was not generated" >&2
+  exit 1
+fi
+
+hdiutil create -volname "HushDesk" \
+  -srcfolder "${DIST_DIR}/HushDesk.app" \
+  -ov -format UDZO "${DIST_DIR}/HushDesk.dmg"
+
+if [ ! -f "${DIST_DIR}/HushDesk.dmg" ]; then
+  echo "error: dist/HushDesk.dmg was not generated" >&2
+  exit 1
+fi
+
+echo "Build artifacts ready:"
+echo "  App: ${DIST_DIR}/HushDesk.app"
+echo "  DMG: ${DIST_DIR}/HushDesk.dmg"

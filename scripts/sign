@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APP_PATH="${REPO_ROOT}/dist/HushDesk.app"
+
+if [ -z "${CODESIGN_ID:-}" ]; then
+  echo "error: CODESIGN_ID environment variable is required" >&2
+  exit 1
+fi
+
+if [ -z "${TEAM_ID:-}" ]; then
+  echo "error: TEAM_ID environment variable is required" >&2
+  exit 1
+fi
+
+if [ ! -d "${APP_PATH}" ]; then
+  echo "error: ${APP_PATH} not found. Run ./scripts/build first." >&2
+  exit 1
+fi
+
+cd "${REPO_ROOT}"
+
+codesign --deep --force --options runtime --timestamp --sign "${CODESIGN_ID}" "${APP_PATH}"
+
+codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+
+echo "Codesign verification passed for ${APP_PATH}"
