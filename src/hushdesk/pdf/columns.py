@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from dataclasses import dataclass
 from typing import Callable, List, Optional
@@ -12,6 +13,8 @@ except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
 from hushdesk.pdf.layout import bands_from_day_centers, find_day_header_centers
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -53,6 +56,14 @@ def select_audit_columns(
             continue
 
         x0, x1, width, height = band
+        if x1 <= x0 or (x1 - x0) < 5.0:
+            logger.warning(
+                "degenerate band detected: page=%d x0=%.1f x1=%.1f width=%.1f",
+                page_index + 1,
+                x0,
+                x1,
+                x1 - x0,
+            )
         if width <= 0:
             frac0 = frac1 = 0.0
         else:

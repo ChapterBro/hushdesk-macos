@@ -59,11 +59,15 @@ class AuditWorker(QObject):
         elif self._input_pdf.exists():
             try:
                 with fitz.open(self._input_pdf) as doc:
-                    self.log.emit(f"Opened doc: pages={doc.page_count}")
+                    doc_pages = len(doc)
+                    self.log.emit(f"Opened doc: pages={doc_pages}")
                     column_bands = select_audit_columns(
                         doc,
                         audit_date,
                         on_page_without_header=missing_headers.append,
+                    )
+                    self.log.emit(
+                        f"DEBUG: doc_pages={doc_pages}, bands_found={len(column_bands)}"
                     )
             except Exception as exc:  # pragma: no cover - defensive guard
                 message = f"Unable to compute column bands for {self._input_pdf}: {exc}"

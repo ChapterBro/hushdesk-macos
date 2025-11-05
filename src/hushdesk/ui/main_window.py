@@ -349,6 +349,7 @@ class MainWindow(QMainWindow):
         self.log_panel.clear()
         self._reset_progress()
         self._append_log_line(f"Started audit: {input_path}")
+        self._append_log_line("DEBUG: progress total set to 0 (reset)")
 
     @Slot(int, int)
     def _on_progress_changed(self, current: int, total: int) -> None:
@@ -357,6 +358,7 @@ class MainWindow(QMainWindow):
         self.progress_bar.setRange(0, total)
         self.progress_bar.setValue(current)
         self._chips["Reviewed"].set_value(current)
+        self._append_log_line(f"DEBUG: progress tick current={current}, total={total}")
 
     @Slot(str)
     def _on_worker_log(self, message: str) -> None:
