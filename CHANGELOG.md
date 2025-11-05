@@ -3,6 +3,7 @@
 ## Phase 7 – End-User Trust UI
 - feat(ui): Review Explorer panel with grouped decisions, search, and exception filters.
 - feat(ui): Evidence drawer shows rule context with PDF previews and per-slot source flags.
+- feat(ui): QA Mode toggle with anomaly explorer and slot metrics chips.
 
 ## Phase 6 – Release Tooling
 - chore(build): add macOS build/sign/notarize/release scripts and set package `__version__`.

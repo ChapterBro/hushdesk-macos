@@ -99,6 +99,7 @@ class AuditWorker(QObject):
         counters = self._empty_summary()
         records: List[DecisionRecord] = []
         record_payloads: List[dict] = []
+        anomalies: List[dict] = []
         hall_counts: Counter[str] = Counter()
         run_notes: List[str] = []
         notes_seen: set[str] = set()
@@ -149,6 +150,7 @@ class AuditWorker(QObject):
                                 self._input_pdf.name,
                                 records,
                                 record_payloads,
+                                anomalies,
                                 hall_counts,
                                 run_notes,
                                 notes_seen,
@@ -186,6 +188,7 @@ class AuditWorker(QObject):
                 "counts": summary_counts_copy,
                 "records": [deepcopy(payload) for payload in record_payloads],
                 "notes": list(run_notes),
+                "anomalies": [deepcopy(entry) for entry in anomalies],
                 "source_pdf": str(self._input_pdf),
             }
         )
@@ -224,6 +227,7 @@ class AuditWorker(QObject):
         source_basename: str,
         records: List[DecisionRecord],
         record_payloads: List[dict],
+        anomalies: List[dict],
         hall_counts: Counter[str],
         run_notes: List[str],
         notes_seen: set[str],
@@ -294,6 +298,18 @@ class AuditWorker(QObject):
                     continue
                 slot_bands = {"AM": fallback_band}
                 fallback_used = True
+
+            for candidate_name, candidate_band in slot_bands.items():
+                if candidate_band is None:
+                    self._append_anomaly(
+                        anomalies,
+                        "zero_width_band",
+                        room_bed,
+                        candidate_name,
+                        band.page_index,
+                        f"Zero-width band dropped — {room_bed} ({candidate_name})",
+                        None,
+                    )
 
             slot_sequence = [(name, band) for name, band in slot_bands.items() if band is not None]
             if not slot_sequence:
@@ -596,6 +612,16 @@ class AuditWorker(QObject):
                             notes_seen,
                             f"Allowed code without trigger — {room_bed} ({slot_label})",
                         )
+                        self._append_anomaly(
+                            anomalies,
+                            "allowed_code_without_trigger",
+                            room_bed,
+                            slot_label,
+                            band.page_index,
+                            f"Allowed code without trigger — {room_bed} ({slot_label})",
+                            None,
+                            {"code": code_value},
+                        )
 
                     decision_display = "DC'D" if decision == "DCD" else decision.replace("_", "-")
                     trigger_text = "True" if triggered else "False"
@@ -692,9 +718,36 @@ class AuditWorker(QObject):
                         extras=extras,
                     )
                     records.append(decision_record)
-                    record_payloads.append(
-                        self._record_payload(len(record_payloads), decision_record)
-                    )
+                    payload_entry = self._record_payload(len(record_payloads), decision_record)
+                    record_payloads.append(payload_entry)
+                    record_id = payload_entry.get("id")
+                    if mark == DueMark.NONE:
+                        self._append_anomaly(
+                            anomalies,
+                            "missing_due_mark",
+                            room_bed,
+                            slot_label,
+                            band.page_index,
+                            f"Missing due mark — {room_bed} ({slot_label})",
+                            int(record_id) if isinstance(record_id, int) else None,
+                            {
+                                "mark": mark_display,
+                                "source": extras.get("source_type"),
+                            },
+                        )
+                    if rule.kind.startswith("SBP") and not slot_bp:
+                        self._append_anomaly(
+                            anomalies,
+                            "no_bp_value",
+                            room_bed,
+                            slot_label,
+                            band.page_index,
+                            f"No BP captured in slot — {room_bed} ({slot_label})",
+                            int(record_id) if isinstance(record_id, int) else None,
+                            {
+                                "source": extras.get("source_type"),
+                            },
+                        )
 
         return counts
 
@@ -1489,6 +1542,30 @@ class AuditWorker(QObject):
         if isinstance(hr_bbox, (list, tuple)) and len(hr_bbox) == 4:
             boxes["hr"].append(tuple(map(float, hr_bbox)))
         return boxes
+
+    @staticmethod
+    def _append_anomaly(
+        anomalies: List[Dict[str, object]],
+        category: str,
+        room_bed: str,
+        slot_label: str,
+        page_index: int,
+        message: str,
+        record_id: Optional[int],
+        detail: Optional[Dict[str, object]] = None,
+    ) -> None:
+        entry: Dict[str, object] = {
+            "category": category,
+            "message": message,
+            "room_bed": room_bed,
+            "slot": slot_label,
+            "page_index": int(page_index),
+            "page_number": int(page_index) + 1,
+            "record_ids": [int(record_id)] if isinstance(record_id, int) else [],
+        }
+        if detail:
+            entry["detail"] = detail
+        anomalies.append(entry)
 
     @staticmethod
     def _merge_counts(target: Dict[str, int], delta: Dict[str, int]) -> None:

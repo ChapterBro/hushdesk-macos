@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Set
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -10,8 +10,11 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QListWidget,
+    QListWidgetItem,
     QLineEdit,
     QSizePolicy,
+    QTabWidget,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -29,9 +32,10 @@ _COUNT_KEY_MAP: Dict[str, str] = {
 
 
 class ReviewExplorer(QWidget):
-    """Grouped decision list with search and filters."""
+    """Grouped decision list with search, QA mode, and anomaly navigation."""
 
     record_selected = Signal(dict)
+    anomaly_selected = Signal(dict)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -40,6 +44,9 @@ class ReviewExplorer(QWidget):
         self._counts: Dict[str, int] = {}
         self._filter_text = ""
         self._exceptions_only = False
+        self._qa_mode_enabled = False
+        self._anomalies: List[dict] = []
+        self._anomaly_filter_ids: Optional[Set[int]] = None
 
         self._build_ui()
 
@@ -83,9 +90,28 @@ class ReviewExplorer(QWidget):
         self.tree.itemSelectionChanged.connect(self._on_selection_changed)
         self.tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        layout.addWidget(self.tree, stretch=1)
+        decisions_container = QWidget()
+        decisions_layout = QVBoxLayout(decisions_container)
+        decisions_layout.setContentsMargins(0, 0, 0, 0)
+        decisions_layout.setSpacing(0)
+        decisions_layout.addWidget(self.tree)
 
-        footer = QLabel("Select a row to view evidence.")
+        self.anomaly_list = QListWidget()
+        self.anomaly_list.itemClicked.connect(self._on_anomaly_clicked)
+
+        anomalies_container = QWidget()
+        anomalies_layout = QVBoxLayout(anomalies_container)
+        anomalies_layout.setContentsMargins(0, 0, 0, 0)
+        anomalies_layout.setSpacing(0)
+        anomalies_layout.addWidget(self.anomaly_list)
+
+        self.tab_widget = QTabWidget()
+        self.tab_widget.addTab(decisions_container, "Decisions")
+        self.tab_widget.addTab(anomalies_container, "Anomalies (0)")
+
+        layout.addWidget(self.tab_widget, stretch=1)
+
+        footer = QLabel("Select a row to view evidence. QA Mode surfaces source and cluster metrics.")
         footer.setStyleSheet("color: #6b7280; font-size: 12px;")
         layout.addWidget(footer)
 
@@ -94,15 +120,70 @@ class ReviewExplorer(QWidget):
             normalized = {key: int(value) for key, value in counts.items()}
             self._counts = normalized
         self._records = [dict(record) for record in records]
+        self._anomaly_filter_ids = None
+        self._apply_filters()
+
+    def update_anomalies(self, anomalies: Iterable[dict]) -> None:
+        self._anomalies = [dict(entry) for entry in anomalies]
+        self._populate_anomaly_list()
+
+    def set_qa_mode(self, enabled: bool) -> None:
+        if self._qa_mode_enabled == enabled:
+            return
+        self._qa_mode_enabled = enabled
+        self._apply_filters()
+
+    def apply_anomaly_filter(self, anomaly: dict) -> None:
+        if not isinstance(anomaly, dict):
+            return
+        self.tab_widget.setCurrentIndex(0)
+        record_ids = anomaly.get("record_ids") if isinstance(anomaly.get("record_ids"), list) else []
+        ids = {int(rid) for rid in record_ids if isinstance(rid, int)}
+        if ids:
+            self._anomaly_filter_ids = ids
+            self.search_field.blockSignals(True)
+            self.search_field.clear()
+            self.search_field.blockSignals(False)
+            self._filter_text = ""
+            self._apply_filters()
+            self._select_first_filtered_record()
+            return
+
+        target = " ".join(
+            part for part in (anomaly.get("room_bed"), anomaly.get("slot")) if part
+        ).strip()
+        self._anomaly_filter_ids = None
+        if target:
+            self.search_field.blockSignals(True)
+            self.search_field.setText(target)
+            self.search_field.blockSignals(False)
+            return
+        self._apply_filters()
+
+    def clear_anomaly_filter(self) -> None:
+        self._anomaly_filter_ids = None
         self._apply_filters()
 
     def clear(self) -> None:
         self._records = []
         self._counts = {}
+        self._filter_text = ""
+        self._exceptions_only = False
+        self._anomalies = []
+        self._anomaly_filter_ids = None
+        self.search_field.blockSignals(True)
+        self.search_field.clear()
+        self.search_field.blockSignals(False)
+        self.exceptions_toggle.blockSignals(True)
+        self.exceptions_toggle.setChecked(False)
+        self.exceptions_toggle.blockSignals(False)
         self.tree.clear()
+        self.anomaly_list.clear()
+        self._update_anomaly_tab_label()
 
     def _on_search_changed(self, text: str) -> None:
         self._filter_text = text.strip().lower()
+        self._anomaly_filter_ids = None
         self._apply_filters()
 
     def _on_exceptions_changed(self, state: int) -> None:
@@ -115,6 +196,7 @@ class ReviewExplorer(QWidget):
 
         filter_text = self._filter_text
         exceptions_only = self._exceptions_only
+        filter_ids = self._anomaly_filter_ids
 
         for kind in _KIND_ORDER:
             kind_records = [record for record in self._records if record.get("kind") == kind]
@@ -125,7 +207,7 @@ class ReviewExplorer(QWidget):
             filtered = [
                 record
                 for record in kind_records
-                if self._record_visible(record, filter_text, exceptions_only)
+                if self._record_visible(record, filter_text, exceptions_only, filter_ids)
             ]
 
             if not filtered and total_count == 0:
@@ -151,18 +233,28 @@ class ReviewExplorer(QWidget):
             header_item.setExpanded(True)
 
         self.tree.blockSignals(False)
+        if self._anomaly_filter_ids:
+            self._select_first_filtered_record()
 
     @staticmethod
-    def _record_visible(record: dict, filter_text: str, exceptions_only: bool) -> bool:
+    def _record_visible(
+        record: dict,
+        filter_text: str,
+        exceptions_only: bool,
+        filter_ids: Optional[Set[int]],
+    ) -> bool:
         if exceptions_only and not record.get("exception"):
             return False
+        if filter_ids is not None:
+            record_id = record.get("id")
+            if record_id not in filter_ids:
+                return False
         if not filter_text:
             return True
         blob = record.get("search_blob") or ""
         return filter_text in blob
 
-    @staticmethod
-    def _format_row(record: dict) -> str:
+    def _format_row(self, record: dict) -> str:
         room = record.get("room_bed") or "Unknown"
         dose = record.get("slot_label") or record.get("dose") or "-"
         rule_text = record.get("rule_text") or ""
@@ -176,7 +268,27 @@ class ReviewExplorer(QWidget):
             parts.append(vital_text)
         if mark_display:
             parts.append(mark_display)
-        return " · ".join(parts)
+
+        base = " · ".join(parts)
+        qa_suffix = self._qa_suffix(record) if self._qa_mode_enabled else ""
+        if qa_suffix:
+            return f"{base} | {qa_suffix}"
+        return base
+
+    @staticmethod
+    def _qa_suffix(record: dict) -> str:
+        extras = record.get("extras") if isinstance(record.get("extras"), dict) else {}
+        chips: List[str] = []
+        source = record.get("source_type") or extras.get("source_type")
+        if source:
+            chips.append(f"source={source}")
+        dy_val = extras.get("dy")
+        if isinstance(dy_val, (int, float)):
+            chips.append(f"dy={dy_val:+.0f}px")
+        cluster_val = extras.get("cluster_y")
+        if isinstance(cluster_val, (int, float)):
+            chips.append(f"cluster={cluster_val:.1f}")
+        return " | ".join(chips)
 
     def _on_selection_changed(self) -> None:
         selected = self.tree.selectedItems()
@@ -187,3 +299,36 @@ class ReviewExplorer(QWidget):
             if isinstance(payload, dict):
                 self.record_selected.emit(dict(payload))
                 break
+
+    def _populate_anomaly_list(self) -> None:
+        self.anomaly_list.clear()
+        for anomaly in self._anomalies:
+            text = anomaly.get("message") or "(unknown anomaly)"
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, anomaly)
+            self.anomaly_list.addItem(item)
+        self._update_anomaly_tab_label()
+
+    def _update_anomaly_tab_label(self) -> None:
+        count = len(self._anomalies)
+        self.tab_widget.setTabText(1, f"Anomalies ({count})")
+
+    def _on_anomaly_clicked(self, item: QListWidgetItem) -> None:
+        payload = item.data(Qt.ItemDataRole.UserRole)
+        if isinstance(payload, dict):
+            self.anomaly_selected.emit(dict(payload))
+
+    def _select_first_filtered_record(self) -> None:
+        if not self._anomaly_filter_ids:
+            return
+        for index in range(self.tree.topLevelItemCount()):
+            header_item = self.tree.topLevelItem(index)
+            for child_index in range(header_item.childCount()):
+                child = header_item.child(child_index)
+                payload = child.data(0, Qt.ItemDataRole.UserRole)
+                if not isinstance(payload, dict):
+                    continue
+                record_id = payload.get("id")
+                if record_id in self._anomaly_filter_ids:
+                    self.tree.setCurrentItem(child)
+                    return

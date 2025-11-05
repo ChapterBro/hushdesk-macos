@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QProgressBar,
     QPushButton,
+    QCheckBox,
     QSplitter,
     QVBoxLayout,
     QWidget,
@@ -152,7 +153,9 @@ class MainWindow(QMainWindow):
         self._last_saved_log: Optional[str] = None
         self._audit_date_pending = True
         self._current_pdf_path: Optional[Path] = None
+        self._qa_mode_enabled = False
         self._records_payload: list[dict] = []
+        self._anomalies_payload: list[dict] = []
         self._selected_record: Optional[dict] = None
 
         self._refresh_header_colors()
@@ -265,8 +268,14 @@ class MainWindow(QMainWindow):
             self._chips[title] = chip
             self._chips_by_key[key] = chip
 
+        chips_layout.addStretch(1)
+        self.qa_mode_toggle = QCheckBox("QA Mode")
+        self.qa_mode_toggle.stateChanged.connect(self._on_qa_mode_changed)
+        chips_layout.addWidget(self.qa_mode_toggle)
+
         self.review_explorer = ReviewExplorer()
         self.review_explorer.record_selected.connect(self._on_review_record_selected)
+        self.review_explorer.anomaly_selected.connect(self._on_anomaly_selected)
 
         self.evidence_panel = EvidencePanel()
 
@@ -397,8 +406,13 @@ class MainWindow(QMainWindow):
         self._records_payload.clear()
         self._selected_record = None
         self._current_pdf_path = None
+        self._anomalies_payload.clear()
         if hasattr(self, "review_explorer"):
             self.review_explorer.clear()
+            self.review_explorer.update_anomalies([])
+            self.review_explorer.clear_anomaly_filter()
+        if getattr(self, "qa_mode_toggle", None) is not None:
+            self.qa_mode_toggle.setChecked(False)
         if hasattr(self, "evidence_panel"):
             self.evidence_panel.clear()
         self.log_panel.moveCursor(QTextCursor.MoveOperation.End)
@@ -460,6 +474,7 @@ class MainWindow(QMainWindow):
     def _on_summary_payload(self, payload: dict) -> None:
         counts_obj = payload.get("counts") if isinstance(payload, dict) else {}
         records_obj = payload.get("records") if isinstance(payload, dict) else []
+        anomalies_obj = payload.get("anomalies") if isinstance(payload, dict) else []
         source_pdf = payload.get("source_pdf") if isinstance(payload, dict) else None
         if isinstance(source_pdf, str):
             try:
@@ -481,8 +496,16 @@ class MainWindow(QMainWindow):
             ]
         else:
             self._records_payload = []
+        if isinstance(anomalies_obj, list):
+            self._anomalies_payload = [
+                dict(entry) for entry in anomalies_obj if isinstance(entry, dict)
+            ]
+        else:
+            self._anomalies_payload = []
         if hasattr(self, "review_explorer"):
             self.review_explorer.update_records(counts=counts_dict, records=self._records_payload)
+            self.review_explorer.update_anomalies(self._anomalies_payload)
+            self.review_explorer.set_qa_mode(self._qa_mode_enabled)
         if hasattr(self, "evidence_panel"):
             if self._records_payload:
                 self.evidence_panel.clear("Select a decision to view details.")
@@ -494,6 +517,21 @@ class MainWindow(QMainWindow):
         self._selected_record = dict(payload)
         if hasattr(self, "evidence_panel"):
             self.evidence_panel.set_record(self._selected_record, self._current_pdf_path)
+
+    @Slot(dict)
+    def _on_anomaly_selected(self, anomaly: dict) -> None:
+        if not isinstance(anomaly, dict):
+            return
+        if hasattr(self, "review_explorer"):
+            self.review_explorer.apply_anomaly_filter(anomaly)
+
+    @Slot(int)
+    def _on_qa_mode_changed(self, state: int) -> None:
+        self._qa_mode_enabled = state == Qt.CheckState.Checked
+        if hasattr(self, "review_explorer"):
+            self.review_explorer.set_qa_mode(self._qa_mode_enabled)
+            if not self._qa_mode_enabled:
+                self.review_explorer.clear_anomaly_filter()
 
     @Slot(str)
     def _on_worker_log(self, message: str) -> None:
