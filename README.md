@@ -13,6 +13,12 @@ Current version: `0.1.0`
 - Launch the desktop app: `./scripts/dev`
 - Default audit date follows the filename-first previous-day policy (America/Chicago)
 
+## Optional Performance (Rust Accelerator)
+- Install Rust toolchain: `brew install rustup && rustup-init -y`
+- Build the native wheel for local development: `pip install maturin && maturin develop`
+- Opt-in at runtime: `export HUSHDESK_USE_RUST=1`
+- When the native module is missing or disabled, HushDesk automatically falls back to the pure-Python path.
+
 ## Headless Run
 - Set `HUSHDESK_AUDIT_DATE_MMDDYYYY=MM/DD/YYYY` and `HUSHDESK_SCOUT=1` when needed
 - Execute `python -m hushdesk.dev.headless --mar "<path-to-MAR.pdf>"`
