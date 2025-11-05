@@ -58,6 +58,7 @@ class AuditWorker(QObject):
         self._audit_date: date | None = None
         self._building_master = load_building_master()
         self._unknown_room_debug_warned = False
+        self._page_room_cache: Dict[int, Optional[Tuple[str, str]]] = {}
 
     @Slot()
     def run(self) -> None:
@@ -194,7 +195,7 @@ class AuditWorker(QObject):
 
             row_bands = find_row_bands_for_block(page, block_bbox)
             block_rect = normalize_rect(block_bbox)
-            room_info, room_spans = self._resolve_room_info(text_dict, block_rect)
+            room_info, room_spans = self._resolve_room_info(band.page_index, text_dict, block_rect)
             if room_info:
                 room_bed, hall_name = room_info
                 if hall_name and hall_name.lower() != "unknown":
@@ -412,6 +413,7 @@ class AuditWorker(QObject):
         text_dict: dict,
     ) -> List[Tuple[Tuple[float, float, float, float], str]]:
         candidates: List[Tuple[Tuple[float, float, float, float], str]] = []
+        page_max_dim = max(page.rect.x1, page.rect.y1)
         for block in text_dict.get("blocks", []):
             for line in block.get("lines", []):
                 spans = line.get("spans", [])
@@ -423,23 +425,34 @@ class AuditWorker(QObject):
                 lowered = line_text.lower()
                 if "hold" not in lowered:
                     continue
-                has_symbol = "<" in line_text or ">" in line_text
-                has_words = "less" in lowered or "greater" in lowered
-                if not (has_symbol or has_words):
-                    continue
                 bbox = self._line_bbox(spans)
                 if bbox is None:
                     continue
-                extended_x1 = min(page.rect.width, band.x1 + 160.0)
+                extended_x1 = min(page_max_dim, band.x1 + 160.0)
                 block_bbox = normalize_rect(
                     (
                         max(0.0, min(band.x0 - 120.0, bbox[0] - 12.0)),
                         max(0.0, bbox[1] - 36.0),
                         extended_x1,
-                        min(page.rect.height, bbox[3] + 140.0),
+                        min(page_max_dim, bbox[3] + 140.0),
                     )
                 )
-                candidates.append((block_bbox, line_text))
+                block_spans = list(
+                    self._collect_spans(
+                        text_dict,
+                        block_bbox[0],
+                        block_bbox[2],
+                        block_bbox[1],
+                        block_bbox[3],
+                    )
+                )
+                block_text = " ".join(
+                    str(span.get("text", "")).strip()
+                    for span in block_spans
+                    if span.get("text")
+                ).strip()
+                rule_text = block_text or line_text
+                candidates.append((block_bbox, rule_text))
 
         if not candidates:
             return []
@@ -495,9 +508,16 @@ class AuditWorker(QObject):
 
     def _resolve_room_info(
         self,
+        page_index: int,
         text_dict: dict,
         block_bbox: Tuple[float, float, float, float],
     ) -> Tuple[Optional[Tuple[str, str]], List[Dict[str, object]]]:
+        cached = self._page_room_cache.get(page_index)
+        if cached is None:
+            cached = self._resolve_room_for_page(page_index, text_dict)
+            self._page_room_cache[page_index] = cached
+        if cached:
+            return cached, []
         block_rect = normalize_rect(block_bbox)
         gutter_x1 = block_rect[0]
         gutter_x0 = max(0.0, gutter_x1 - 72.0)
@@ -518,6 +538,29 @@ class AuditWorker(QObject):
         if not spans:
             return (None, [])
         return resolve_room_from_block(spans, self._building_master), spans
+
+    def _resolve_room_for_page(
+        self,
+        page_index: int,
+        text_dict: dict,
+    ) -> Optional[Tuple[str, str]]:
+        header_limit = 220.0
+        spans: List[Dict[str, object]] = []
+        for block in text_dict.get("blocks", []):
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    text = span.get("text")
+                    bbox = span.get("bbox")
+                    if not text or not bbox:
+                        continue
+                    sx0, sy0, sx1, sy1 = normalize_rect(tuple(map(float, bbox)))
+                    if sy1 <= header_limit:
+                        spans.append({"text": text})
+        if spans:
+            page_room = resolve_room_from_block(spans, self._building_master)
+            if page_room:
+                return page_room
+        return None
 
     @staticmethod
     def _collect_spans(
@@ -716,9 +759,9 @@ class AuditWorker(QObject):
         if mark == DueMark.DCD:
             return "X in due cell", None
         if mark == DueMark.CODE_ALLOWED:
-            code_match = re.search(r"\b(\d{1,2})\b", mark_text)
-            if code_match:
-                return None, f"code {code_match.group(1)}"
+            code_value = AuditWorker._parse_allowed_code(mark_text)
+            if code_value is not None:
+                return None, f"code {code_value}"
             return None, "allowed code"
         if mark == DueMark.GIVEN_CHECK:
             return "check mark present", None
@@ -771,13 +814,14 @@ class AuditWorker(QObject):
 
     @staticmethod
     def _parse_allowed_code(mark_text: str) -> Optional[int]:
-        match = re.search(r"\b(\d{1,2})\b", mark_text)
-        if not match:
-            return None
-        try:
-            return int(match.group(1))
-        except ValueError:
-            return None
+        allowed = {"4", "6", "11", "12", "15"}
+        for match in re.findall(r"\b(\d{1,2})\b", mark_text):
+            if match in allowed:
+                try:
+                    return int(match)
+                except ValueError:
+                    continue
+        return None
 
     @staticmethod
     def _format_vital_text(rule_kind: str, bp_value: Optional[str], hr_value: Optional[int]) -> str:
