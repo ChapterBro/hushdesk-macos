@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 from dataclasses import dataclass
-from typing import List
+from typing import Callable, List, Optional
 
 try:  # pragma: no cover - optional dependency when tests run without PyMuPDF
     import fitz  # type: ignore
@@ -25,7 +25,12 @@ class ColumnBand:
     frac1: float
 
 
-def select_audit_columns(doc: "fitz.Document", audit_date: date) -> List[ColumnBand]:
+def select_audit_columns(
+    doc: "fitz.Document",
+    audit_date: date,
+    *,
+    on_page_without_header: Optional[Callable[[int], None]] = None,
+) -> List[ColumnBand]:
     """Return per-page column bands that match ``audit_date``."""
 
     target_day = audit_date.day
@@ -35,6 +40,8 @@ def select_audit_columns(doc: "fitz.Document", audit_date: date) -> List[ColumnB
         page = doc.load_page(page_index)
         centers = find_day_header_centers(page)
         if not centers:
+            if on_page_without_header is not None:
+                on_page_without_header(page_index)
             continue
 
         rect = page.rect

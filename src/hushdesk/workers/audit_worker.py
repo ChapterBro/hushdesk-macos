@@ -25,8 +25,12 @@ logger = logging.getLogger(__name__)
 class AuditWorker(QObject):
     """Worker that simulates page-by-page progress in a background thread."""
 
-    progress_changed = Signal(int, int)
-    audit_date_resolved = Signal(str)
+    started = Signal(str)
+    progress = Signal(int, int)
+    log = Signal(str)
+    saved = Signal(str)
+    warning = Signal(str)
+    audit_date_text = Signal(str)
     no_data_for_date = Signal()
     finished = Signal(Path)
 
@@ -39,62 +43,73 @@ class AuditWorker(QObject):
 
     @Slot()
     def run(self) -> None:
+        self.started.emit(str(self._input_pdf))
+
         audit_date = resolve_audit_date(self._input_pdf)
         self._audit_date = audit_date
         label_value = f"{format_mmddyyyy(audit_date)} — Central"
-        self.audit_date_resolved.emit(label_value)
+        self.audit_date_text.emit(label_value)
 
         column_bands: list[ColumnBand] = []
+        missing_headers: list[int] = []
         if fitz is None:
-            logger.warning("PyMuPDF is not available; skipping column band detection.")
+            message = "PyMuPDF is not available; skipping column band detection."
+            logger.warning(message)
+            self.warning.emit(message)
         elif self._input_pdf.exists():
             try:
                 with fitz.open(self._input_pdf) as doc:
-                    column_bands = select_audit_columns(doc, audit_date)
+                    self.log.emit(f"Opened doc: pages={doc.page_count}")
+                    column_bands = select_audit_columns(
+                        doc,
+                        audit_date,
+                        on_page_without_header=missing_headers.append,
+                    )
             except Exception as exc:  # pragma: no cover - defensive guard
-                logger.warning(
-                    "Unable to compute column bands for %s: %s",
-                    self._input_pdf,
-                    exc,
-                    exc_info=True,
-                )
+                message = f"Unable to compute column bands for {self._input_pdf}: {exc}"
+                logger.warning(message, exc_info=True)
+                self.warning.emit(message)
         else:
-            logger.warning(
-                "Input PDF %s does not exist; skipping column band detection.", self._input_pdf
-            )
+            message = f"Input PDF {self._input_pdf} does not exist; skipping column band detection."
+            logger.warning(message)
+            self.warning.emit(message)
 
         logger.info("Column selection result for %s: %s", audit_date.isoformat(), column_bands)
+        for page_index in missing_headers:
+            self.log.emit(f"No header on page {page_index + 1} (skipped)")
+        for band in column_bands:
+            self.log.emit(
+                "ColumnBand page=%d x0=%.1fpt x1=%.1fpt frac=%.3f–%.3f"
+                % (band.page_index + 1, band.x0, band.x1, band.frac0, band.frac1)
+            )
+
         output_path = self._input_pdf.with_suffix(".txt")
 
         if not column_bands:
             self.no_data_for_date.emit()
-            self._write_placeholder(output_path)
+            warning_message = "No data for selected date"
+            self.warning.emit(warning_message)
+            if self._write_placeholder(output_path):
+                self.saved.emit(str(output_path))
             self.finished.emit(output_path)
             return
 
-        for band in column_bands:
-            logger.info(
-                "Page %d band: x0=%.2fpt x1=%.2fpt width=%.2fpt height=%.2fpt frac=[%.4f, %.4f]",
-                band.page_index + 1,
-                band.x0,
-                band.x1,
-                band.page_width,
-                band.page_height,
-                band.frac0,
-                band.frac1,
-            )
-
         for page in range(1, self._total_pages + 1):
             time.sleep(self._delay)
-            self.progress_changed.emit(page, self._total_pages)
+            self.progress.emit(page, self._total_pages)
 
-        self._write_placeholder(output_path)
+        if self._write_placeholder(output_path):
+            self.saved.emit(str(output_path))
 
         self.finished.emit(output_path)
 
-    def _write_placeholder(self, output_path: Path) -> None:
+    def _write_placeholder(self, output_path: Path) -> bool:
         try:
             output_path.write_text(build_placeholder_output(self._input_pdf))
-        except OSError:
+            return True
+        except OSError as exc:
+            message = f"Unable to save placeholder TXT to {output_path}: {exc}"
+            logger.warning(message)
+            self.warning.emit(message)
             # Surface error handling can be added later; for now we still emit finished
-            pass
+            return False

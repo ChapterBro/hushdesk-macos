@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import Qt, QThread, Signal, Slot
-from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QGuiApplication
+from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QGuiApplication, QTextCursor
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -17,9 +17,9 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QMessageBox,
+    QPlainTextEdit,
     QProgressBar,
     QPushButton,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -135,9 +135,11 @@ class MainWindow(QMainWindow):
         self._selected_pdf: Optional[Path] = None
         self.selected_pdf: Optional[Path] = None
         self._thread: Optional[QThread] = None
+        self._worker: Optional[AuditWorker] = None
         self._audit_completed = False
         self._total_pages = 0
         self._no_data_for_date = False
+        self._active_toasts: list[QMessageBox] = []
 
         self._load_settings()
         self._build_ui()
@@ -230,16 +232,16 @@ class MainWindow(QMainWindow):
         for chip in self._chips.values():
             chips_layout.addWidget(chip)
 
-        # Placeholder text area for future audit results
-        self.results_placeholder = QTextEdit()
-        self.results_placeholder.setReadOnly(True)
-        self.results_placeholder.setPlaceholderText("Audit results will appear here.")
+        self.log_panel = QPlainTextEdit()
+        self.log_panel.setObjectName("LogPanel")
+        self.log_panel.setReadOnly(True)
+        self.log_panel.setPlaceholderText("Audit log will appear here.")
 
         central_layout.addWidget(header_frame)
         central_layout.addWidget(self.status_banner)
         central_layout.addWidget(progress_frame)
         central_layout.addWidget(chips_frame)
-        central_layout.addWidget(self.results_placeholder, stretch=1)
+        central_layout.addWidget(self.log_panel, stretch=1)
 
         self.setCentralWidget(central)
 
@@ -301,37 +303,42 @@ class MainWindow(QMainWindow):
         self._audit_completed = False
         self.copy_action.setEnabled(False)
         self.save_action.setEnabled(False)
-        self.results_placeholder.setPlainText("Ready to audit placeholder MAR.")
+        self.log_panel.setPlainText("Ready to audit placeholder MAR.")
         self._reset_progress()
         self._settings["last_open_dir"] = str(absolute_path.parent)
         self._save_settings()
 
     def _reset_progress(self) -> None:
+        self._total_pages = 0
         self.progress_label.setText("Page 0 of 0")
-        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setRange(0, 1)
         self.progress_bar.setValue(0)
         self.audit_date_label.setText("Audit Date: (pending) — Central")
         self.status_banner.hide()
         self._no_data_for_date = False
         for chip in self._chips.values():
             chip.set_value(0)
+        self.log_panel.moveCursor(QTextCursor.MoveOperation.End)
 
     def _start_audit(self) -> None:
         if not self._selected_pdf:
             return
 
-        logger.debug("UI: run requested; file=%s", self._selected_pdf)
         self.run_button.setEnabled(False)
-        self._reset_progress()
-        self.results_placeholder.setPlainText("Simulating audit…")
+        self.log_panel.setPlainText("Preparing audit…")
 
         self._thread = QThread()
         worker = AuditWorker(input_pdf=self._selected_pdf, total_pages=10, delay=0.25)
         worker.moveToThread(self._thread)
+        self._worker = worker
 
-        worker.audit_date_resolved.connect(self._on_audit_date_resolved)
+        worker.started.connect(self._on_run_started)
+        worker.progress.connect(self._on_progress_changed)
+        worker.log.connect(self._on_worker_log)
+        worker.saved.connect(self._on_worker_saved)
+        worker.warning.connect(self._on_worker_warning)
+        worker.audit_date_text.connect(self._on_audit_date_text)
         worker.no_data_for_date.connect(self._on_no_data_for_date)
-        worker.progress_changed.connect(self._on_progress_changed)
         worker.finished.connect(self._on_audit_finished)
         worker.finished.connect(self._thread.quit)
         worker.finished.connect(worker.deleteLater)
@@ -341,6 +348,12 @@ class MainWindow(QMainWindow):
 
         self._thread.start()
 
+    @Slot(str)
+    def _on_run_started(self, input_path: str) -> None:
+        self.log_panel.clear()
+        self._reset_progress()
+        self._append_log_line(f"Started audit: {input_path}")
+
     @Slot(int, int)
     def _on_progress_changed(self, current: int, total: int) -> None:
         self._total_pages = total
@@ -349,6 +362,21 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(current)
         self._chips["Reviewed"].set_value(current)
 
+    @Slot(str)
+    def _on_worker_log(self, message: str) -> None:
+        self._append_log_line(message)
+
+    @Slot(str)
+    def _on_worker_saved(self, path: str) -> None:
+        self._append_log_line(f"Saved output: {path}")
+        self._show_toast("Saved", f"Saved: {path}")
+
+    @Slot(str)
+    def _on_worker_warning(self, message: str) -> None:
+        self.status_banner.setText(message)
+        self.status_banner.show()
+        self._append_log_line(f"Warning: {message}")
+
     @Slot(Path)
     def _on_audit_finished(self, output_path: Path) -> None:
         self._audit_completed = True
@@ -356,15 +384,12 @@ class MainWindow(QMainWindow):
         self.copy_action.setEnabled(True)
         self.save_action.setEnabled(True)
         if self._no_data_for_date:
-            self.results_placeholder.setPlainText(
-                f"No data for selected date. Placeholder TXT saved to:\n{output_path}"
-            )
+            self._append_log_line(f"No data for selected date. Placeholder TXT saved to: {output_path}")
         else:
-            self.results_placeholder.setPlainText(
-                f"Audit complete. Placeholder TXT saved to:\n{output_path}"
-            )
+            self._append_log_line(f"Audit complete. Placeholder TXT saved to: {output_path}")
         self._settings["last_output_directory"] = str(output_path.parent)
         self._save_settings()
+        self._worker = None
 
     def _copy_placeholder_checklist(self) -> None:
         clipboard = QGuiApplication.clipboard()
@@ -384,21 +409,41 @@ class MainWindow(QMainWindow):
         except OSError as exc:
             QMessageBox.critical(self, "Save Error", f"Unable to save placeholder TXT: {exc}")
             return
-        self.results_placeholder.append(f"\nPlaceholder TXT saved to {output_path}")
+        self._append_log_line(f"Placeholder TXT saved to {output_path}")
         self._settings["last_output_directory"] = str(output_path.parent)
         self._save_settings()
         QMessageBox.information(self, "Save TXT", f"Placeholder TXT saved to:\n{output_path}")
 
     @Slot(str)
-    def _on_audit_date_resolved(self, label_value: str) -> None:
-        self.audit_date_label.setText(label_value)
+    def _on_audit_date_text(self, label_value: str) -> None:
+        self.audit_date_label.setText(f"Audit Date: {label_value}")
 
     @Slot()
     def _on_no_data_for_date(self) -> None:
         self._no_data_for_date = True
         self.status_banner.setText("No data for selected date")
         self.status_banner.show()
-        self.results_placeholder.setPlainText("No data for selected date.")
+        self._append_log_line("No data for selected date.")
+
+    def _append_log_line(self, message: str) -> None:
+        if not message:
+            return
+        self.log_panel.appendPlainText(message)
+        cursor = self.log_panel.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        self.log_panel.setTextCursor(cursor)
+
+    def _show_toast(self, title: str, message: str) -> None:
+        toast = QMessageBox(self)
+        toast.setWindowTitle(title)
+        toast.setText(message)
+        toast.setIcon(QMessageBox.Icon.Information)
+        toast.setStandardButtons(QMessageBox.StandardButton.Ok)
+        toast.setModal(False)
+        toast.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        toast.finished.connect(lambda *_: self._active_toasts.remove(toast) if toast in self._active_toasts else None)
+        self._active_toasts.append(toast)
+        toast.open()
 
     def closeEvent(self, event) -> None:  # noqa: N802
         if self._thread and self._thread.isRunning():
