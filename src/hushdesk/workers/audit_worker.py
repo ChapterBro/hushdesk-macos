@@ -186,6 +186,7 @@ class AuditWorker(QObject):
                 "counts": summary_counts_copy,
                 "records": [deepcopy(payload) for payload in record_payloads],
                 "notes": list(run_notes),
+                "source_pdf": str(self._input_pdf),
             }
         )
         hall = self._resolve_report_hall(hall_counts)
@@ -628,6 +629,24 @@ class AuditWorker(QObject):
                     record_notes_text = "; ".join(record_notes) if record_notes else None
                     dcd_reason = "X in due cell" if decision == "DCD" else None
                     mark_display = self._format_mark_display(mark, mark_text, code_value)
+                    dy_value = None
+                    if cluster_y is not None:
+                        try:
+                            dy_value = float(cluster_y) - float(slot_mid)
+                        except (TypeError, ValueError):
+                            dy_value = None
+                    slot_rect = self._build_slot_rect(state.get("slot_x0"), state.get("slot_x1"), slot_band)
+                    due_rect = slot_rect
+                    source_flags = self._build_source_flags(
+                        state,
+                        fallback_used,
+                        split_band_used,
+                        cluster_assigned,
+                        given_detected,
+                        explicit_mark,
+                    )
+                    source_type = self._resolve_source_type(source_flags)
+                    token_boxes = self._build_token_boxes(state.get("vitals"), due_rect)
                     extras: Dict[str, object] = {
                         "mark_display": mark_display,
                         "mark_type": mark.name,
@@ -637,6 +656,26 @@ class AuditWorker(QObject):
                         "triggered": triggered,
                         "decision_raw": decision,
                         "exception": record_kind in {"HOLD-MISS", "HELD-OK"},
+                        "page_index": band.page_index,
+                        "page_number": band.page_index + 1,
+                        "page_width": float(band.page_width),
+                        "page_height": float(band.page_height),
+                        "band_rect": self._band_rect_tuple(band),
+                        "slot_band": self._slot_band_tuple(slot_band),
+                        "slot_rect": slot_rect,
+                        "due_rect": due_rect,
+                        "token_boxes": token_boxes,
+                        "source_flags": source_flags,
+                        "source_type": source_type,
+                        "slot_label": slot_label,
+                        "slot_name": slot_name,
+                        "cluster_y": cluster_y,
+                        "slot_mid": slot_mid,
+                        "dy": dy_value,
+                        "tolerance": tolerance,
+                        "given_detected": given_detected,
+                        "explicit_mark": explicit_mark,
+                        "notes_list": list(record_notes),
                     }
                     decision_record = DecisionRecord(
                         hall=hall_name,
@@ -1346,15 +1385,19 @@ class AuditWorker(QObject):
         extras_copy = dict(record.extras) if record.extras else {}
         mark_display = str(extras_copy.get("mark_display") or "")
         exception_flag = bool(extras_copy.get("exception"))
+        slot_label = extras_copy.get("slot_label") or record.dose
+        source_type = extras_copy.get("source_type") or "label"
+        page_index = extras_copy.get("page_index")
         search_parts = [
             record.room_bed,
-            record.dose,
+            slot_label,
             record.kind,
             record.rule_text,
             record.vital_text,
             str(record.code) if record.code is not None else "",
             mark_display,
             record.notes or "",
+            source_type,
         ]
         search_blob = " ".join(part for part in search_parts if part).lower()
         return {
@@ -1362,6 +1405,7 @@ class AuditWorker(QObject):
             "kind": record.kind,
             "room_bed": record.room_bed,
             "dose": record.dose,
+            "slot_label": slot_label,
             "rule_text": record.rule_text,
             "vital_text": record.vital_text,
             "code": record.code,
@@ -1369,9 +1413,82 @@ class AuditWorker(QObject):
             "notes": record.notes,
             "mark_display": mark_display,
             "exception": exception_flag,
+            "source_type": source_type,
+            "triggered": bool(extras_copy.get("triggered")),
+            "page_index": int(page_index) if isinstance(page_index, int) else None,
             "extras": extras_copy,
             "search_blob": search_blob,
         }
+
+    @staticmethod
+    def _band_rect_tuple(band: ColumnBand) -> Tuple[float, float, float, float]:
+        return (float(band.x0), 0.0, float(band.x1), float(band.page_height))
+
+    @staticmethod
+    def _slot_band_tuple(bounds: Optional[Tuple[float, float]]) -> Optional[Tuple[float, float]]:
+        if bounds is None:
+            return None
+        top, bottom = bounds
+        if bottom < top:
+            top, bottom = bottom, top
+        return (float(top), float(bottom))
+
+    @staticmethod
+    def _build_slot_rect(slot_x0: Optional[float], slot_x1: Optional[float], slot_band: Optional[Tuple[float, float]]) -> Optional[Tuple[float, float, float, float]]:
+        if slot_x0 is None or slot_x1 is None or slot_band is None:
+            return None
+        top, bottom = slot_band
+        y0 = float(min(top, bottom))
+        y1 = float(max(top, bottom))
+        x0 = float(min(slot_x0, slot_x1))
+        x1 = float(max(slot_x0, slot_x1))
+        if x1 <= x0 or y1 <= y0:
+            return None
+        return (x0, y0, x1, y1)
+
+    @staticmethod
+    def _build_source_flags(
+        state: Dict[str, object],
+        fallback_used: bool,
+        split_band_used: bool,
+        cluster_assigned: bool,
+        given_detected: bool,
+        explicit_mark: bool,
+    ) -> Dict[str, bool]:
+        return {
+            "fallback": bool(state.get("fallback_used")) or fallback_used,
+            "split": bool(state.get("split_used")) or split_band_used,
+            "bp_label_missing": bool(state.get("bp_label_missing")),
+            "hr_label_missing": bool(state.get("hr_label_missing")),
+            "cluster_assigned": bool(cluster_assigned),
+            "given_detected": bool(given_detected),
+            "explicit_mark": bool(explicit_mark),
+        }
+
+    @staticmethod
+    def _resolve_source_type(flags: Dict[str, bool]) -> str:
+        if flags.get("fallback"):
+            return "fallback"
+        if flags.get("split"):
+            return "split"
+        if flags.get("cluster_assigned"):
+            return "cluster"
+        return "label"
+
+    @staticmethod
+    def _build_token_boxes(vitals: Optional[Dict[str, object]], due_rect: Optional[Tuple[float, float, float, float]]) -> Dict[str, List[Tuple[float, float, float, float]]]:
+        boxes: Dict[str, List[Tuple[float, float, float, float]]] = {"bp": [], "hr": [], "mark": []}
+        if due_rect is not None:
+            boxes["mark"].append(tuple(map(float, due_rect)))
+        if not isinstance(vitals, dict):
+            return boxes
+        bp_bbox = vitals.get("bp_bbox")
+        if isinstance(bp_bbox, (list, tuple)) and len(bp_bbox) == 4:
+            boxes["bp"].append(tuple(map(float, bp_bbox)))
+        hr_bbox = vitals.get("hr_bbox")
+        if isinstance(hr_bbox, (list, tuple)) and len(hr_bbox) == 4:
+            boxes["hr"].append(tuple(map(float, hr_bbox)))
+        return boxes
 
     @staticmethod
     def _merge_counts(target: Dict[str, int], delta: Dict[str, int]) -> None:

@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 
 from hushdesk.placeholders import build_placeholder_output
 from hushdesk.workers.audit_worker import AuditWorker
+from .evidence_panel import EvidencePanel
 from .review_explorer import ReviewExplorer
 
 
@@ -150,6 +151,7 @@ class MainWindow(QMainWindow):
         self._latest_counts = {key: 0 for _, key in self.COUNT_KEYS}
         self._last_saved_log: Optional[str] = None
         self._audit_date_pending = True
+        self._current_pdf_path: Optional[Path] = None
         self._records_payload: list[dict] = []
         self._selected_record: Optional[dict] = None
 
@@ -266,24 +268,11 @@ class MainWindow(QMainWindow):
         self.review_explorer = ReviewExplorer()
         self.review_explorer.record_selected.connect(self._on_review_record_selected)
 
-        evidence_placeholder = QFrame()
-        evidence_layout = QVBoxLayout(evidence_placeholder)
-        evidence_layout.setContentsMargins(16, 16, 16, 16)
-        evidence_layout.setSpacing(12)
-        evidence_label = QLabel("Evidence Drawer")
-        evidence_label.setStyleSheet("font-size: 14px; font-weight: 600;")
-        evidence_hint = QLabel("Select a decision to view details.")
-        evidence_hint.setWordWrap(True)
-        evidence_hint.setStyleSheet("color: #6b7280;")
-        evidence_layout.addWidget(evidence_label)
-        evidence_layout.addWidget(evidence_hint)
-        evidence_layout.addStretch(1)
-        self._evidence_placeholder = evidence_placeholder
-        self._evidence_hint_label = evidence_hint
+        self.evidence_panel = EvidencePanel()
 
         top_splitter = QSplitter(Qt.Orientation.Horizontal)
         top_splitter.addWidget(self.review_explorer)
-        top_splitter.addWidget(self._evidence_placeholder)
+        top_splitter.addWidget(self.evidence_panel)
         top_splitter.setStretchFactor(0, 1)
         top_splitter.setStretchFactor(1, 2)
 
@@ -407,10 +396,11 @@ class MainWindow(QMainWindow):
             chip.set_value(0)
         self._records_payload.clear()
         self._selected_record = None
+        self._current_pdf_path = None
         if hasattr(self, "review_explorer"):
             self.review_explorer.clear()
-        if getattr(self, "_evidence_hint_label", None) is not None:
-            self._evidence_hint_label.setText("Select a decision to view details.")
+        if hasattr(self, "evidence_panel"):
+            self.evidence_panel.clear()
         self.log_panel.moveCursor(QTextCursor.MoveOperation.End)
 
     def _start_audit(self) -> None:
@@ -470,6 +460,14 @@ class MainWindow(QMainWindow):
     def _on_summary_payload(self, payload: dict) -> None:
         counts_obj = payload.get("counts") if isinstance(payload, dict) else {}
         records_obj = payload.get("records") if isinstance(payload, dict) else []
+        source_pdf = payload.get("source_pdf") if isinstance(payload, dict) else None
+        if isinstance(source_pdf, str):
+            try:
+                self._current_pdf_path = Path(source_pdf).resolve()
+            except OSError:
+                self._current_pdf_path = Path(source_pdf)
+        else:
+            self._current_pdf_path = None
         counts_dict: dict[str, int] = {}
         if isinstance(counts_obj, dict):
             for key, value in counts_obj.items():
@@ -485,17 +483,17 @@ class MainWindow(QMainWindow):
             self._records_payload = []
         if hasattr(self, "review_explorer"):
             self.review_explorer.update_records(counts=counts_dict, records=self._records_payload)
-        if getattr(self, "_evidence_hint_label", None) is not None:
-            if not self._records_payload:
-                self._evidence_hint_label.setText("No decisions available.")
+        if hasattr(self, "evidence_panel"):
+            if self._records_payload:
+                self.evidence_panel.clear("Select a decision to view details.")
             else:
-                self._evidence_hint_label.setText("Select a decision to view details.")
+                self.evidence_panel.clear("No decisions available.")
 
     @Slot(dict)
     def _on_review_record_selected(self, payload: dict) -> None:
         self._selected_record = dict(payload)
-        if getattr(self, "_evidence_hint_label", None) is not None:
-            self._evidence_hint_label.setText(self._format_record_hint(payload))
+        if hasattr(self, "evidence_panel"):
+            self.evidence_panel.set_record(self._selected_record, self._current_pdf_path)
 
     @Slot(str)
     def _on_worker_log(self, message: str) -> None:
@@ -573,21 +571,6 @@ class MainWindow(QMainWindow):
         self._audit_date_pending = True
         self.audit_date_label.setText("Audit Date: (pending) — Central")
         self._apply_header_styles()
-
-    @staticmethod
-    def _format_record_hint(payload: dict) -> str:
-        kind = payload.get("kind") or "-"
-        room = payload.get("room_bed") or "Unknown"
-        dose = payload.get("dose") or "-"
-        rule_text = payload.get("rule_text") or ""
-        vital_text = payload.get("vital_text") or ""
-        mark_display = payload.get("mark_display") or ""
-        details = [segment for segment in (rule_text, vital_text, mark_display) if segment]
-        detail_line = " · ".join(details)
-        summary = f"{kind} — {room} ({dose})"
-        if detail_line:
-            return f"{summary}\n{detail_line}"
-        return summary
 
     def _append_log_line(self, message: str) -> None:
         if not message:

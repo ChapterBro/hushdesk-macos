@@ -164,7 +164,7 @@ class ReviewExplorer(QWidget):
     @staticmethod
     def _format_row(record: dict) -> str:
         room = record.get("room_bed") or "Unknown"
-        dose = record.get("dose") or "-"
+        dose = record.get("slot_label") or record.get("dose") or "-"
         rule_text = record.get("rule_text") or ""
         vital_text = record.get("vital_text") or ""
         mark_display = record.get("mark_display") or ""
