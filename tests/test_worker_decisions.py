@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from collections import Counter
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -47,6 +48,11 @@ class AuditWorkerDecisionTests(unittest.TestCase):
             {"bp": None, "hr": None},
         ]
 
+        records = []
+        hall_counts = Counter()
+        run_notes: list[str] = []
+        notes_seen: set[str] = set()
+
         with patch.object(
             AuditWorker,
             "_find_block_candidates",
@@ -69,7 +75,16 @@ class AuditWorkerDecisionTests(unittest.TestCase):
             "_resolve_room_info",
             return_value=(("101-1", "Mercer"), [{"text": "101-1"}]),
         ):
-            counts = worker._evaluate_column_band(DummyPage(), band)
+            counts = worker._evaluate_column_band(
+                DummyPage(),
+                band,
+                "11/03/2025",
+                "Administration Record Report 2025-11-04.pdf",
+                records,
+                hall_counts,
+                run_notes,
+                notes_seen,
+            )
 
         self.assertEqual(vitals_mock.call_count, 2)
         self.assertEqual(counts["reviewed"], 1)
@@ -77,6 +92,12 @@ class AuditWorkerDecisionTests(unittest.TestCase):
         self.assertEqual(counts["hold_miss"], 0)
         self.assertEqual(counts["compliant"], 0)
         self.assertEqual(counts["dcd"], 0)
+        self.assertEqual(len(records), 1)
+        decision = records[0]
+        self.assertEqual(decision.kind, "HELD-OK")
+        self.assertEqual(decision.room_bed, "101-1")
+        self.assertEqual(decision.dose, "AM")
+        self.assertEqual(decision.code, 15)
 
     def test_format_decision_log_for_allowed_code(self) -> None:
         worker = AuditWorker(Path("Administration Record Report 2025-11-04.pdf"))

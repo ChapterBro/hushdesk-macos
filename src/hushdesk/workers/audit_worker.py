@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 import time
+from collections import Counter
 from datetime import date
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -25,7 +26,8 @@ from hushdesk.pdf.duecell import DueMark, detect_due_mark
 from hushdesk.pdf.geometry import normalize_rect
 from hushdesk.pdf.rows import find_row_bands_for_block
 from hushdesk.pdf.vitals import extract_vitals_in_band
-from hushdesk.placeholders import build_placeholder_output
+from hushdesk.report.model import DecisionRecord
+from hushdesk.report.txt_writer import write_report
 
 
 logger = logging.getLogger(__name__)
@@ -64,11 +66,17 @@ class AuditWorker(QObject):
         audit_date = resolve_audit_date(self._input_pdf)
         self._audit_date = audit_date
         label_value = f"{format_mmddyyyy(audit_date)} — Central"
+        audit_date_text = format_mmddyyyy(audit_date)
+        label_value = f"{audit_date_text} — Central"
         self.audit_date_text.emit(label_value)
 
         column_bands: List[ColumnBand] = []
         missing_headers: List[int] = []
         counters = self._empty_summary()
+        records: List[DecisionRecord] = []
+        hall_counts: Counter[str] = Counter()
+        run_notes: List[str] = []
+        notes_seen: set[str] = set()
         doc_pages = 0
         no_data_emitted = False
         if fitz is None:
@@ -100,7 +108,16 @@ class AuditWorker(QObject):
                         for index, band in enumerate(column_bands, start=1):
                             time.sleep(self._delay)
                             page = doc.load_page(band.page_index)
-                            band_counts = self._evaluate_column_band(page, band)
+                            band_counts = self._evaluate_column_band(
+                                page,
+                                band,
+                                audit_date_text,
+                                self._input_pdf.name,
+                                records,
+                                hall_counts,
+                                run_notes,
+                                notes_seen,
+                            )
                             self._merge_counts(counters, band_counts)
                             self.progress.emit(index, total_steps)
                     else:
@@ -117,34 +134,52 @@ class AuditWorker(QObject):
             logger.warning(message)
             self.warning.emit(message)
 
-        output_path = self._input_pdf.with_suffix(".txt")
-
         logger.info("Column selection result for %s: %s", audit_date.isoformat(), column_bands)
 
         if not column_bands and not no_data_emitted:
             self.no_data_for_date.emit()
             no_data_emitted = True
+            self._add_note(run_notes, notes_seen, "No data for selected date")
 
         self.summary_counts.emit(counters)
-        if self._write_placeholder(output_path):
+        hall = self._resolve_report_hall(hall_counts)
+        if hall == "UNKNOWN":
+            self._add_note(run_notes, notes_seen, "Hall could not be resolved from room-bed tokens")
+        elif hall == "MIXED":
+            self._add_note(run_notes, notes_seen, "Rooms span multiple halls (mixed)")
+
+        output_path = self._build_output_path(audit_date, hall)
+        try:
+            write_report(
+                records,
+                counters,
+                audit_date_text,
+                hall,
+                self._input_pdf.name,
+                output_path,
+                run_notes,
+            )
             self.saved.emit(str(output_path))
+        except OSError as exc:
+            message = f"Unable to save TXT to {output_path}: {exc}"
+            logger.warning(message)
+            self.warning.emit(message)
 
         self.finished.emit(output_path)
 
-    def _write_placeholder(self, output_path: Path) -> bool:
-        try:
-            output_path.write_text(build_placeholder_output(self._input_pdf))
-            return True
-        except OSError as exc:
-            message = f"Unable to save placeholder TXT to {output_path}: {exc}"
-            logger.warning(message)
-            self.warning.emit(message)
-            # Surface error handling can be added later; for now we still emit finished
-            return False
-
     # --- Band evaluation ----------------------------------------------------
 
-    def _evaluate_column_band(self, page: "fitz.Page", band: ColumnBand) -> Dict[str, int]:
+    def _evaluate_column_band(
+        self,
+        page: "fitz.Page",
+        band: ColumnBand,
+        audit_date_text: str,
+        source_basename: str,
+        records: List[DecisionRecord],
+        hall_counts: Counter[str],
+        run_notes: List[str],
+        notes_seen: set[str],
+    ) -> Dict[str, int]:
         counts = self._empty_summary()
         try:
             text_dict = page.get_text("dict")
@@ -162,12 +197,19 @@ class AuditWorker(QObject):
             room_info, room_spans = self._resolve_room_info(text_dict, block_rect)
             if room_info:
                 room_bed, hall_name = room_info
+                if hall_name and hall_name.lower() != "unknown":
+                    hall_counts[hall_name] += 1
             else:
                 room_bed = "Unknown"
                 hall_name = "Unknown"
                 self.log.emit(
                     "WARN — room-bed unresolved — "
                     f"page {band.page_index + 1} y={block_rect[1]:.1f}-{block_rect[3]:.1f}"
+                )
+                self._add_note(
+                    run_notes,
+                    notes_seen,
+                    f"Room not resolved for block on page {band.page_index + 1}",
                 )
                 if DEBUG_DECISION_DETAILS and not self._unknown_room_debug_warned:
                     snippet = self._summarize_room_spans(room_spans)
@@ -265,6 +307,12 @@ class AuditWorker(QObject):
                 if mark == DueMark.NONE:
                     self.log.emit(f"WARN — missing due mark — {room_bed} ({slot_label})")
 
+                record_notes: List[str] = []
+                if split_band_used:
+                    record_notes.append("split")
+                elif fallback_used:
+                    record_notes.append("fallback")
+
                 dcd_counted = False
                 for rule in rule_specs:
                     vital_value: Optional[int]
@@ -274,12 +322,26 @@ class AuditWorker(QObject):
                             self.log.emit(
                                 f"WARN — SBP missing — {room_bed} ({slot_label})"
                             )
+                            self._add_note(
+                                run_notes,
+                                notes_seen,
+                                f"Vitals missing (unexpected) — {room_bed} ({slot_label})",
+                            )
+                            if "vitals missing" not in record_notes:
+                                record_notes.append("vitals missing")
                     else:
                         vital_value = slot_hr
                         if vital_value is None:
                             self.log.emit(
                                 f"WARN — HR missing — {room_bed} ({slot_label})"
                             )
+                            self._add_note(
+                                run_notes,
+                                notes_seen,
+                                f"Vitals missing (unexpected) — {room_bed} ({slot_label})",
+                            )
+                            if "vitals missing" not in record_notes:
+                                record_notes.append("vitals missing")
 
                     decision = decide_for_dose(rule.kind, rule.threshold, vital_value, mark)
                     skip_message = False
@@ -299,6 +361,11 @@ class AuditWorker(QObject):
                         self.log.emit(
                             f"WARN — allowed code without trigger — {room_bed} ({slot_label})"
                         )
+                        self._add_note(
+                            run_notes,
+                            notes_seen,
+                            f"Allowed code without trigger — {room_bed} ({slot_label})",
+                        )
 
                     if not skip_message:
                         message = self._format_decision_log(
@@ -312,6 +379,29 @@ class AuditWorker(QObject):
                             mark_text,
                         )
                         self.log.emit(message)
+
+                    if decision == "NONE":
+                        continue
+
+                    record_kind = self._decision_label(decision)
+                    record_code = self._parse_allowed_code(mark_text) if mark == DueMark.CODE_ALLOWED else None
+                    record_vital = self._format_vital_text(rule.kind, slot_bp, slot_hr)
+                    record_notes_text = "; ".join(record_notes) if record_notes else None
+                    dcd_reason = "X in due cell" if decision == "DCD" else None
+                    decision_record = DecisionRecord(
+                        hall=hall_name,
+                        date_mmddyyyy=audit_date_text,
+                        source_basename=source_basename,
+                        room_bed=room_bed,
+                        dose=slot_name,
+                        kind=record_kind,
+                        rule_text=rule.description,
+                        vital_text=record_vital,
+                        code=record_code,
+                        dcd_reason=dcd_reason,
+                        notes=record_notes_text,
+                    )
+                    records.append(decision_record)
 
         return counts
 
@@ -650,6 +740,50 @@ class AuditWorker(QObject):
             "compliant": 0,
             "dcd": 0,
         }
+
+    def _build_output_path(self, audit_date: date, hall: str) -> Path:
+        stamp = format_mmddyyyy(audit_date).replace("/", "-")
+        hall_upper = hall.upper()
+        filename = f"{self._input_pdf.stem}__{stamp}__{hall_upper}.txt"
+        return self._input_pdf.with_name(filename)
+
+    @staticmethod
+    def _resolve_report_hall(hall_counts: Counter[str]) -> str:
+        filtered = Counter(
+            {hall: count for hall, count in hall_counts.items() if hall and hall.lower() != "unknown"}
+        )
+        if not filtered:
+            return "UNKNOWN"
+        most_common = filtered.most_common()
+        top_hall, top_count = most_common[0]
+        tied = [hall for hall, count in most_common if count == top_count]
+        if len(tied) > 1:
+            return "MIXED"
+        return top_hall
+
+    @staticmethod
+    def _add_note(notes: List[str], seen: set[str], message: str) -> None:
+        text = message.strip()
+        if not text or text in seen:
+            return
+        notes.append(text)
+        seen.add(text)
+
+    @staticmethod
+    def _parse_allowed_code(mark_text: str) -> Optional[int]:
+        match = re.search(r"\b(\d{1,2})\b", mark_text)
+        if not match:
+            return None
+        try:
+            return int(match.group(1))
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _format_vital_text(rule_kind: str, bp_value: Optional[str], hr_value: Optional[int]) -> str:
+        if rule_kind.startswith("SBP"):
+            return f"BP {bp_value}" if bp_value else "BP missing"
+        return f"HR {hr_value}" if hr_value is not None else "HR missing"
 
     @staticmethod
     def _merge_counts(target: Dict[str, int], delta: Dict[str, int]) -> None:

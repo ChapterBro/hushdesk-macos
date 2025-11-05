@@ -65,8 +65,9 @@ class AuditWorkerSmokeTests(unittest.TestCase):
                 "Expected column clamp log entry.",
             )
 
-            output_path = pdf_path.with_suffix(".txt")
-            self.assertTrue(output_path.exists(), "Placeholder TXT should be created.")
+            expected_name = "Administration Record Report 2025-11-04__11-03-2025__UNKNOWN.txt"
+            output_path = pdf_path.with_name(expected_name)
+            self.assertTrue(output_path.exists(), "TXT report should be created.")
 
 
 if __name__ == "__main__":
