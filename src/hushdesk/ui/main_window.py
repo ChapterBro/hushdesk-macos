@@ -410,9 +410,9 @@ class MainWindow(QMainWindow):
         self.copy_action.setEnabled(True)
         self.save_action.setEnabled(True)
         if self._no_data_for_date:
-            self._append_log_line(f"No data for selected date. Placeholder TXT saved to: {output_path}")
+            self._append_log_line("No data for selected date.")
         else:
-            self._append_log_line(f"Audit complete. Placeholder TXT saved to: {output_path}")
+            self._append_log_line("Audit complete.")
         self._settings["last_output_directory"] = str(output_path.parent)
         self._save_settings()
         self._worker = None
