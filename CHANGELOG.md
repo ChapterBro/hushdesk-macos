@@ -2,6 +2,7 @@
 
 ## Phase 6 – Release Tooling
 - chore(build): add macOS build/sign/notarize/release scripts and set package `__version__`.
+- docs(readme): document Quickstart, headless run, build/sign/notarize/release workflow.
 
 ## Phase 4 – Vitals & Due-Cell Precedence
 - feat(rows): semantic row-band detection for BP/HR and AM/PM lanes inside each med block.
