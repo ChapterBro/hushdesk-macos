@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- accel: fix center dedup, maturin develop OK; parity with Python confirmed.
+
 ## Phase 8 – Optional Accelerators
 - feat(accel): optional pyo3 crate with Python fallbacks for y-cluster, BP stitch, and band selection wiring in vitals/layout.
 - test(accel): parity coverage for accelerators and Rust toggle smoke on audit worker fixtures.

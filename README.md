@@ -15,7 +15,7 @@ Current version: `0.1.0`
 
 ## Optional Performance (Rust Accelerator)
 - Install Rust toolchain: `brew install rustup && rustup-init -y`
-- Build the native wheel for local development: `pip install maturin && maturin develop`
+- Build the native wheel for local development: `python -m pip install -U pip maturin` then `maturin develop`
 - Opt-in at runtime: `export HUSHDESK_USE_RUST=1`
 - When the native module is missing or disabled, HushDesk automatically falls back to the pure-Python path.
 
