@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
 from typing import Optional
 
@@ -26,9 +25,6 @@ from PySide6.QtWidgets import (
 
 from hushdesk.placeholders import build_placeholder_output
 from hushdesk.workers.audit_worker import AuditWorker
-
-
-logger = logging.getLogger(__name__)
 
 
 class _Chip(QFrame):

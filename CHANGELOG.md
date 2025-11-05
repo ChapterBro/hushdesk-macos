@@ -2,6 +2,9 @@
 
 ## Phase 3 – Semantic Anchors
 - feat(layout): semantic day-header detection + per-page column bands in PDF user-space points.
+- feat(ui): bind Source and pending Audit Date headers, add log panel with save toasts.
+- feat(worker): started/progress/log/saved/warning signals with column band summaries per page.
+- refactor(app): drop deprecated Qt6 HiDPI attributes from bootstrap.
 
 ## Phase 2 – Date Logic Clamp Stub
 - Resolved filename-first audit dates (Central previous day) and surfaced the formatted header value.
