@@ -14,6 +14,7 @@
 - fix(rows): normalized label detection, regex-tolerant anchors, and midpoint row-band construction with minimum height fallback.
 - fix(vitals|due): clip rectangles use normalized coordinates to avoid empty gathers.
 - test(rows|geometry): regression cases for inverted spans, block bounds, and row-band coverage.
+- fix(worker): decision loop consumes normalized row bands, counts reviewed per due-cell, and covers Held-OK code + trigger smoke test.
 
 ## Phase 3 – Semantic Anchors
 - feat(layout): semantic day-header detection + per-page column bands in PDF user-space points.

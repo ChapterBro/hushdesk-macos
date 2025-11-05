@@ -21,6 +21,7 @@ from hushdesk.engine.decide import decide_for_dose
 from hushdesk.pdf.columns import ColumnBand, select_audit_columns
 from hushdesk.pdf.dates import format_mmddyyyy, resolve_audit_date
 from hushdesk.pdf.duecell import DueMark, detect_due_mark
+from hushdesk.pdf.geometry import normalize_rect
 from hushdesk.pdf.rows import find_row_bands_for_block
 from hushdesk.pdf.vitals import extract_vitals_in_band
 from hushdesk.placeholders import build_placeholder_output
@@ -198,6 +199,7 @@ class AuditWorker(QObject):
 
                 mark = detect_due_mark(page, band.x0, band.x1, *slot_band)
                 mark_text = self._collect_text(page, band.x0, band.x1, *slot_band)
+                counts["reviewed"] += 1
                 if mark == DueMark.NONE:
                     self.log.emit(f"WARN — missing due mark — {room_bed} ({slot_name})")
 
@@ -216,7 +218,6 @@ class AuditWorker(QObject):
                                 f"WARN — HR missing — {room_bed} ({slot_name})"
                             )
 
-                    counts["reviewed"] += 1
                     decision = decide_for_dose(rule.kind, rule.threshold, vital_value, mark)
                     if decision == "HELD_OK":
                         counts["held_ok"] += 1
@@ -268,11 +269,13 @@ class AuditWorker(QObject):
                 bbox = self._line_bbox(spans)
                 if bbox is None:
                     continue
-                block_bbox = (
-                    max(0.0, min(band.x0 - 120.0, bbox[0] - 12.0)),
-                    max(0.0, bbox[1] - 36.0),
-                    band.x1,
-                    min(page.rect.height, bbox[3] + 140.0),
+                block_bbox = normalize_rect(
+                    (
+                        max(0.0, min(band.x0 - 120.0, bbox[0] - 12.0)),
+                        max(0.0, bbox[1] - 36.0),
+                        band.x1,
+                        min(page.rect.height, bbox[3] + 140.0),
+                    )
                 )
                 candidates.append((block_bbox, line_text))
 
@@ -333,9 +336,14 @@ class AuditWorker(QObject):
     ) -> Optional[Tuple[float, float]]:
         if band is None:
             return None
+        rect = normalize_rect(block_bbox)
+        block_top = rect[1]
+        block_bottom = rect[3]
         top, bottom = band
-        expanded_top = max(block_bbox[1], top - ROW_PADDING)
-        expanded_bottom = min(block_bbox[3], bottom + ROW_PADDING)
+        if bottom < top:
+            top, bottom = bottom, top
+        expanded_top = max(block_top, top - ROW_PADDING)
+        expanded_bottom = min(block_bottom, bottom + ROW_PADDING)
         if expanded_bottom <= expanded_top:
             return None
         return expanded_top, expanded_bottom
@@ -355,11 +363,12 @@ class AuditWorker(QObject):
     def _find_room_bed_label(
         self, page: "fitz.Page", block_bbox: Tuple[float, float, float, float]
     ) -> Optional[str]:
+        block_x0, block_y0, block_x1, block_y1 = normalize_rect(block_bbox)
         search_rect = fitz.Rect(
-            max(0.0, block_bbox[0] - 160.0),
-            block_bbox[1],
-            block_bbox[0],
-            block_bbox[3],
+            max(0.0, block_x0 - 160.0),
+            block_y0,
+            block_x0,
+            block_y1,
         )
         try:
             text = page.get_text("text", clip=search_rect)
@@ -371,7 +380,8 @@ class AuditWorker(QObject):
         return None
 
     def _collect_text(self, page: "fitz.Page", x0: float, x1: float, y0: float, y1: float) -> str:
-        rect = fitz.Rect(x0, y0, x1, y1)
+        nx0, ny0, nx1, ny1 = normalize_rect((x0, y0, x1, y1))
+        rect = fitz.Rect(nx0, ny0, nx1, ny1)
         try:
             return page.get_text("text", clip=rect).strip()
         except RuntimeError:
