@@ -1,0 +1,13 @@
+[package]
+name = "hushdesk_accel"
+version = "0.1.0"
+edition = "2021"
+authors = ["HushDesk"]
+description = "Optional Rust accelerators for HushDesk"
+
+[lib]
+name = "hushdesk_accel"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.21", features = ["extension-module"] }

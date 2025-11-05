@@ -1,5 +1,8 @@
 # Changelog
 
+## Phase 8 – Optional Accelerators
+- feat(accel): optional pyo3 crate with Python fallbacks for y-cluster, BP stitch, and band selection wiring in vitals/layout.
+
 ## Phase 7 – End-User Trust UI
 - feat(ui): Review Explorer panel with grouped decisions, search, and exception filters.
 - feat(ui): Evidence drawer shows rule context with PDF previews and per-slot source flags.

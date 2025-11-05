@@ -11,6 +11,8 @@ try:  # pragma: no cover - PyMuPDF optional when tests run
 except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
+from hushdesk.accel import stitch_bp, y_cluster
+
 from .geometry import normalize_rect
 
 BP_RE = re.compile(r"(?i)\b(?:bp\s*)?(\d{2,3})\s*/\s*(\d{2,3})\b")
@@ -436,35 +438,31 @@ def _extract_stitched_bp(
     if not match:
         return []
 
-    try:
-        sbp = int(match.group(1))
-    except (ValueError, TypeError):
-        return []
-
     stitched: List[Tuple[float, str]] = []
     for other in span_list:
         if other is span:
             continue
         if not DIGITS_ONLY_RE.fullmatch(other.normalized):
             continue
-        try:
-            dbp = int(other.normalized)
-        except ValueError:
-            continue
 
         center_y = (span.center_y + other.center_y) / 2.0
+        candidate = stitch_bp([span.normalized, other.normalized])
+        if not candidate:
+            continue
+        sbp, dbp = _split_bp(candidate)
+        if sbp is None or dbp is None:
+            continue
         if not _bp_plausible(sbp, dbp, center_y, header_cutoff):
             continue
         if not _spans_aligned(span, other):
             continue
 
-        value = f"{sbp}/{dbp}"
-        if _reject_header_date(value, sbp, dbp, center_y, header_cutoff):
+        if _reject_header_date(candidate, sbp, dbp, center_y, header_cutoff):
             continue
-        if value in seen:
+        if candidate in seen:
             continue
-        stitched.append((center_y, value))
-        seen.add(value)
+        stitched.append((center_y, candidate))
+        seen.add(candidate)
 
     return stitched
 
@@ -571,15 +569,36 @@ def extract_vitals_in_band_fallback(
         return []
 
     cluster_map: Dict[int, List[Dict[str, object]]] = {}
+    points: List[float] = []
     for span in spans:
-        bin_index = int(round(float(span["y_mid"]) / _FALLBACK_BIN_SIZE))
+        try:
+            y_mid = float(span["y_mid"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        bin_index = int(round(y_mid / _FALLBACK_BIN_SIZE))
         cluster_map.setdefault(bin_index, []).append(span)
+        points.append(y_mid)
 
+    cluster_centers = y_cluster(points, int(round(_FALLBACK_BIN_SIZE)))
+    used_bins: set[int] = set()
     clusters: List[Tuple[float, List[Dict[str, object]]]] = []
-    for items in cluster_map.values():
+    for center in cluster_centers:
+        bin_index = int(round(center / _FALLBACK_BIN_SIZE))
+        if bin_index in used_bins:
+            continue
+        items = cluster_map.get(bin_index)
         if not items:
             continue
-        center = sum(float(item["y_mid"]) for item in items) / len(items)
+        clusters.append((center, items))
+        used_bins.add(bin_index)
+
+    for bin_index, items in cluster_map.items():
+        if bin_index in used_bins or not items:
+            continue
+        try:
+            center = sum(float(item["y_mid"]) for item in items) / len(items)
+        except (KeyError, TypeError, ValueError, ZeroDivisionError):
+            continue
         clusters.append((center, items))
 
     clusters.sort(key=lambda item: item[0])
