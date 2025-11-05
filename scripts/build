@@ -65,6 +65,10 @@ if [ ! -f "${DIST_DIR}/HushDesk.dmg" ]; then
   exit 1
 fi
 
+if [ "${DESKTOP_ALIAS:-0}" = "1" ]; then
+  "${REPO_ROOT}/scripts/desktop_alias"
+fi
+
 echo "Build artifacts ready:"
 echo "  App: ${DIST_DIR}/HushDesk.app"
 echo "  DMG: ${DIST_DIR}/HushDesk.dmg"
