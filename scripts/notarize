@@ -4,22 +4,24 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DMG_PATH="${REPO_ROOT}/dist/HushDesk.dmg"
-
+NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 PASSWORD_SOURCE="${APPLE_SPECIFIC_PASSWORD:-${APP_SPECIFIC_PASSWORD:-}}"
 
-if [ -z "${APPLE_ID:-}" ]; then
-  echo "error: APPLE_ID environment variable is required" >&2
-  exit 1
-fi
+if [ -z "${NOTARY_PROFILE}" ]; then
+  if [ -z "${APPLE_ID:-}" ]; then
+    echo "error: set APPLE_ID or NOTARY_PROFILE for notarization" >&2
+    exit 1
+  fi
 
-if [ -z "${TEAM_ID:-}" ]; then
-  echo "error: TEAM_ID environment variable is required" >&2
-  exit 1
-fi
+  if [ -z "${TEAM_ID:-}" ]; then
+    echo "error: TEAM_ID environment variable is required" >&2
+    exit 1
+  fi
 
-if [ -z "${PASSWORD_SOURCE}" ]; then
-  echo "error: set APP_SPECIFIC_PASSWORD (or APPLE_SPECIFIC_PASSWORD) environment variable" >&2
-  exit 1
+  if [ -z "${PASSWORD_SOURCE}" ]; then
+    echo "error: set APP_SPECIFIC_PASSWORD (or APPLE_SPECIFIC_PASSWORD) environment variable" >&2
+    exit 1
+  fi
 fi
 
 if [ ! -f "${DMG_PATH}" ]; then
@@ -29,11 +31,17 @@ fi
 
 cd "${REPO_ROOT}"
 
-xcrun notarytool submit "${DMG_PATH}" \
-  --apple-id "${APPLE_ID}" \
-  --team-id "${TEAM_ID}" \
-  --password "${PASSWORD_SOURCE}" \
-  --wait
+if [ -n "${NOTARY_PROFILE}" ]; then
+  xcrun notarytool submit "${DMG_PATH}" \
+    --keychain-profile "${NOTARY_PROFILE}" \
+    --wait
+else
+  xcrun notarytool submit "${DMG_PATH}" \
+    --apple-id "${APPLE_ID}" \
+    --team-id "${TEAM_ID}" \
+    --password "${PASSWORD_SOURCE}" \
+    --wait
+fi
 
 xcrun stapler staple "${DMG_PATH}"
 

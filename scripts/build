@@ -33,7 +33,7 @@ mkdir -p "${DIST_DIR}"
   --add-data "hushdesk/config:config" \
   --collect-all PySide6 \
   --icon "${ICON_PATH}" \
-  --osx-bundle-identifier "com.chapterbro.hushdesk" \
+  --osx-bundle-identifier "com.nottingham.hushdesk" \
   src/hushdesk/app.py
 
 if [ ! -d "${DIST_DIR}/HushDesk.app" ]; then
@@ -52,9 +52,21 @@ set_plist_value() {
   "${PLIST_BUDDY}" -c "Add :${key} string ${value}" "${PLIST}"
 }
 
+set_plist_bool() {
+  local key="$1"
+  local value="$2"
+  if "${PLIST_BUDDY}" -c "Set :${key} ${value}" "${PLIST}" 2>/dev/null; then
+    return 0
+  fi
+  "${PLIST_BUDDY}" -c "Add :${key} bool ${value}" "${PLIST}"
+}
+
 set_plist_value "CFBundleIconFile" "hushdesk"
 set_plist_value "CFBundleName" "HushDesk"
 set_plist_value "CFBundleDisplayName" "HushDesk"
+set_plist_value "CFBundleIdentifier" "com.nottingham.hushdesk"
+set_plist_bool "NSHighResolutionCapable" true
+set_plist_value "LSApplicationCategoryType" "public.app-category.productivity"
 
 hdiutil create -volname "HushDesk" \
   -srcfolder "${DIST_DIR}/HushDesk.app" \
