@@ -9,7 +9,12 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from hushdesk.pdf.columns import select_audit_column
+try:  # pragma: no cover - optional dependency when tests run without PyMuPDF
+    import fitz  # type: ignore
+except ImportError:  # pragma: no cover
+    fitz = None  # type: ignore
+
+from hushdesk.pdf.columns import ColumnBand, select_audit_columns
 from hushdesk.pdf.dates import format_mmddyyyy, resolve_audit_date
 from hushdesk.placeholders import build_placeholder_output
 
@@ -39,15 +44,45 @@ class AuditWorker(QObject):
         label_value = f"{format_mmddyyyy(audit_date)} — Central"
         self.audit_date_resolved.emit(label_value)
 
-        column_bounds = select_audit_column(audit_date)
-        logger.info("Column selection result for %s: %s", audit_date.isoformat(), column_bounds)
+        column_bands: list[ColumnBand] = []
+        if fitz is None:
+            logger.warning("PyMuPDF is not available; skipping column band detection.")
+        elif self._input_pdf.exists():
+            try:
+                with fitz.open(self._input_pdf) as doc:
+                    column_bands = select_audit_columns(doc, audit_date)
+            except Exception as exc:  # pragma: no cover - defensive guard
+                logger.warning(
+                    "Unable to compute column bands for %s: %s",
+                    self._input_pdf,
+                    exc,
+                    exc_info=True,
+                )
+        else:
+            logger.warning(
+                "Input PDF %s does not exist; skipping column band detection.", self._input_pdf
+            )
+
+        logger.info("Column selection result for %s: %s", audit_date.isoformat(), column_bands)
         output_path = self._input_pdf.with_suffix(".txt")
 
-        if column_bounds is None:
+        if not column_bands:
             self.no_data_for_date.emit()
             self._write_placeholder(output_path)
             self.finished.emit(output_path)
             return
+
+        for band in column_bands:
+            logger.info(
+                "Page %d band: x0=%.2fpt x1=%.2fpt width=%.2fpt height=%.2fpt frac=[%.4f, %.4f]",
+                band.page_index + 1,
+                band.x0,
+                band.x1,
+                band.page_width,
+                band.page_height,
+                band.frac0,
+                band.frac1,
+            )
 
         for page in range(1, self._total_pages + 1):
             time.sleep(self._delay)
