@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+set -E
+
+trap 'status=$?; cmd=${BASH_COMMAND:-}; if [ "${status}" -ne 0 ]; then echo "Build failed: ${cmd}" >&2; fi' ERR
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="${REPO_ROOT}/dist"
@@ -40,6 +43,8 @@ if [ ! -d "${DIST_DIR}/HushDesk.app" ]; then
   echo "error: dist/HushDesk.app was not generated" >&2
   exit 1
 fi
+
+"${REPO_ROOT}/scripts/stamp_version"
 
 PLIST="${DIST_DIR}/HushDesk.app/Contents/Info.plist"
 
