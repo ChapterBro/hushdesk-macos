@@ -5,30 +5,19 @@ from __future__ import annotations
 import json
 import re
 from functools import lru_cache
-from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
+
+from hushdesk._paths import resource_path
 
 ROOM_BED_PATTERN = re.compile(r"\b([1-4]\d{2})\s*[-/ ]?\s*([12])\b")
 ROOM_ONLY_PATTERN = re.compile(r"\b([1-4]\d{2})\b")
-DEFAULT_MASTER_PATH = "hushdesk/config/building_master_mac.json"
-
-
-def _project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
-
-
-def _resolve_path(path: str | Path) -> Path:
-    candidate = Path(path)
-    if candidate.is_absolute():
-        return candidate
-    resolved = _project_root() / candidate
-    return resolved
+DEFAULT_MASTER_PATH = "config/building_master_mac.json"
 
 
 @lru_cache(maxsize=4)
 def load_building_master(path: str = DEFAULT_MASTER_PATH) -> Dict[str, object]:
     """Load and cache the building master JSON."""
-    resolved = _resolve_path(path)
+    resolved = resource_path(path)
     with resolved.open("r", encoding="utf-8") as handle:
         payload = json.load(handle)
 

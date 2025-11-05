@@ -697,7 +697,12 @@ class MainWindow(QMainWindow):
         toast.open()
 
     def closeEvent(self, event) -> None:  # noqa: N802
-        if self._thread and self._thread.isRunning():
-            self._thread.quit()
-            self._thread.wait(1000)
+        thread = self._thread
+        if thread is not None:
+            try:
+                if thread.isRunning():
+                    thread.quit()
+                    thread.wait(1000)
+            except RuntimeError:
+                pass
         super().closeEvent(event)

@@ -13,3 +13,11 @@
 ## CLI launch failure: missing hushdesk.ui.evidence_panel
 - Cause: SyntaxError prevented `evidence_panel` from compiling under Python 3.11 due to f-string with backslash.
 - Fix: Sanitized f-string to pre-escape double quotes before formatting.
+## CLI launch failure: missing bundle resources
+- Command: `NSUnbufferedIO=YES dist/HushDesk.app/Contents/MacOS/HushDesk`
+- Error: `FileNotFoundError` for `hushdesk/config/building_master_mac.json` once bundled.
+- Fix: Introduced `hushdesk._paths.resource_path` to resolve data files inside PyInstaller bundles and updated `id.rooms.load_building_master` to use it.
+
+## Close event runtime error
+- Symptom: Finder run spammed `Internal C++ object (PySide6.QtCore.QThread) already deleted` on shutdown.
+- Fix: Hardened `MainWindow.closeEvent` to guard against already-disposed worker threads.

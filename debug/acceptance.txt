@@ -1,0 +1,7 @@
+==> Verify plist keys
+HushDesk
+0.1.0
+20251105.151316
+==> CLI launch
+==> Finder launch with system logs
+ACCEPTANCE: PASS

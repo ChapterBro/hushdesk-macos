@@ -1,57 +1,29 @@
 #!/usr/bin/env bash
-
-set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PLIST="${REPO_ROOT}/dist/HushDesk.app/Contents/Info.plist"
-INIT_FILE="${REPO_ROOT}/src/hushdesk/__init__.py"
-
-if [ ! -f "${PLIST}" ]; then
-  echo "error: Info.plist not found at ${PLIST}" >&2
-  exit 1
-fi
-
-VERSION_VALUE="${VERSION:-}"
-if [ -z "${VERSION_VALUE}" ]; then
-  VERSION_VALUE="$(
-    python3 - "${INIT_FILE}" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-try:
-    text = Path(sys.argv[1]).read_text(encoding="utf-8")
-except FileNotFoundError:
-    pass
+set -Eeuo pipefail
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+app="${1:-"$repo_root/dist/HushDesk.app"}"
+plist="$app/Contents/Info.plist"
+version="${VERSION:-$(python3 - <<'PY'
+import re, pathlib
+p = pathlib.Path('src/hushdesk/__init__.py')
+if p.exists():
+    m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", p.read_text())
+    print(m.group(1) if m else "0.1.0")
 else:
-    match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", text)
-    if match:
-        print(match.group(1), end="")
+    print("0.1.0")
 PY
-  )"
+)}"
+build_raw="${BUILD:-$(/bin/date +%Y%m%d.%H%M%S)}"
+IFS='.' read -r -a seg <<<"$build_raw"
+if ((${#seg[@]}==1)); then
+  ymd="${build_raw:0:8}"; hms="${build_raw:8:6}"; build="${ymd}.${hms:-000000}"
+else
+  build="$build_raw"
 fi
-
-if [ -z "${VERSION_VALUE}" ]; then
-  VERSION_VALUE="0.1.0"
-fi
-
-BUILD_VALUE="${BUILD:-}"
-if [ -z "${BUILD_VALUE}" ]; then
-  BUILD_VALUE="$(date -u +%Y%m%d%H%M%S)"
-fi
-
-VERSION="${VERSION_VALUE}"
-BUILD="${BUILD_VALUE}"
-
-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "${PLIST}" 2>/dev/null \
-  || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string ${VERSION}" "${PLIST}"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD}" "${PLIST}" 2>/dev/null \
-  || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${BUILD}" "${PLIST}"
-/usr/libexec/PlistBuddy -c "Set :CFBundleName HushDesk" "${PLIST}" 2>/dev/null \
-  || /usr/libexec/PlistBuddy -c "Add :CFBundleName string HushDesk" "${PLIST}"
-/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName HushDesk" "${PLIST}" 2>/dev/null \
-  || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string HushDesk" "${PLIST}"
-
-echo "Stamped VERSION: ${VERSION}"
-echo "Stamped BUILD:   ${BUILD}"
+IFS='.' read -r -a seg <<<"$build"
+((${#seg[@]}>=1 && ${#seg[@]}<=3)) || { echo "BUILD must have 1–3 integer segments: $build" >&2; exit 1; }
+for s in "${seg[@]}"; do [[ "$s" =~ ^[0-9]+$ ]] || { echo "BUILD must be integers: $build" >&2; exit 1; }; (( s <= 2147483647 )) || { echo "BUILD segment too large: $s" >&2; exit 1; }; done
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string $version" "$plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $build" "$plist"
+echo "Stamped VERSION: $version"
+echo "Stamped BUILD:   $build"
