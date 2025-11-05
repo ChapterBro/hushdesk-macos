@@ -1,0 +1,733 @@
+diff --git a/HushDesk.spec b/HushDesk.spec
+index cf12387..5bdf5df 100644
+--- a/HushDesk.spec
++++ b/HushDesk.spec
+@@ -1,19 +1,12 @@
+ # -*- mode: python ; coding: utf-8 -*-
+-from PyInstaller.utils.hooks import collect_all
+-
+-datas = [('hushdesk/config', 'config')]
+-binaries = []
+-hiddenimports = []
+-tmp_ret = collect_all('PySide6')
+-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+ 
+ 
+ a = Analysis(
+     ['src/hushdesk/app.py'],
+     pathex=[],
+-    binaries=binaries,
+-    datas=datas,
+-    hiddenimports=hiddenimports,
++    binaries=[],
++    datas=[('hushdesk/config', 'config')],
++    hiddenimports=[],
+     hookspath=[],
+     hooksconfig={},
+     runtime_hooks=[],
+diff --git a/scripts/build b/scripts/build
+index 2e10448..32edb7b 100755
+--- a/scripts/build
++++ b/scripts/build
+@@ -34,7 +34,6 @@ mkdir -p "${DIST_DIR}"
+ 
+ "${PYINSTALLER_BIN}" -y --noconfirm --name "HushDesk" --windowed \
+   --add-data "hushdesk/config:config" \
+-  --collect-all PySide6 \
+   --icon "${ICON_PATH}" \
+   --osx-bundle-identifier "com.nottingham.hushdesk" \
+   src/hushdesk/app.py
+diff --git a/src/hushdesk/engine/decide.py b/src/hushdesk/engine/decide.py
+index 9cb9d50..982c871 100644
+--- a/src/hushdesk/engine/decide.py
++++ b/src/hushdesk/engine/decide.py
+@@ -2,11 +2,15 @@
+ 
+ from __future__ import annotations
+ 
++import logging
+ from typing import Optional
+ 
+ from hushdesk.pdf.duecell import DueMark
+ 
+ 
++logger = logging.getLogger(__name__)
++
++
+ def rule_triggers(rule_kind: str, threshold: int, vital: Optional[int]) -> bool:
+     """Return ``True`` when ``vital`` satisfies the hold rule condition."""
+ 
+@@ -34,7 +38,10 @@ def decide_for_dose(rule_kind: str, threshold: int, vital: Optional[int], mark:
+     triggered = rule_triggers(rule_kind, threshold, vital)
+ 
+     if mark == DueMark.CODE_ALLOWED:
+-        return "HELD_OK" if triggered else "NONE"
++        if triggered:
++            return "HELD_OK"
++        logger.warning("Allowed code without trigger (ignored)")
++        return "NONE"
+ 
+     if mark in (DueMark.GIVEN_CHECK, DueMark.GIVEN_TIME):
+         return "HOLD_MISS" if triggered else "COMPLIANT"
+diff --git a/src/hushdesk/engine/rules.py b/src/hushdesk/engine/rules.py
+index c5dbb89..60cb022 100644
+--- a/src/hushdesk/engine/rules.py
++++ b/src/hushdesk/engine/rules.py
+@@ -76,14 +76,18 @@ def parse_rule_text(text: str) -> List[RuleSpec]:
+         word_value = match.group("word_value")
+ 
+         preceding_fragment = text[cursor : match.start()]
+-        if _CONNECTOR_RE.search(preceding_fragment):
+-            # connectors maintain context; nothing to do
+-            pass
+-        elif "hold" not in preceding_fragment.lower():
+-            hold_context = False
+ 
+         if prefix:
+             hold_context = True
++        elif _CONNECTOR_RE.search(preceding_fragment):
++            # connector tokens keep whichever context was already in effect
++            pass
++        else:
++            normalized = preceding_fragment.strip().lower()
++            if normalized:
++                hold_context = "hold" in normalized
++
++        cursor = match.end()
+ 
+         if not hold_context:
+             continue
+diff --git a/src/hushdesk/pdf/dates.py b/src/hushdesk/pdf/dates.py
+index 68f0e88..dd81036 100644
+--- a/src/hushdesk/pdf/dates.py
++++ b/src/hushdesk/pdf/dates.py
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import os
+ import re
+ from datetime import date, datetime, time, timedelta
+ from pathlib import Path
+@@ -49,6 +50,24 @@ def central_prev_day(value: date) -> date:
+     return previous.date()
+ 
+ 
++def dev_override_date() -> date | None:
++    """Return a developer-provided audit date when the override env var is set."""
++
++    raw_value = os.getenv("HUSHDESK_AUDIT_DATE_MMDDYYYY")
++    if not raw_value:
++        return None
++
++    match = re.fullmatch(r"\s*(\d{2})/(\d{2})/(\d{4})\s*", raw_value)
++    if not match:
++        return None
++
++    month, day, year = (int(group) for group in match.groups())
++    try:
++        return date(year=year, month=month, day=day)
++    except ValueError:
++        return None
++
++
+ def format_mmddyyyy(value: date) -> str:
+     """Return ``value`` formatted as ``MM/DD/YYYY``."""
+ 
+@@ -68,4 +87,3 @@ def resolve_audit_date(filename: Path) -> date:
+ 
+     today_central = datetime.now(tz=CENTRAL_TZ).date()
+     return central_prev_day(today_central)
+-
+diff --git a/src/hushdesk/pdf/rows.py b/src/hushdesk/pdf/rows.py
+index 7f1d1b0..0fafc95 100644
+--- a/src/hushdesk/pdf/rows.py
++++ b/src/hushdesk/pdf/rows.py
+@@ -22,6 +22,7 @@ _BP_LABEL_RE = re.compile(r"(?i)^\s*B\s*P\b")
+ _HR_LABEL_RE = re.compile(r"(?i)^\s*(?:HR|PULSE)\b")
+ _AM_LABEL_RE = re.compile(r"(?i)^(?:a\.?m\.?|a\s*m\b|morning)")
+ _PM_LABEL_RE = re.compile(r"(?i)^(?:p\.?m\.?|p\s*m\b|evening)")
++_TIME_RE = re.compile(r"\b(?:[0-1]?\d|2[0-3]):[0-5]\d\b")
+ 
+ 
+ @dataclass(slots=True)
+@@ -83,32 +84,10 @@ def find_row_bands_for_block(page: "fitz.Page", block_bbox: Tuple[float, float,
+ 
+     auto_am_pm_split = False
+     if row_bands["am"] is None and row_bands["pm"] is None and row_bands["bp"] is not None:
+-        bp_band = row_bands["bp"]
+-        dose_top = max(y0, min(y1, bp_band[1]))
+-        dose_bottom = y1
+-        if dose_bottom > dose_top:
+-            height = dose_bottom - dose_top
+-            midpoint = dose_top + height / 2.0
+-
+-            am_top = dose_top
+-            am_bottom = max(am_top + _MIN_BAND_HALF_HEIGHT, midpoint)
+-            am_bottom = min(am_bottom, dose_bottom)
+-
+-            pm_top = max(am_bottom, midpoint)
+-            pm_bottom = dose_bottom
+-            if pm_bottom - pm_top < _MIN_BAND_HALF_HEIGHT:
+-                pm_top = max(dose_top, pm_bottom - _MIN_BAND_HALF_HEIGHT)
+-
+-            if am_bottom > pm_top:
+-                overlap = am_bottom - pm_top
+-                pm_top += overlap
+-                if pm_top >= pm_bottom:
+-                    pm_top = am_bottom
+-
+-            if am_bottom <= pm_top and pm_top < pm_bottom:
+-                row_bands["am"] = (am_top, am_bottom)
+-                row_bands["pm"] = (pm_top, pm_bottom)
+-                auto_am_pm_split = True
++        auto_split = _auto_split_am_pm(text, block_bbox, row_bands["bp"])
++        if auto_split is not None:
++            row_bands["am"], row_bands["pm"] = auto_split
++            auto_am_pm_split = True
+ 
+     return RowBands(
+         bp=row_bands["bp"],
+@@ -209,6 +188,72 @@ def _band_from_center(
+     return top, bottom
+ 
+ 
++def _auto_split_am_pm(
++    text_dict: dict,
++    block_bbox: Tuple[float, float, float, float],
++    bp_band: Tuple[float, float],
++) -> Optional[Tuple[Tuple[float, float], Tuple[float, float]]]:
++    block_x0, block_y0, block_x1, block_y1 = normalize_rect(block_bbox)
++    _bp_top, bp_bottom = sorted(bp_band)
++    dose_top = max(block_y0, min(block_y1, bp_bottom))
++    dose_bottom = block_y1
++    if dose_bottom <= dose_top:
++        return None
++
++    height = dose_bottom - dose_top
++    default_midpoint = dose_top + height / 2.0
++
++    time_positions = _collect_time_positions(text_dict, (block_x0, dose_top, block_x1, dose_bottom))
++
++    midpoint_ratio = 0.5
++    if time_positions:
++        above = sum(1 for pos in time_positions if pos <= default_midpoint)
++        below = len(time_positions) - above
++        if above and not below:
++            midpoint_ratio = 0.55
++        elif below and not above:
++            midpoint_ratio = 0.45
++
++    midpoint = dose_top + height * midpoint_ratio
++    min_am_bottom = dose_top + _MIN_BAND_HALF_HEIGHT
++    max_pm_top = dose_bottom - _MIN_BAND_HALF_HEIGHT
++    midpoint = min(max(midpoint, min_am_bottom), max_pm_top)
++
++    am_top = dose_top
++    am_bottom = midpoint
++    pm_top = midpoint
++    pm_bottom = dose_bottom
++
++    if am_bottom - am_top < _MIN_BAND_HALF_HEIGHT:
++        am_bottom = min(dose_bottom - _MIN_BAND_HALF_HEIGHT, am_top + _MIN_BAND_HALF_HEIGHT)
++        pm_top = am_bottom
++    if pm_bottom - pm_top < _MIN_BAND_HALF_HEIGHT:
++        pm_top = max(dose_top + _MIN_BAND_HALF_HEIGHT, pm_bottom - _MIN_BAND_HALF_HEIGHT)
++        am_bottom = pm_top
++
++    if am_bottom <= am_top or pm_bottom <= pm_top:
++        return None
++
++    return (am_top, am_bottom), (pm_top, pm_bottom)
++
++
++def _collect_time_positions(
++    text_dict: dict,
++    bbox: Tuple[float, float, float, float],
++) -> List[float]:
++    x0, y0, x1, y1 = normalize_rect(bbox)
++    positions: List[float] = []
++    for span_bbox, raw_text in _iter_spans_within(text_dict, (x0, y0, x1, y1)):
++        text = str(raw_text)
++        if not text:
++            continue
++        if not _TIME_RE.search(text):
++            continue
++        pos_y = (span_bbox[1] + span_bbox[3]) / 2.0
++        positions.append(pos_y)
++    return positions
++
++
+ def _box_center(box: LabelBox) -> float:
+     return (box[1] + box[3]) / 2.0
+ 
+diff --git a/src/hushdesk/report/txt_writer.py b/src/hushdesk/report/txt_writer.py
+index 902cb99..e7359ce 100644
+--- a/src/hushdesk/report/txt_writer.py
++++ b/src/hushdesk/report/txt_writer.py
+@@ -5,7 +5,7 @@ from __future__ import annotations
+ import re
+ from datetime import datetime
+ from pathlib import Path
+-from typing import Iterable, List, Optional
++from typing import Dict, Iterable, List, Optional
+ from zoneinfo import ZoneInfo
+ 
+ from .model import DecisionRecord
+@@ -47,18 +47,28 @@ def write_report(
+     exceptions = [record for record in records if record.kind in {"HOLD-MISS", "HELD-OK"}]
+     lines.append("Exceptions —")
+     if exceptions:
+-        for record in _iter_sorted(exceptions):
++        for record in _iter_sorted_by_room(exceptions):
+             lines.append(_format_record_line(record))
+     else:
+         lines.append("Hold-Miss: 0 (no exceptions)")
+ 
+     lines.append("")
+     lines.append("All Reviewed —")
+-    sorted_records = list(_iter_sorted(records))
++    grouped: Dict[str, List[DecisionRecord]] = {kind: [] for kind in _KIND_ORDER}
++    fallback_bucket: List[DecisionRecord] = []
++    for record in records:
++        if record.kind in grouped:
++            grouped[record.kind].append(record)
++        else:
++            fallback_bucket.append(record)
++
+     for kind in _KIND_ORDER:
+-        for record in sorted_records:
+-            if record.kind == kind:
+-                lines.append(_format_record_line(record))
++        for record in _iter_sorted_by_room(grouped[kind]):
++            lines.append(_format_record_line(record))
++
++    if fallback_bucket:
++        for record in _iter_sorted_by_room(fallback_bucket):
++            lines.append(_format_record_line(record))
+ 
+     note_lines: List[str] = []
+     seen_notes: set[str] = set()
+@@ -100,16 +110,15 @@ def write_report(
+     out_path.write_text("\n".join(lines), encoding="utf-8")
+ 
+ 
+-def _iter_sorted(records: Iterable[DecisionRecord]) -> Iterable[DecisionRecord]:
+-    return sorted(records, key=_record_sort_key)
++def _iter_sorted_by_room(records: Iterable[DecisionRecord]) -> Iterable[DecisionRecord]:
++    return sorted(records, key=_room_sort_key)
+ 
+ 
+-def _record_sort_key(record: DecisionRecord) -> tuple:
++def _room_sort_key(record: DecisionRecord) -> tuple:
+     room = record.room_bed or "Unknown"
+     room_key = (room.lower() == "unknown", room)
+     dose_key = _DOSE_ORDER.get(record.dose, 0)
+-    kind_key = _KIND_ORDER.index(record.kind) if record.kind in _KIND_ORDER else len(_KIND_ORDER)
+-    return (room_key, dose_key, kind_key, record.rule_text)
++    return (room_key, dose_key, record.rule_text)
+ 
+ 
+ def _format_record_line(record: DecisionRecord) -> str:
+diff --git a/src/hushdesk/ui/evidence_panel.py b/src/hushdesk/ui/evidence_panel.py
+index e2bf5ef..c1aa1d2 100644
+--- a/src/hushdesk/ui/evidence_panel.py
++++ b/src/hushdesk/ui/evidence_panel.py
+@@ -6,8 +6,8 @@ import subprocess
+ from pathlib import Path
+ from typing import Dict, List, Optional, Tuple
+ 
+-from PySide6.QtCore import Qt, QUrl
+-from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen, QPixmap, QRectF
++from PySide6.QtCore import Qt, QUrl, QRectF
++from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen, QPixmap
+ from PySide6.QtWidgets import (
+     QHBoxLayout,
+     QLabel,
+@@ -207,8 +207,9 @@ class EvidencePanel(QWidget):
+ 
+     @staticmethod
+     def _launch_preview_script(pdf_path: Path, page_number: int) -> None:
++        escaped_pdf = str(pdf_path).replace('"', '\\"')
+         script_lines = [
+-            f'set pdfPath to POSIX file "{str(pdf_path).replace("\"", "\\\"")}"',
++            f'set pdfPath to POSIX file "{escaped_pdf}"',
+             f'set pageNumber to {page_number}',
+             "tell application \"Preview\"",
+             "activate",
+diff --git a/tests/test_duecell.py b/tests/test_duecell.py
+index 7f76ea4..5f078e3 100644
+--- a/tests/test_duecell.py
++++ b/tests/test_duecell.py
+@@ -17,51 +17,81 @@ from hushdesk.pdf.duecell import DueMark, detect_due_mark  # noqa: E402
+ 
+ 
+ class DummyRect:
+-    def __init__(self, *_: float) -> None:
+-        pass
++    def __init__(self, *args: float | tuple[float, float]) -> None:
++        if len(args) == 4:
++            x0, y0, x1, y1 = args  # type: ignore[assignment]
++        elif len(args) == 2:
++            (x0, y0), (x1, y1) = args  # type: ignore[assignment]
++        else:  # pragma: no cover - defensive
++            raise ValueError("Unsupported Rect args")
++        self.x0 = float(x0)
++        self.y0 = float(y0)
++        self.x1 = float(x1)
++        self.y1 = float(y1)
+ 
+     def intersects(self, other: "DummyRect") -> bool:  # noqa: D401
+         return True
+ 
+ 
+ class DummyPage:
+-    def __init__(self, text: str) -> None:
+-        self._text = text
+-
+-    def get_text(self, kind: str, clip: object = None) -> str:  # noqa: D401
+-        return self._text
++    def __init__(self, spans: list[tuple[str, tuple[float, float, float, float]]], drawings: list | None = None) -> None:
++        self._spans = spans
++        self._drawings = drawings or []
++
++    def get_text(self, kind: str, clip: object = None) -> dict:  # noqa: D401
++        if kind != "dict":
++            raise AssertionError(f"Unexpected kind request: {kind}")
++        return {
++            "blocks": [
++                {
++                    "lines": [
++                        {
++                            "spans": [
++                                {"text": text, "bbox": bbox}
++                                for text, bbox in self._spans
++                            ]
++                        }
++                    ]
++                }
++            ]
++        }
+ 
+     def get_drawings(self) -> list:  # noqa: D401
+-        return []
++        return self._drawings
+ 
+ 
+ class DueCellDetectionTests(unittest.TestCase):
+     def test_detect_dcd_from_text_x(self) -> None:
+-        page = DummyPage("X")
++        page = DummyPage([("X", (0.0, 0.0, 1.0, 1.0))])
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.DCD)
+ 
+     def test_code_allowed_overrides_given(self) -> None:
+-        page = DummyPage("15 √")
++        page = DummyPage(
++            [
++                ("15", (0.1, 0.1, 0.4, 0.4)),
++                ("√", (0.6, 0.2, 0.9, 0.5)),
++            ]
++        )
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.CODE_ALLOWED)
+ 
+     def test_detect_given_check(self) -> None:
+-        page = DummyPage("√")
++        page = DummyPage([("√", (0.0, 0.0, 1.0, 1.0))])
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.GIVEN_CHECK)
+ 
+     def test_detect_given_time(self) -> None:
+-        page = DummyPage("09:45")
++        page = DummyPage([("09:45", (0.0, 0.0, 1.0, 1.0))])
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.GIVEN_TIME)
+ 
+     def test_detect_none(self) -> None:
+-        page = DummyPage("")
++        page = DummyPage([])
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.NONE)
+diff --git a/tests/test_rules_parse.py b/tests/test_rules_parse.py
+index 235b7b9..850886c 100644
+--- a/tests/test_rules_parse.py
++++ b/tests/test_rules_parse.py
+@@ -30,6 +30,15 @@ class RuleParsingTests(unittest.TestCase):
+         specs = parse_rule_text(text)
+         self.assertEqual(specs, [])
+ 
++    def test_and_or_dual_rules(self) -> None:
++        text = "Hold if SBP < 100 and/or HR < 60"
++        specs = parse_rule_text(text)
++        self.assertEqual(len(specs), 2)
++        self.assertEqual(specs[0].kind, "SBP<")
++        self.assertEqual(specs[0].threshold, 100)
++        self.assertEqual(specs[1].kind, "HR<")
++        self.assertEqual(specs[1].threshold, 60)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
+diff --git a/tests/test_txt_writer.py b/tests/test_txt_writer.py
+index 7e5ca00..7b3d859 100644
+--- a/tests/test_txt_writer.py
++++ b/tests/test_txt_writer.py
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import re
+ import unittest
+ from pathlib import Path
+ from tempfile import TemporaryDirectory
+@@ -11,7 +12,7 @@ from hushdesk.report.txt_writer import write_report
+ 
+ 
+ class TxtWriterTests(unittest.TestCase):
+-    def test_write_report_formats_sections(self) -> None:
++    def test_write_report_respects_sectioning_and_order(self) -> None:
+         records = [
+             DecisionRecord(
+                 hall="Bridgeman",
+@@ -20,7 +21,7 @@ class TxtWriterTests(unittest.TestCase):
+                 room_bed="307-1",
+                 dose="AM",
+                 kind="HOLD-MISS",
+-                rule_text="Hold if SBP < 110",
++                rule_text="Hold if SBP < 110 | Source: Policy 2025",
+                 vital_text="BP 101/44",
+                 code=None,
+                 dcd_reason=None,
+@@ -65,9 +66,26 @@ class TxtWriterTests(unittest.TestCase):
+                 dcd_reason="X in due cell",
+                 notes=None,
+             ),
++            DecisionRecord(
++                hall="Bridgeman",
++                date_mmddyyyy="11/03/2025",
++                source_basename="sample.pdf",
++                room_bed="305-2",
++                dose="PM",
++                kind="HOLD-MISS",
++                rule_text="Hold if HR < 58",
++                vital_text="HR 57",
++                code=None,
++                dcd_reason=None,
++                notes=None,
++            ),
++        ]
++        counts = {"reviewed": 5, "hold_miss": 2, "held_ok": 1, "compliant": 1, "dcd": 1}
++        notes = [
++            "Vitals missing (unexpected) — 309-1 (AM)",
++            "Vitals missing (unexpected) — 309-1 (AM (split))",
++            "Room not resolved for block on page 3",
+         ]
+-        counts = {"reviewed": 4, "hold_miss": 1, "held_ok": 1, "compliant": 1, "dcd": 1}
+-        notes = ["Room not resolved for block on page 3"]
+ 
+         with TemporaryDirectory() as tmpdir:
+             out_path = Path(tmpdir) / "report.txt"
+@@ -77,22 +95,57 @@ class TxtWriterTests(unittest.TestCase):
+         self.assertEqual(content[0], "11/03/2025 · Hall: BRIDGEMAN · Source: sample.pdf")
+         self.assertEqual(
+             content[1],
+-            "Reviewed: 4 · Hold-Miss: 1 · Held-OK: 1 · Compliant: 1 · DC'D: 1",
++            "Reviewed: 5 · Hold-Miss: 2 · Held-OK: 1 · Compliant: 1 · DC'D: 1",
+         )
+-        self.assertIn("Exceptions —", content)
+-        self.assertTrue(
+-            any(
+-                "HOLD-MISS — 307-1 (AM (split)) — Hold if SBP < 110; BP 101/44" in line
+-                for line in content
+-            )
++
++        exceptions_idx = content.index("Exceptions —")
++        all_reviewed_idx = content.index("All Reviewed —")
++
++        exceptions_lines = [
++            line
++            for line in content[exceptions_idx + 1 : all_reviewed_idx]
++            if line.strip()
++        ]
++
++        pattern = re.compile(r"^(?P<kind>[^—]+) — (?P<room>[^()]+?) \((?P<dose>[^)]+)\)")
++        exception_keys = [pattern.match(line).groups() for line in exceptions_lines]
++        self.assertEqual(
++            exception_keys,
++            [
++                ("HOLD-MISS", "305-2", "PM"),
++                ("HOLD-MISS", "307-1", "AM"),
++                ("HELD-OK", "307-1", "PM"),
++            ],
++        )
++
++        all_notes_start = next((i for i, line in enumerate(content) if line.startswith("Notes —")), len(content))
++        reviewed_lines = [
++            line
++            for line in content[all_reviewed_idx + 1 : all_notes_start]
++            if line.strip()
++        ]
++        reviewed_keys = [pattern.match(line).groups() for line in reviewed_lines]
++        self.assertEqual(
++            reviewed_keys,
++            [
++                ("HOLD-MISS", "305-2", "PM"),
++                ("HOLD-MISS", "307-1", "AM"),
++                ("HELD-OK", "307-1", "PM"),
++                ("COMPLIANT", "305-1", "AM"),
++                ("DC'D", "309-1", "PM"),
++            ],
+         )
++
+         self.assertTrue(
+-            any(
+-                line.startswith("HELD-OK — 307-1 (PM)") and "| code 12" in line for line in content
+-            )
++            any("Hold if SBP < 110" in line and "Source" not in line for line in reviewed_lines)
+         )
+-        self.assertIn("All Reviewed —", content)
+-        self.assertTrue(any(line.startswith("Notes — Room not resolved") for line in content))
++
++        note_lines = [line for line in content if line.startswith("Notes —")]
++        self.assertEqual(len(note_lines), 3)
++        self.assertIn("Notes — AM/PM labels missing (split)", note_lines)
++        self.assertTrue(any(line.startswith("Notes — Room not resolved") for line in note_lines))
++        self.assertTrue(any(line.startswith("Notes — Vitals missing") for line in note_lines))
++
+         self.assertTrue(content[-1].startswith("Generated: "))
+ 
+ 
+diff --git a/tests/test_vitals.py b/tests/test_vitals.py
+index 8a1a60c..0833d69 100644
+--- a/tests/test_vitals.py
++++ b/tests/test_vitals.py
+@@ -5,13 +5,20 @@ from __future__ import annotations
+ import sys
+ import unittest
+ from pathlib import Path
++from types import SimpleNamespace
++from unittest.mock import patch
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+ SRC_PATH = ROOT / "src"
+ if str(SRC_PATH) not in sys.path:
+     sys.path.insert(0, str(SRC_PATH))
+ 
+-from hushdesk.pdf.vitals import parse_bp_token, parse_hr_token  # noqa: E402
++from hushdesk.pdf.vitals import (  # noqa: E402
++    extract_vitals_in_band,
++    extract_vitals_in_band_fallback,
++    parse_bp_token,
++    parse_hr_token,
++)
+ 
+ 
+ class VitalParsingTests(unittest.TestCase):
+@@ -26,11 +33,100 @@ class VitalParsingTests(unittest.TestCase):
+         self.assertEqual(parse_hr_token("Pulse 78"), 78)
+ 
+     def test_parse_hr_token_plain_number(self) -> None:
+-        self.assertEqual(parse_hr_token("64"), 64)
++        self.assertIsNone(parse_hr_token("64"))
+ 
+     def test_parse_hr_token_invalid(self) -> None:
+         self.assertIsNone(parse_hr_token("N/A"))
+ 
++    def test_fallback_extracts_bp_and_hr(self) -> None:
++        sample_dict = {
++            "blocks": [
++                {
++                    "lines": [
++                        {
++                            "spans": [
++                                {"text": "BP 118/70 HR 74", "bbox": [100.0, 300.0, 180.0, 312.0]},
++                            ]
++                        },
++                        {
++                            "spans": [
++                                {"text": "P 68", "bbox": [110.0, 350.0, 140.0, 360.0]},
++                                {"text": "BP 132/82", "bbox": [150.0, 350.0, 200.0, 362.0]},
++                            ]
++                        },
++                    ]
++                }
++            ]
++        }
++
++        class StubPage:
++            def __init__(self, payload: dict) -> None:
++                self._payload = payload
++
++            def get_text(self, kind: str, clip: object = None) -> dict:
++                if kind != "dict":
++                    return {}
++                return self._payload
++
++        result = extract_vitals_in_band_fallback(StubPage(sample_dict), 90.0, 200.0, (0.0, 220.0))
++        self.assertEqual(len(result), 2)
++        self.assertEqual(result[0]["bp"], "118/70")
++        self.assertEqual(result[0]["hr"], 74)
++        self.assertEqual(result[1]["bp"], "132/82")
++        self.assertEqual(result[1]["hr"], 68)
++
++    def test_extract_vitals_uses_column_fallback(self) -> None:
++        fallback_dict = {
++            "blocks": [
++                {
++                    "lines": [
++                        {
++                            "spans": [
++                                {"text": "BP 120/78", "bbox": [100.0, 310.0, 160.0, 322.0]},
++                                {"text": "Pulse 70", "bbox": [100.0, 324.0, 150.0, 336.0]},
++                            ]
++                        },
++                        {
++                            "spans": [
++                                {"text": "BP 138/82", "bbox": [100.0, 360.0, 160.0, 372.0]},
++                            ]
++                        },
++                    ]
++                }
++            ]
++        }
++
++        class DummyRect:
++            def __init__(self, *args: float) -> None:
++                self.args = args
++
++        class StubPage:
++            def __init__(self, payload: dict) -> None:
++                self._payload = payload
++
++            def get_text(self, kind: str, clip: object = None) -> dict:
++                if kind != "dict":
++                    return {}
++                if clip is not None:
++                    return {"blocks": []}
++                return self._payload
++
++        page = StubPage(fallback_dict)
++        stub_fitz = SimpleNamespace(Rect=DummyRect)
++        with patch("hushdesk.pdf.vitals.fitz", stub_fitz):
++            result = extract_vitals_in_band(
++                page,
++                90.0,
++                180.0,
++                300.0,
++                340.0,
++                dose_hint="AM",
++                dose_bands={"AM": (290.0, 330.0), "PM": (340.0, 380.0)},
++            )
++        self.assertEqual(result["bp"], "120/78")
++        self.assertEqual(result["hr"], 70)
++        self.assertIn("_fallback_selected", result)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

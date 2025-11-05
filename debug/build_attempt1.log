@@ -1,0 +1,61 @@
+Cleaning /Users/hushdesk/Projects/hushdesk-macos/dist
+48 INFO: PyInstaller: 6.16.0, contrib hooks: 2025.9
+48 INFO: Python: 3.9.6
+53 INFO: Platform: macOS-26.1-arm64-arm-64bit
+53 INFO: Python environment: /Users/hushdesk/Projects/hushdesk-macos/.venv_build
+54 INFO: wrote /Users/hushdesk/Projects/hushdesk-macos/HushDesk.spec
+56 WARNING: Failed to collect submodules for 'PySide6.scripts.deploy_lib' because importing 'PySide6.scripts.deploy_lib' raised: ModuleNotFoundError: No module named 'project_lib'
+779 INFO: Module search paths (PYTHONPATH):
+['/Users/hushdesk/Projects/hushdesk-macos/src',
+ '/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python39.zip',
+ '/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9',
+ '/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload',
+ '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages',
+ '/Users/hushdesk/Projects/hushdesk-macos/src']
+859 INFO: Appending 'binaries' from .spec
+861 INFO: Appending 'datas' from .spec
+913 INFO: checking Analysis
+967 INFO: checking PYZ
+968 INFO: EXE target arch: arm64
+968 INFO: Code signing identity: None
+971 INFO: checking PKG
+971 INFO: Building because /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/localpycs/pyimod02_importers.pyc changed
+971 INFO: Building PKG (CArchive) HushDesk.pkg
+975 INFO: Building PKG (CArchive) HushDesk.pkg completed successfully.
+976 INFO: Bootloader /Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/bootloader/Darwin-64bit/runw
+976 INFO: checking EXE
+976 INFO: Rebuilding EXE-00.toc because pkg is more recent
+976 INFO: Building EXE from EXE-00.toc
+976 INFO: Copying bootloader EXE to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/HushDesk
+976 INFO: Converting EXE to target arch (arm64)
+985 INFO: Removing signature(s) from EXE
+992 INFO: Modifying Mach-O image UUID(s) in EXE
+994 INFO: Appending PKG archive to EXE
+994 INFO: Fixing EXE headers for code signing
+997 INFO: Re-signing the EXE
+1005 INFO: Building EXE from EXE-00.toc completed successfully.
+1024 INFO: checking COLLECT
+1025 INFO: Building COLLECT COLLECT-00.toc
+Traceback (most recent call last):
+  File "/Users/hushdesk/Projects/hushdesk-macos/.venv_build/bin/pyinstaller", line 7, in <module>
+    sys.exit(_console_script_run())
+  File "/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/__main__.py", line 231, in _console_script_run
+    run()
+  File "/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/__main__.py", line 215, in run
+    run_build(pyi_config, spec_file, **vars(args))
+  File "/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/__main__.py", line 70, in run_build
+    PyInstaller.building.build_main.main(pyi_config, spec_file, **kwargs)
+  File "/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/building/build_main.py", line 1272, in main
+    build(specfile, distpath, workpath, clean_build)
+  File "/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/building/build_main.py", line 1210, in build
+    exec(code, spec_namespace)
+  File "/Users/hushdesk/Projects/hushdesk-macos/HushDesk.spec", line 44, in <module>
+    coll = COLLECT(
+  File "/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/building/api.py", line 1147, in __init__
+    self.__postinit__()
+  File "/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/building/datastruct.py", line 184, in __postinit__
+    self.assemble()
+  File "/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/building/api.py", line 1210, in assemble
+    os.symlink(src_name, dest_path)  # Create link at dest_path, pointing at (relative) src_name
+FileExistsError: [Errno 17] File exists: 'Versions/Current/Resources' -> '/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk/_internal/PySide6/Qt/lib/Qt3DAnimation.framework/Resources'
+Build failed: "${PYINSTALLER_BIN}" -y --noconfirm --name "HushDesk" --windowed --add-data "hushdesk/config:config" --collect-all PySide6 --icon "${ICON_PATH}" --osx-bundle-identifier "com.nottingham.hushdesk" src/hushdesk/app.py

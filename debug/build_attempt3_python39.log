@@ -1,0 +1,88 @@
+Cleaning /Users/hushdesk/Projects/hushdesk-macos/dist
+37 INFO: PyInstaller: 6.16.0, contrib hooks: 2025.9
+37 INFO: Python: 3.9.6
+42 INFO: Platform: macOS-26.1-arm64-arm-64bit
+42 INFO: Python environment: /Users/hushdesk/Projects/hushdesk-macos/.venv_build
+42 INFO: wrote /Users/hushdesk/Projects/hushdesk-macos/HushDesk.spec
+45 INFO: Module search paths (PYTHONPATH):
+['/Users/hushdesk/Projects/hushdesk-macos/src',
+ '/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python39.zip',
+ '/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9',
+ '/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload',
+ '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages',
+ '/Users/hushdesk/Projects/hushdesk-macos/src']
+121 INFO: Appending 'datas' from .spec
+122 INFO: checking Analysis
+161 INFO: Building because hiddenimports changed
+161 INFO: Looking for Python shared library...
+163 INFO: Using Python shared library: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/Python3
+163 INFO: Running Analysis Analysis-00.toc
+163 INFO: Target bytecode optimization level: 0
+163 INFO: Initializing module dependency graph...
+164 INFO: Initializing module graph hook caches...
+168 INFO: Analyzing modules for base_library.zip ...
+336 INFO: Processing standard module hook 'hook-encodings.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+787 INFO: Processing standard module hook 'hook-pickle.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+1035 INFO: Processing standard module hook 'hook-heapq.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+1154 INFO: Caching module dependency graph...
+1171 INFO: Analyzing /Users/hushdesk/Projects/hushdesk-macos/src/hushdesk/app.py
+1173 INFO: Processing standard module hook 'hook-PySide6.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+1241 INFO: Processing standard module hook 'hook-shiboken6.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+1302 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+1647 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+1956 INFO: Processing standard module hook 'hook-PySide6.QtWidgets.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+2287 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+2417 INFO: Processing standard module hook 'hook-platform.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+2426 INFO: Processing standard module hook 'hook-xml.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+2521 INFO: Processing standard module hook 'hook-zoneinfo.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+2528 INFO: Processing standard module hook 'hook-sysconfig.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+2533 INFO: Processing standard module hook 'hook-_osx_support.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+2576 INFO: Processing module hooks (post-graph stage)...
+2690 INFO: Processing standard module hook 'hook-PySide6.QtDBus.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+2747 INFO: Performing binary vs. data reclassification (123 entries)
+2774 INFO: Looking for ctypes DLLs
+2775 INFO: Analyzing run-time hooks ...
+2775 INFO: Including run-time hook 'pyi_rth_inspect.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks/rthooks'
+2776 INFO: Including run-time hook 'pyi_rth_pyside6.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks/rthooks'
+2776 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks/pre_find_module_path'
+2778 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/hooks'
+2782 INFO: Creating base_library.zip...
+2788 INFO: Looking for dynamic libraries
+2985 INFO: Warnings written to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/warn-HushDesk.txt
+2990 INFO: Graph cross-reference written to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/xref-HushDesk.html
+3087 INFO: checking PYZ
+3088 INFO: Building because toc changed
+3088 INFO: Building PYZ (ZlibArchive) /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/PYZ-00.pyz
+3151 INFO: Building PYZ (ZlibArchive) /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/PYZ-00.pyz completed successfully.
+3152 INFO: EXE target arch: arm64
+3152 INFO: Code signing identity: None
+3153 INFO: checking PKG
+3154 INFO: Building because toc changed
+3154 INFO: Building PKG (CArchive) HushDesk.pkg
+3156 INFO: Building PKG (CArchive) HushDesk.pkg completed successfully.
+3156 INFO: Bootloader /Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.9/site-packages/PyInstaller/bootloader/Darwin-64bit/runw
+3156 INFO: checking EXE
+3156 INFO: Building because toc changed
+3156 INFO: Building EXE from EXE-00.toc
+3156 INFO: Copying bootloader EXE to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/HushDesk
+3157 INFO: Converting EXE to target arch (arm64)
+3165 INFO: Removing signature(s) from EXE
+3172 INFO: Modifying Mach-O image UUID(s) in EXE
+3173 INFO: Appending PKG archive to EXE
+3174 INFO: Fixing EXE headers for code signing
+3176 INFO: Re-signing the EXE
+3185 INFO: Building EXE from EXE-00.toc completed successfully.
+3186 INFO: checking COLLECT
+3187 INFO: Building COLLECT COLLECT-00.toc
+3819 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+3822 INFO: checking BUNDLE
+3823 INFO: Building BUNDLE BUNDLE-00.toc
+5398 INFO: Signing the BUNDLE...
+5467 INFO: Building BUNDLE BUNDLE-00.toc completed successfully.
+5469 INFO: Build complete! The results are available in: /Users/hushdesk/Projects/hushdesk-macos/dist
+Stamped VERSION: 0.1.0
+Stamped BUILD:   20251105203823
+created: /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.dmg
+Build artifacts ready:
+  App: /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app
+  DMG: /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.dmg

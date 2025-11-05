@@ -34,7 +34,6 @@ mkdir -p "${DIST_DIR}"
 
 "${PYINSTALLER_BIN}" -y --noconfirm --name "HushDesk" --windowed \
   --add-data "hushdesk/config:config" \
-  --collect-all PySide6 \
   --icon "${ICON_PATH}" \
   --osx-bundle-identifier "com.nottingham.hushdesk" \
   src/hushdesk/app.py

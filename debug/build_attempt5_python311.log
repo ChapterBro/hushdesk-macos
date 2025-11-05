@@ -1,0 +1,36 @@
+Cleaning /Users/hushdesk/Projects/hushdesk-macos/dist
+30 INFO: PyInstaller: 6.16.0, contrib hooks: 2025.9
+30 INFO: Python: 3.11.14
+34 INFO: Platform: macOS-26.1-arm64-arm-64bit
+34 INFO: Python environment: /Users/hushdesk/Projects/hushdesk-macos/.venv_build
+35 INFO: wrote /Users/hushdesk/Projects/hushdesk-macos/HushDesk.spec
+36 INFO: Module search paths (PYTHONPATH):
+['/Users/hushdesk/Projects/hushdesk-macos/src',
+ '/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python311.zip',
+ '/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11',
+ '/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload',
+ '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages',
+ '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/setuptools/_vendor',
+ '/Users/hushdesk/Projects/hushdesk-macos/src']
+103 INFO: Appending 'datas' from .spec
+103 INFO: checking Analysis
+109 INFO: checking PYZ
+109 INFO: EXE target arch: arm64
+109 INFO: Code signing identity: None
+110 INFO: checking PKG
+111 INFO: Bootloader /Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/bootloader/Darwin-64bit/runw
+111 INFO: checking EXE
+111 INFO: checking COLLECT
+112 INFO: Building COLLECT COLLECT-00.toc
+442 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+444 INFO: checking BUNDLE
+445 INFO: Building BUNDLE BUNDLE-00.toc
+789 INFO: Signing the BUNDLE...
+862 INFO: Building BUNDLE BUNDLE-00.toc completed successfully.
+864 INFO: Build complete! The results are available in: /Users/hushdesk/Projects/hushdesk-macos/dist
+Stamped VERSION: 0.1.0
+Stamped BUILD:   20251105204224
+created: /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.dmg
+Build artifacts ready:
+  App: /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app
+  DMG: /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.dmg
