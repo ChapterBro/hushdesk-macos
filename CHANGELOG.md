@@ -2,6 +2,7 @@
 
 ## Phase 8 – Optional Accelerators
 - feat(accel): optional pyo3 crate with Python fallbacks for y-cluster, BP stitch, and band selection wiring in vitals/layout.
+- test(accel): parity coverage for accelerators and Rust toggle smoke on audit worker fixtures.
 
 ## Phase 7 – End-User Trust UI
 - feat(ui): Review Explorer panel with grouped decisions, search, and exception filters.
