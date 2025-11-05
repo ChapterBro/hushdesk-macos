@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from statistics import mean
 from typing import DefaultDict, Dict, Iterable, List, Tuple
@@ -14,6 +15,10 @@ except ImportError:  # pragma: no cover
 RowBucket = List[Tuple[int, float]]
 
 _ROW_MERGE_TOLERANCE = 3.0
+_CENTER_MERGE_EPSILON = 2.0
+_MIN_BAND_WIDTH = 5.0
+
+logger = logging.getLogger(__name__)
 
 
 def _iter_numeric_spans(page: "fitz.Page") -> Iterable[Tuple[int, float, float]]:
@@ -105,25 +110,36 @@ def bands_from_day_centers(
     averaged = [(day, mean(xs)) for day, xs in by_day.items()]
     averaged.sort(key=lambda item: item[1])
 
-    count = len(averaged)
+    merged: List[Tuple[int, float]] = []
+    if averaged:
+        group: List[Tuple[int, float]] = [averaged[0]]
+        for day, center_x in averaged[1:]:
+            if abs(center_x - group[-1][1]) <= _CENTER_MERGE_EPSILON:
+                group.append((day, center_x))
+            else:
+                merged.extend(_collapse_center_group(group))
+                group = [(day, center_x)]
+        merged.extend(_collapse_center_group(group))
+
+    count = len(merged)
     bands: Dict[int, Tuple[float, float, float, float]] = {}
-    for index, (day, center_x) in enumerate(averaged):
+    for index, (day, center_x) in enumerate(merged):
         if count == 1:
             x0 = 0.0
             x1 = page_width
         elif index == 0:
-            next_center = averaged[index + 1][1]
+            next_center = merged[index + 1][1]
             delta = (next_center - center_x) / 2.0
             x0 = center_x - delta
             x1 = center_x + delta
         elif index == count - 1:
-            prev_center = averaged[index - 1][1]
+            prev_center = merged[index - 1][1]
             delta = (center_x - prev_center) / 2.0
             x0 = center_x - delta
             x1 = center_x + delta
         else:
-            prev_center = averaged[index - 1][1]
-            next_center = averaged[index + 1][1]
+            prev_center = merged[index - 1][1]
+            next_center = merged[index + 1][1]
             x0 = center_x - (center_x - prev_center) / 2.0
             x1 = center_x + (next_center - center_x) / 2.0
 
@@ -131,6 +147,34 @@ def bands_from_day_centers(
         x1 = min(page_width, x1)
         if x1 < x0:
             x0, x1 = x1, x0
+        band_width = x1 - x0
+        if band_width < _MIN_BAND_WIDTH:
+            logger.info(
+                "skipping narrow band day=%s width=%.2f (page width %.2f)", day, band_width, page_width
+            )
+            continue
+        if x1 <= x0:
+            logger.info(
+                "skipping non-positive band day=%s x0=%.2f x1=%.2f", day, x0, x1
+            )
+            continue
         bands[day] = (x0, x1, page_width, page_height)
 
     return bands
+
+
+def _collapse_center_group(group: List[Tuple[int, float]]) -> List[Tuple[int, float]]:
+    if not group:
+        return []
+    if len(group) == 1:
+        return group
+    unique_days = {day for day, _ in group}
+    if len(unique_days) == 1:
+        day = group[0][0]
+        merged_center = mean(center for _, center in group)
+        return [(day, merged_center)]
+    logger.info(
+        "unable to merge centers within epsilon due to differing day labels: days=%s",
+        sorted(unique_days),
+    )
+    return group
