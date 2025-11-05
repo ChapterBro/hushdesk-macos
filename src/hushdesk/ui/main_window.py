@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import tempfile
 from pathlib import Path
 from typing import Optional
+from uuid import uuid4
 
 from PySide6.QtCore import Qt, QThread, Signal, Slot
 from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QGuiApplication, QPalette, QTextCursor
@@ -26,8 +28,10 @@ from PySide6.QtWidgets import (
 )
 
 from hushdesk.placeholders import build_placeholder_output
+from hushdesk.preview.overlay import render_band_preview
 from hushdesk.workers.audit_worker import AuditWorker
 from .evidence_panel import EvidencePanel
+from .preview_dialog import PreviewDialog
 from .review_explorer import ReviewExplorer
 
 
@@ -276,6 +280,7 @@ class MainWindow(QMainWindow):
         self.review_explorer = ReviewExplorer()
         self.review_explorer.record_selected.connect(self._on_review_record_selected)
         self.review_explorer.anomaly_selected.connect(self._on_anomaly_selected)
+        self.review_explorer.preview_requested.connect(self._on_preview_requested)
 
         self.evidence_panel = EvidencePanel()
 
@@ -517,6 +522,50 @@ class MainWindow(QMainWindow):
         self._selected_record = dict(payload)
         if hasattr(self, "evidence_panel"):
             self.evidence_panel.set_record(self._selected_record, self._current_pdf_path)
+
+    @Slot(dict)
+    def _on_preview_requested(self, payload: dict) -> None:
+        if not isinstance(payload, dict):
+            return
+        if self._current_pdf_path is None or not self._current_pdf_path.exists():
+            QMessageBox.warning(self, "Preview Unavailable", "PDF source not available for preview.")
+            return
+        page_index: Optional[int] = payload.get("page_index") if isinstance(payload.get("page_index"), int) else None
+        if page_index is None:
+            extras = payload.get("extras") if isinstance(payload.get("extras"), dict) else {}
+            maybe_page = extras.get("page_index")
+            if isinstance(maybe_page, int):
+                page_index = maybe_page
+        if page_index is None:
+            QMessageBox.warning(self, "Preview Unavailable", "Record is missing page information.")
+            return
+
+        label_list = payload.get("overlay_labels") if isinstance(payload.get("overlay_labels"), list) else []
+        overlays = {
+            "page_pixels": payload.get("page_pixels") if isinstance(payload.get("page_pixels"), dict) else {},
+            "audit_band": payload.get("audit_band"),
+            "slot_bboxes": payload.get("slot_bboxes") if isinstance(payload.get("slot_bboxes"), dict) else {},
+            "vital_bbox": payload.get("vital_bbox"),
+            "mark_bboxes": payload.get("mark_bboxes") if isinstance(payload.get("mark_bboxes"), list) else [],
+            "labels": label_list,
+            "overlay_labels": label_list,
+        }
+
+        temp_dir = Path(tempfile.gettempdir())
+        preview_path = temp_dir / f"hushdesk-preview-{uuid4().hex}.png"
+        try:
+            render_band_preview(
+                str(self._current_pdf_path),
+                int(page_index),
+                overlays,
+                preview_path,
+            )
+        except Exception as exc:  # pragma: no cover - user feedback
+            QMessageBox.warning(self, "Preview Error", f"Unable to render preview: {exc}")
+            return
+
+        dialog = PreviewDialog(preview_path, overlays, self)
+        dialog.exec()
 
     @Slot(dict)
     def _on_anomaly_selected(self, anomaly: dict) -> None:

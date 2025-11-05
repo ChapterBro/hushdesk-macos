@@ -73,6 +73,7 @@ class AuditWorker(QObject):
         self._page_room_cache: Dict[int, Optional[Tuple[str, str]]] = {}
         self._page_filter = {int(index) for index in page_filter} if page_filter else None
         self._trace = bool(trace)
+        self._page_render_cache: Dict[int, Tuple[float, int, int]] = {}
 
     @Slot()
     def run(self) -> None:
@@ -238,6 +239,7 @@ class AuditWorker(QObject):
             text_dict = page.get_text("dict")
         except RuntimeError:
             return counts
+        scale, page_width_px, page_height_px = self._page_render_metrics(page)
 
         block_candidates = self._find_block_candidates(page, band, text_dict)
         for block_bbox, rule_text in block_candidates:
@@ -347,6 +349,14 @@ class AuditWorker(QObject):
                 )
                 self._extend_fallback_trace(trace_log, hr_result, context="HR")
                 hr_value = hr_result.get("hr")
+
+            slot_rect_map_points: Dict[str, Optional[Tuple[float, float, float, float]]] = {}
+            for slot_label_name, slot_bounds in dose_bounds_map.items():
+                slot_rect_map_points[slot_label_name] = self._build_slot_rect(
+                    slot_x0,
+                    slot_x1,
+                    slot_bounds,
+                )
 
             if split_band_used:
                 self.log.emit(
@@ -673,6 +683,24 @@ class AuditWorker(QObject):
                     )
                     source_type = self._resolve_source_type(source_flags)
                     token_boxes = self._build_token_boxes(state.get("vitals"), due_rect)
+                    overlay_pixels = self._build_overlay_payload(
+                        band_rect=self._band_rect_tuple(band),
+                        slot_rects=slot_rect_map_points,
+                        token_boxes=token_boxes,
+                        scale=scale,
+                        page_width_px=page_width_px,
+                        page_height_px=page_height_px,
+                        active_slot=slot_name,
+                        slot_bp=slot_bp,
+                        slot_hr=slot_hr,
+                    )
+                    dy_px = float(dy_value) * scale if isinstance(dy_value, (int, float)) else None
+                    cluster_y_px = float(cluster_y) * scale if isinstance(cluster_y, (int, float)) else None
+                    source_meta: Dict[str, object] = {"vital_source": source_type}
+                    if dy_px is not None:
+                        source_meta["dy_px"] = dy_px
+                    if cluster_y_px is not None:
+                        source_meta["cluster_y_px"] = cluster_y_px
                     extras: Dict[str, object] = {
                         "mark_display": mark_display,
                         "mark_type": mark.name,
@@ -691,6 +719,8 @@ class AuditWorker(QObject):
                         "slot_rect": slot_rect,
                         "due_rect": due_rect,
                         "token_boxes": token_boxes,
+                        "overlay_pixels": overlay_pixels,
+                        "source_meta": source_meta,
                         "source_flags": source_flags,
                         "source_type": source_type,
                         "slot_label": slot_label,
@@ -1441,6 +1471,18 @@ class AuditWorker(QObject):
         slot_label = extras_copy.get("slot_label") or record.dose
         source_type = extras_copy.get("source_type") or "label"
         page_index = extras_copy.get("page_index")
+        overlay_pixels = extras_copy.get("overlay_pixels")
+        if not isinstance(overlay_pixels, dict):
+            overlay_pixels = {}
+        source_meta = extras_copy.get("source_meta")
+        if not isinstance(source_meta, dict):
+            source_meta = {}
+        audit_band = overlay_pixels.get("audit_band")
+        slot_bboxes = overlay_pixels.get("slot_bboxes") if isinstance(overlay_pixels.get("slot_bboxes"), dict) else {}
+        vital_bbox = overlay_pixels.get("vital_bbox")
+        mark_bboxes = overlay_pixels.get("mark_bboxes") if isinstance(overlay_pixels.get("mark_bboxes"), list) else []
+        overlay_labels = overlay_pixels.get("labels") if isinstance(overlay_pixels.get("labels"), list) else []
+        page_pixels = overlay_pixels.get("page") if isinstance(overlay_pixels.get("page"), dict) else {}
         search_parts = [
             record.room_bed,
             slot_label,
@@ -1470,6 +1512,14 @@ class AuditWorker(QObject):
             "triggered": bool(extras_copy.get("triggered")),
             "page_index": int(page_index) if isinstance(page_index, int) else None,
             "extras": extras_copy,
+            "page_pixels": dict(page_pixels),
+            "audit_band": tuple(audit_band) if isinstance(audit_band, (list, tuple)) else audit_band,
+            "slot_bboxes": {str(key): tuple(value) for key, value in slot_bboxes.items()} if isinstance(slot_bboxes, dict) else {},
+            "vital_bbox": tuple(vital_bbox) if isinstance(vital_bbox, (list, tuple)) else None,
+            "mark_bboxes": [tuple(rect) for rect in mark_bboxes if isinstance(rect, (list, tuple))],
+            "vital_boxes": [tuple(rect) for rect in overlay_pixels.get("vital_boxes", []) if isinstance(rect, (list, tuple))],
+            "overlay_labels": list(overlay_labels),
+            "source_meta": dict(source_meta),
             "search_blob": search_blob,
         }
 
@@ -1542,6 +1592,145 @@ class AuditWorker(QObject):
         if isinstance(hr_bbox, (list, tuple)) and len(hr_bbox) == 4:
             boxes["hr"].append(tuple(map(float, hr_bbox)))
         return boxes
+
+    def _page_render_metrics(self, page: "fitz.Page") -> Tuple[float, int, int]:
+        page_index = int(getattr(page, "number", 0))
+        cached = self._page_render_cache.get(page_index)
+        if cached:
+            return cached
+        page_width = float(page.rect.width or 0.0)
+        page_height = float(page.rect.height or 0.0)
+        target_width = 1600.0
+        scale = 1.0
+        if page_width > 0:
+            scale = max(1.0, target_width / page_width)
+        matrix = fitz.Matrix(scale, scale) if fitz is not None else None  # type: ignore[attr-defined]
+        width_px = int(round(page_width * scale)) if page_width > 0 else int(scale * 1000)
+        height_px = int(round(page_height * scale)) if page_height > 0 else int(scale * 1000)
+        if matrix is not None:
+            try:
+                pix = page.get_pixmap(matrix=matrix)
+                width_px = int(pix.width)
+                height_px = int(pix.height)
+            except Exception:
+                pass
+        metrics = (scale, width_px, height_px)
+        self._page_render_cache[page_index] = metrics
+        return metrics
+
+    @staticmethod
+    def _rect_points_to_pixels(
+        rect: Optional[Tuple[float, float, float, float]],
+        scale: float,
+    ) -> Optional[Tuple[float, float, float, float]]:
+        if rect is None:
+            return None
+        x0, y0, x1, y1 = rect
+        width = x1 - x0
+        height = y1 - y0
+        if width <= 0.0 or height <= 0.0:
+            return None
+        factor = float(scale) if scale > 0 else 1.0
+        return (
+            x0 * factor,
+            y0 * factor,
+            width * factor,
+            height * factor,
+        )
+
+    def _rect_list_to_pixels(
+        self,
+        rects: Iterable[Tuple[float, float, float, float]],
+        scale: float,
+    ) -> List[Tuple[float, float, float, float]]:
+        results: List[Tuple[float, float, float, float]] = []
+        for rect in rects:
+            converted = self._rect_points_to_pixels(rect, scale)
+            if converted is not None:
+                results.append(converted)
+        return results
+
+    @staticmethod
+    def _union_rects(
+        rects: Iterable[Tuple[float, float, float, float]]
+    ) -> Optional[Tuple[float, float, float, float]]:
+        rect_list = list(rects)
+        if not rect_list:
+            return None
+        x0 = min(rect[0] for rect in rect_list)
+        y0 = min(rect[1] for rect in rect_list)
+        x1 = max(rect[0] + rect[2] for rect in rect_list)
+        y1 = max(rect[1] + rect[3] for rect in rect_list)
+        width = x1 - x0
+        height = y1 - y0
+        if width <= 0.0 or height <= 0.0:
+            return None
+        return (x0, y0, width, height)
+
+    def _build_overlay_payload(
+        self,
+        *,
+        band_rect: Optional[Tuple[float, float, float, float]],
+        slot_rects: Dict[str, Optional[Tuple[float, float, float, float]]],
+        token_boxes: Dict[str, List[Tuple[float, float, float, float]]],
+        scale: float,
+        page_width_px: int,
+        page_height_px: int,
+        active_slot: str,
+        slot_bp: Optional[str],
+        slot_hr: Optional[int],
+    ) -> Dict[str, object]:
+        slot_rects_px: Dict[str, Tuple[float, float, float, float]] = {}
+        for key, rect in slot_rects.items():
+            converted = self._rect_points_to_pixels(rect, scale)
+            if converted is not None:
+                slot_rects_px[str(key)] = converted
+        band_rect_px = self._rect_points_to_pixels(band_rect, scale)
+        bp_rects = token_boxes.get("bp") if isinstance(token_boxes, dict) else []
+        hr_rects = token_boxes.get("hr") if isinstance(token_boxes, dict) else []
+        mark_rects = token_boxes.get("mark") if isinstance(token_boxes, dict) else []
+        bp_rects_px = self._rect_list_to_pixels(bp_rects or [], scale)
+        hr_rects_px = self._rect_list_to_pixels(hr_rects or [], scale)
+        mark_rects_px = self._rect_list_to_pixels(mark_rects or [], scale)
+        vital_rects_px: List[Tuple[float, float, float, float]] = []
+        vital_rects_px.extend(bp_rects_px)
+        vital_rects_px.extend(hr_rects_px)
+        vital_bbox_px = self._union_rects(vital_rects_px)
+
+        labels: List[Dict[str, object]] = []
+        if slot_bp and bp_rects_px:
+            label_rect = bp_rects_px[0]
+            labels.append(
+                {
+                    "text": f"SBP: {slot_bp}",
+                    "x": label_rect[0],
+                    "y": max(0.0, label_rect[1] - 18.0),
+                }
+            )
+        if isinstance(slot_hr, int) and hr_rects_px:
+            label_rect = hr_rects_px[0]
+            labels.append(
+                {
+                    "text": f"HR: {slot_hr}",
+                    "x": label_rect[0],
+                    "y": max(0.0, label_rect[1] - 18.0),
+                }
+            )
+
+        return {
+            "page": {
+                "width": int(page_width_px),
+                "height": int(page_height_px),
+                "scale": float(scale),
+            },
+            "active_slot": active_slot,
+            "audit_band": band_rect_px,
+            "slot_bboxes": slot_rects_px,
+            "vital_bbox": vital_bbox_px,
+            "vital_boxes": vital_rects_px,
+            "mark_bboxes": mark_rects_px,
+            "labels": labels,
+        }
 
     @staticmethod
     def _append_anomaly(

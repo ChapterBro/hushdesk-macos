@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Dict, Iterable, List, Optional, Set
 
 from PySide6.QtCore import Qt, Signal
@@ -14,7 +15,9 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QLineEdit,
     QSizePolicy,
+    QStyle,
     QTabWidget,
+    QToolButton,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -36,6 +39,7 @@ class ReviewExplorer(QWidget):
 
     record_selected = Signal(dict)
     anomaly_selected = Signal(dict)
+    preview_requested = Signal(dict)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -83,12 +87,17 @@ class ReviewExplorer(QWidget):
         layout.addWidget(search_frame)
 
         self.tree = QTreeWidget()
+        self.tree.setColumnCount(2)
         self.tree.setHeaderHidden(True)
         self.tree.setRootIsDecorated(False)
         self.tree.setAlternatingRowColors(False)
         self.tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
         self.tree.itemSelectionChanged.connect(self._on_selection_changed)
         self.tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.tree.setColumnWidth(1, 60)
+        header_view = self.tree.header()
+        header_view.setStretchLastSection(False)
+        header_view.setDefaultSectionSize(60)
 
         decisions_container = QWidget()
         decisions_layout = QVBoxLayout(decisions_container)
@@ -214,21 +223,25 @@ class ReviewExplorer(QWidget):
                 continue
 
             header_text = f"{kind} ({total_count})"
-            header_item = QTreeWidgetItem([header_text])
+            header_item = QTreeWidgetItem([header_text, ""])
             header_item.setFlags(header_item.flags() & ~Qt.ItemIsSelectable)
+            header_item.setFirstColumnSpanned(True)
             self.tree.addTopLevelItem(header_item)
 
             if not filtered:
-                placeholder = QTreeWidgetItem(["(no matches)"])
+                placeholder = QTreeWidgetItem(["(no matches)", ""])
                 placeholder.setFlags(placeholder.flags() & ~Qt.ItemIsSelectable)
+                placeholder.setFirstColumnSpanned(True)
                 header_item.addChild(placeholder)
                 header_item.setExpanded(True)
                 continue
 
             for record in filtered:
-                item = QTreeWidgetItem([self._format_row(record)])
+                item = QTreeWidgetItem([self._format_row(record), ""])
                 item.setData(0, Qt.ItemDataRole.UserRole, record)
                 header_item.addChild(item)
+                button = self._make_preview_button(record)
+                self.tree.setItemWidget(item, 1, button)
 
             header_item.setExpanded(True)
 
@@ -317,6 +330,17 @@ class ReviewExplorer(QWidget):
         payload = item.data(Qt.ItemDataRole.UserRole)
         if isinstance(payload, dict):
             self.anomaly_selected.emit(dict(payload))
+
+    def _make_preview_button(self, record: dict) -> QToolButton:
+        button = QToolButton(self.tree)
+        button.setAutoRaise(True)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
+        icon = self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton)
+        button.setIcon(icon)
+        button.setToolTip("Open decision preview")
+        payload = dict(record)
+        button.clicked.connect(partial(self.preview_requested.emit, payload))
+        return button
 
     def _select_first_filtered_record(self) -> None:
         if not self._anomaly_filter_ids:
