@@ -1,10 +1,12 @@
-phase: release-alpha-local
-summary: "Blocks:121 Tracks:237 Date:11/04/2025 Reviewed:46 Hold-Miss:0 Held-Appropriate:2 Compliant:38 DC'D:6"
-txt: "/Users/hushdesk/Library/Application Support/HushDesk/Exports/11_04_2025_BRIDGEMAN_Administration Record Report 2025-11-05.txt"
-receipts:
-  - AUTOMATION: HEADLESS_OK
-  - GUI_AUDIT_OK source="/Users/hushdesk/Downloads/Administration Record Report 2025-11-05.pdf" reviewed=46 hm=0 ha=2 comp=38 dcd=6
+phase: release-drafted
+tag: v0.1.0-mac-alpha
+release: draft
 artifacts:
   - dist/HushDesk_mac_unsigned_alpha.zip
   - dist/HushDesk_mac_unsigned_alpha.zip.sha256
   - RUNBOOK_LOCAL.md
+receipts:
+  - MERGE_OK pr=#1 tag=v0.1.0-mac-alpha
+  - RELEASE_DRAFT_OK version=v0.1.0-mac-alpha assets=3
+  - WORKSPACE_CLEAN_OK stash_created=true
+next_task: (optional) publish release after manual GUI smoke; start v0.1.1 backlog
