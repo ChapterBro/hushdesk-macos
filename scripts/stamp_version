@@ -22,7 +22,7 @@ else
 fi
 IFS='.' read -r -a seg <<<"$build"
 ((${#seg[@]}>=1 && ${#seg[@]}<=3)) || { echo "BUILD must have 1–3 integer segments: $build" >&2; exit 1; }
-for s in "${seg[@]}"; do [[ "$s" =~ ^[0-9]+$ ]] || { echo "BUILD must be integers: $build" >&2; exit 1; }; (( s <= 2147483647 )) || { echo "BUILD segment too large: $s" >&2; exit 1; }; done
+for s in "${seg[@]}"; do [[ "$s" =~ ^[0-9]+$ ]] || { echo "BUILD must be integers: $build" >&2; exit 1; }; (( 10#$s <= 2147483647 )) || { echo "BUILD segment too large: $s" >&2; exit 1; }; done
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string $version" "$plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $build" "$plist"
 echo "Stamped VERSION: $version"
