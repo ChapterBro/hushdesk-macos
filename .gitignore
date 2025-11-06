@@ -11,3 +11,11 @@ build/
 *.dmg
 .coverage
 .pytest_cache/
+.venv*/
+build/
+dist/
+debug/
+__pycache__/
+*.pyc
+*.DS_Store
+hushdesk/logs/
