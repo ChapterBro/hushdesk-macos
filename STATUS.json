@@ -1,15 +1,4 @@
 {
-  "phase": "release-drafted",
-  "tag": "v0.1.0-mac-alpha",
-  "release": "draft",
-  "artifacts": [
-    "dist/HushDesk_mac_unsigned_alpha.zip",
-    "dist/HushDesk_mac_unsigned_alpha.zip.sha256",
-    "RUNBOOK_LOCAL.md"
-  ],
-  "receipts": {
-    "merge": "MERGE_OK pr=#1 tag=v0.1.0-mac-alpha",
-    "release": "RELEASE_DRAFT_OK version=v0.1.0-mac-alpha assets=3",
-    "workspace": "WORKSPACE_CLEAN_OK stash_created=true"
-  }
+  "phase": "qa-redirect-ok",
+  "qa_dir": "~/Library/Application Support/HushDesk/QA"
 }
