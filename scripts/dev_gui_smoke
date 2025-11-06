@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e
+cd "$(dirname "$0")/.."
+. ./.venv/bin/activate
+export PYTHONPATH=src
+export HUSHDESK_USE_RUST="${HUSHDESK_USE_RUST:-1}"
+export HUSHDESK_AUDIT_DATE_MM_DD_YYYY="${HUSHDESK_AUDIT_DATE_MM_DD_YYYY:-$(date -v-1d +%m/%d/%Y)}"
+echo "[HushDesk] Launching GUI with AUDIT=$HUSHDESK_AUDIT_DATE_MM_DD_YYYY, RUST=${HUSHDESK_USE_RUST}"
+./scripts/dev

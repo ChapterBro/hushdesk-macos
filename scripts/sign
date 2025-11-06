@@ -4,6 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_PATH="${REPO_ROOT}/dist/HushDesk.app"
+ENTITLEMENTS_PATH="${ENTITLEMENTS_PATH:-}"
 
 if [ -z "${CODESIGN_ID:-}" ]; then
   echo "error: CODESIGN_ID environment variable is required" >&2
@@ -22,7 +23,17 @@ fi
 
 cd "${REPO_ROOT}"
 
-codesign --deep --force --options runtime --timestamp --sign "${CODESIGN_ID}" "${APP_PATH}"
+SIGN_ARGS=(--deep --force --options runtime --timestamp)
+if [ -n "${ENTITLEMENTS_PATH}" ]; then
+  if [ ! -f "${ENTITLEMENTS_PATH}" ]; then
+    echo "error: entitlements file ${ENTITLEMENTS_PATH} not found" >&2
+    exit 1
+  fi
+  SIGN_ARGS+=(--entitlements "${ENTITLEMENTS_PATH}")
+fi
+SIGN_ARGS+=(--sign "${CODESIGN_ID}" "${APP_PATH}")
+
+codesign "${SIGN_ARGS[@]}"
 
 codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
 

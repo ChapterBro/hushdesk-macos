@@ -1,0 +1,23 @@
+==> Building with: .venv_build/bin/pyinstaller
+32 INFO: PyInstaller: 6.16.0, contrib hooks: 2025.9
+32 INFO: Python: 3.11.14
+37 INFO: Platform: macOS-26.1-arm64-arm-64bit
+37 INFO: Python environment: /Users/hushdesk/Projects/hushdesk-macos/.venv_build
+39 INFO: Module search paths (PYTHONPATH):
+['/Users/hushdesk/Projects/hushdesk-macos/src',
+ '/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python311.zip',
+ '/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11',
+ '/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/lib-dynload',
+ '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages',
+ '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/setuptools/_vendor',
+ '/Users/hushdesk/Projects/hushdesk-macos/src']
+105 INFO: Appending 'datas' from .spec
+105 INFO: checking Analysis
+110 INFO: checking PYZ
+111 INFO: EXE target arch: arm64
+111 INFO: Code signing identity: None
+112 INFO: checking PKG
+112 INFO: Bootloader /Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/bootloader/Darwin-64bit/runw
+112 INFO: checking EXE
+113 INFO: checking COLLECT
+ERROR: The output directory "/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk" is not empty. Please remove all its contents or use the -y option (remove output directory without confirmation).

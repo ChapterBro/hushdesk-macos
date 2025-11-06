@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+app="${1:-"$repo_root/dist/HushDesk.app"}"
+plist="$app/Contents/Info.plist"
+version="${VERSION:-$(python3 - <<'PY'
+import re, pathlib
+p = pathlib.Path('src/hushdesk/__init__.py')
+if p.exists():
+    m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", p.read_text())
+    print(m.group(1) if m else "0.1.0")
+else:
+    print("0.1.0")
+PY
+)}"
+build_raw="${BUILD:-$(/bin/date +%Y%m%d.%H%M%S)}"
+IFS='.' read -r -a seg <<<"$build_raw"
+if ((${#seg[@]}==1)); then
+  ymd="${build_raw:0:8}"; hms="${build_raw:8:6}"; build="${ymd}.${hms:-000000}"
+else
+  build="$build_raw"
+fi
+IFS='.' read -r -a seg <<<"$build"
+((${#seg[@]}>=1 && ${#seg[@]}<=3)) || { echo "BUILD must have 1–3 integer segments: $build" >&2; exit 1; }
+for s in "${seg[@]}"; do [[ "$s" =~ ^[0-9]+$ ]] || { echo "BUILD must be integers: $build" >&2; exit 1; }; (( s <= 2147483647 )) || { echo "BUILD segment too large: $s" >&2; exit 1; }; done
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string $version" "$plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $build" "$plist"
+echo "Stamped VERSION: $version"
+echo "Stamped BUILD:   $build"

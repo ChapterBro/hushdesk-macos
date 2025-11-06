@@ -38,8 +38,12 @@ fn y_cluster(points: Vec<f64>, bin_px: i32) -> PyResult<Vec<f64>> {
         })
         .collect();
 
-    centers.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    centers.dedup_by(|a, b| (a - b).abs() <= f64::EPSILON);
+    // sort centers before dedup
+    centers.sort_by(|x, y| x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal));
+
+    // dedup within a small epsilon
+    const EPS: f64 = 1e-6;
+    centers.dedup_by(|a, b| (*a - *b).abs() <= EPS);
     Ok(centers)
 }
 

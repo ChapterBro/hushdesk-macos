@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- accel: fix center dedup, maturin develop OK; parity with Python confirmed.
+- preview: overlay dialog with audit column, slot, and glyph highlights plus Results preview launchers.
+- ui: QA mode toolbar toggle surfaces inline source/dy diagnostics and slot/vital flags.
+- build: packaging metadata tightened, optional release helper, and GUI smoke launcher script.
+
 ## Phase 8 – Optional Accelerators
 - feat(accel): optional pyo3 crate with Python fallbacks for y-cluster, BP stitch, and band selection wiring in vitals/layout.
 - test(accel): parity coverage for accelerators and Rust toggle smoke on audit worker fixtures.

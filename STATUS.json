@@ -1,0 +1,6 @@
+{
+  "phase": "tests-pytest-ok",
+  "python": "3.11",
+  "pytest": ">=8,<9",
+  "quick_tests": "ok"
+}

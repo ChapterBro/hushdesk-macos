@@ -1,0 +1,7 @@
+HushDesk: launching GUI
+HushDesk: runtime base /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/Frameworks
+HushDesk: executable /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk
+HushDesk: using support dir /Users/hushdesk/Library/Application Support/HushDesk
+HushDesk: main window shown
+PyMuPDF is not available; skipping column band detection.
+HushDesk: event loop exited (0)

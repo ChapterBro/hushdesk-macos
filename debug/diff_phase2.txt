@@ -1,0 +1,1903 @@
+diff --git a/debug/build.log b/debug/build.log
+index 26523c1..db83f57 100644
+--- a/debug/build.log
++++ b/debug/build.log
+@@ -1,10 +1,9 @@
+-Cleaning /Users/hushdesk/Projects/hushdesk-macos/dist
+-28 INFO: PyInstaller: 6.16.0, contrib hooks: 2025.9
+-28 INFO: Python: 3.11.14
+-32 INFO: Platform: macOS-26.1-arm64-arm-64bit
+-32 INFO: Python environment: /Users/hushdesk/Projects/hushdesk-macos/.venv_build
+-32 INFO: wrote /Users/hushdesk/Projects/hushdesk-macos/HushDesk.spec
+-34 INFO: Module search paths (PYTHONPATH):
++==> Building with: .venv_build/bin/pyinstaller
++29 INFO: PyInstaller: 6.16.0, contrib hooks: 2025.9
++29 INFO: Python: 3.11.14
++33 INFO: Platform: macOS-26.1-arm64-arm-64bit
++33 INFO: Python environment: /Users/hushdesk/Projects/hushdesk-macos/.venv_build
++35 INFO: Module search paths (PYTHONPATH):
+ ['/Users/hushdesk/Projects/hushdesk-macos/src',
+  '/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python311.zip',
+  '/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11',
+@@ -14,78 +13,75 @@ Cleaning /Users/hushdesk/Projects/hushdesk-macos/dist
+  '/Users/hushdesk/Projects/hushdesk-macos/src']
+ 101 INFO: Appending 'datas' from .spec
+ 101 INFO: checking Analysis
+-101 INFO: Building Analysis because Analysis-00.toc is non existent
+-101 INFO: Looking for Python shared library...
+-102 INFO: Using Python shared library: /opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/Python
+-102 INFO: Running Analysis Analysis-00.toc
+-102 INFO: Target bytecode optimization level: 0
+-102 INFO: Initializing module dependency graph...
+-102 INFO: Initializing module graph hook caches...
+-106 INFO: Analyzing modules for base_library.zip ...
+-354 INFO: Processing standard module hook 'hook-heapq.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-381 INFO: Processing standard module hook 'hook-encodings.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-878 INFO: Processing standard module hook 'hook-pickle.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-1359 INFO: Caching module dependency graph...
+-1373 INFO: Analyzing /Users/hushdesk/Projects/hushdesk-macos/src/hushdesk/app.py
+-1376 INFO: Processing standard module hook 'hook-PySide6.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-1439 INFO: Processing standard module hook 'hook-shiboken6.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-1496 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-1837 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-2130 INFO: Processing standard module hook 'hook-PySide6.QtWidgets.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-2517 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-2632 INFO: Processing standard module hook 'hook-platform.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-2642 INFO: Processing standard module hook 'hook-xml.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-2678 INFO: Processing standard module hook 'hook-zoneinfo.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+-2686 INFO: Processing standard module hook 'hook-sysconfig.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-2691 INFO: Processing standard module hook 'hook-_osx_support.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-2734 INFO: Processing module hooks (post-graph stage)...
+-2866 INFO: Processing standard module hook 'hook-PySide6.QtDBus.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-2916 INFO: Performing binary vs. data reclassification (125 entries)
+-2940 INFO: Looking for ctypes DLLs
+-2944 INFO: Analyzing run-time hooks ...
+-2944 INFO: Including run-time hook 'pyi_rth_inspect.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks/rthooks'
+-2945 INFO: Including run-time hook 'pyi_rth_pyside6.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks/rthooks'
+-2945 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks/pre_find_module_path'
+-2946 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
+-2948 INFO: Creating base_library.zip...
+-2954 INFO: Looking for dynamic libraries
+-3072 INFO: Warnings written to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/warn-HushDesk.txt
+-3077 INFO: Graph cross-reference written to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/xref-HushDesk.html
+-3143 INFO: checking PYZ
+-3143 INFO: Building PYZ because PYZ-00.toc is non existent
+-3143 INFO: Building PYZ (ZlibArchive) /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/PYZ-00.pyz
+-3234 INFO: Building PYZ (ZlibArchive) /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/PYZ-00.pyz completed successfully.
+-3235 INFO: EXE target arch: arm64
+-3235 INFO: Code signing identity: None
+-3236 INFO: checking PKG
+-3236 INFO: Building PKG because PKG-00.toc is non existent
+-3236 INFO: Building PKG (CArchive) HushDesk.pkg
+-3240 INFO: Building PKG (CArchive) HushDesk.pkg completed successfully.
+-3241 INFO: Bootloader /Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/bootloader/Darwin-64bit/runw
+-3241 INFO: checking EXE
+-3241 INFO: Building EXE because EXE-00.toc is non existent
+-3241 INFO: Building EXE from EXE-00.toc
+-3241 INFO: Copying bootloader EXE to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/HushDesk
+-3241 INFO: Converting EXE to target arch (arm64)
+-3249 INFO: Removing signature(s) from EXE
+-3256 INFO: Modifying Mach-O image UUID(s) in EXE
+-3257 INFO: Appending PKG archive to EXE
+-3258 INFO: Fixing EXE headers for code signing
+-3259 INFO: Re-signing the EXE
+-3268 INFO: Building EXE from EXE-00.toc completed successfully.
+-3269 INFO: checking COLLECT
+-3269 INFO: Building COLLECT because COLLECT-00.toc is non existent
+-3270 INFO: Building COLLECT COLLECT-00.toc
+-3661 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+-3663 INFO: checking BUNDLE
+-3663 INFO: Building BUNDLE because BUNDLE-00.toc is non existent
+-3663 INFO: Building BUNDLE BUNDLE-00.toc
+-4083 INFO: Signing the BUNDLE...
+-4162 INFO: Building BUNDLE BUNDLE-00.toc completed successfully.
+-4164 INFO: Build complete! The results are available in: /Users/hushdesk/Projects/hushdesk-macos/dist
++104 INFO: Building because /Users/hushdesk/Projects/hushdesk-macos/src/hushdesk/ui/main_window.py changed
++104 INFO: Looking for Python shared library...
++105 INFO: Using Python shared library: /opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/Python
++105 INFO: Running Analysis Analysis-00.toc
++105 INFO: Target bytecode optimization level: 0
++105 INFO: Initializing module dependency graph...
++105 INFO: Initializing module graph hook caches...
++108 INFO: Analyzing modules for base_library.zip ...
++362 INFO: Processing standard module hook 'hook-heapq.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++390 INFO: Processing standard module hook 'hook-encodings.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++962 INFO: Processing standard module hook 'hook-pickle.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++1459 INFO: Caching module dependency graph...
++1473 INFO: Analyzing /Users/hushdesk/Projects/hushdesk-macos/src/hushdesk/app.py
++1475 INFO: Processing standard module hook 'hook-PySide6.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++1537 INFO: Processing standard module hook 'hook-shiboken6.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++1593 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++1928 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++2229 INFO: Processing standard module hook 'hook-PySide6.QtWidgets.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++2599 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++2717 INFO: Processing standard module hook 'hook-platform.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++2727 INFO: Processing standard module hook 'hook-xml.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++2762 INFO: Processing standard module hook 'hook-zoneinfo.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/_pyinstaller_hooks_contrib/stdhooks'
++2771 INFO: Processing standard module hook 'hook-sysconfig.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++2776 INFO: Processing standard module hook 'hook-_osx_support.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++2819 INFO: Processing module hooks (post-graph stage)...
++2953 INFO: Processing standard module hook 'hook-PySide6.QtDBus.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++3002 INFO: Performing binary vs. data reclassification (125 entries)
++3023 INFO: Looking for ctypes DLLs
++3027 INFO: Analyzing run-time hooks ...
++3027 INFO: Including run-time hook 'pyi_rth_inspect.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks/rthooks'
++3028 INFO: Including run-time hook 'pyi_rth_pyside6.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks/rthooks'
++3029 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks/pre_find_module_path'
++3029 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from '/Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/hooks'
++3032 INFO: Creating base_library.zip...
++3038 INFO: Looking for dynamic libraries
++3161 INFO: Warnings written to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/warn-HushDesk.txt
++3166 INFO: Graph cross-reference written to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/xref-HushDesk.html
++3233 INFO: checking PYZ
++3234 INFO: Building because /Users/hushdesk/Projects/hushdesk-macos/src/hushdesk/ui/main_window.py changed
++3234 INFO: Building PYZ (ZlibArchive) /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/PYZ-00.pyz
++3324 INFO: Building PYZ (ZlibArchive) /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/PYZ-00.pyz completed successfully.
++3325 INFO: EXE target arch: arm64
++3325 INFO: Code signing identity: None
++3326 INFO: checking PKG
++3326 INFO: Building because /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/PYZ-00.pyz changed
++3326 INFO: Building PKG (CArchive) HushDesk.pkg
++3331 INFO: Building PKG (CArchive) HushDesk.pkg completed successfully.
++3331 INFO: Bootloader /Users/hushdesk/Projects/hushdesk-macos/.venv_build/lib/python3.11/site-packages/PyInstaller/bootloader/Darwin-64bit/runw
++3331 INFO: checking EXE
++3331 INFO: Rebuilding EXE-00.toc because pkg is more recent
++3331 INFO: Building EXE from EXE-00.toc
++3331 INFO: Copying bootloader EXE to /Users/hushdesk/Projects/hushdesk-macos/build/HushDesk/HushDesk
++3332 INFO: Converting EXE to target arch (arm64)
++3339 INFO: Removing signature(s) from EXE
++3347 INFO: Modifying Mach-O image UUID(s) in EXE
++3348 INFO: Appending PKG archive to EXE
++3349 INFO: Fixing EXE headers for code signing
++3350 INFO: Re-signing the EXE
++3359 INFO: Building EXE from EXE-00.toc completed successfully.
++3360 INFO: checking COLLECT
++3361 INFO: Building COLLECT COLLECT-00.toc
++3744 INFO: Building COLLECT COLLECT-00.toc completed successfully.
++3746 INFO: checking BUNDLE
++3747 INFO: Building BUNDLE BUNDLE-00.toc
++4157 INFO: Signing the BUNDLE...
++4236 INFO: Building BUNDLE BUNDLE-00.toc completed successfully.
++4238 INFO: Build complete! The results are available in: /Users/hushdesk/Projects/hushdesk-macos/dist
++==> Stamping Info.plist
+ Stamped VERSION: 0.1.0
+-Stamped BUILD:   20251105204501
+-created: /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.dmg
+-Build artifacts ready:
+-  App: /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app
+-  DMG: /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.dmg
++Stamped BUILD:   20251105.151316
++==> Clearing quarantine (local-only)
++Build: PASS
+diff --git a/debug/launch_cli.log b/debug/launch_cli.log
+index e69de29..056b532 100644
+--- a/debug/launch_cli.log
++++ b/debug/launch_cli.log
+@@ -0,0 +1,9 @@
++HushDesk: launching GUI
++HushDesk: runtime base /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/Frameworks
++HushDesk: executable /Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk
++HushDesk: using support dir /Users/hushdesk/Library/Application Support/HushDesk
++HushDesk: main window shown
++PyMuPDF is not available; skipping column band detection.
++PyMuPDF is not available; skipping column band detection.
++PyMuPDF is not available; skipping column band detection.
++HushDesk: event loop exited (0)
+diff --git a/debug/launch_finder.log b/debug/launch_finder.log
+index 524f4d2..8e9d578 100644
+--- a/debug/launch_finder.log
++++ b/debug/launch_finder.log
+@@ -1,419 +1,340 @@
+ Filtering the log data using "process == "HushDesk" OR subsystem CONTAINS "LaunchServices""
+ Timestamp               Ty Process[PID:TID]
+-2025-11-05 14:57:40.905 A  HushDesk[9742:120a8] (libsystem_info.dylib) Retrieve User by ID
+-2025-11-05 14:57:40.905 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x10031e970] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.daemon
+-2025-11-05 14:57:40.906 Df HushDesk[9742:120d2] [com.apple.xpc:connection] [0x10031f0c0] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.agent
+-2025-11-05 14:57:40.908 Df HushDesk[9742:120d1] [com.apple.securityd:security_exception] MacOS error: -67030
+-2025-11-05 14:57:40.908 Df HushDesk[9742:120d1] [com.apple.securityd:security_exception] MacOS error: -67030
+-2025-11-05 14:57:40.953 I  HushDesk[9742:120a8] [com.apple.CarbonCore:coreservicesdaemon] SCSession():SCSession( id=100, this=0x0x100324750 option=65538) created, forUID=501 mach_port_t=0xe07.
+-2025-11-05 14:57:40.953 I  HushDesk[9742:120a8] [com.apple.CarbonCore:coreservicesdaemon] SCSession():SCSession( id=101, this=0x0x100324890 option=65538) created, forUID=501 mach_port_t=0x1c0b.
+-2025-11-05 14:57:40.953 I  HushDesk[9742:120a8] [com.apple.CarbonCore:coreservicesdaemon] connectToCoreServicesD():Instantiating server (coreservicesd based) SCSession, port=0xe07 serverOptions=0x10002.
+-2025-11-05 14:57:40.954 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x100324250] activating connection: mach=true listener=false peer=false name=com.apple.distributed_notifications@Uv3
+-2025-11-05 14:57:40.955 Df HushDesk[9742:120a8] (libMobileGestalt.dylib) No persisted cache on this platform.
+-2025-11-05 14:57:40.955 A  HushDesk[9742:120a8] (TCC) TCCAccessRequest() IPC
+-2025-11-05 14:57:40.955 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e424140] activating connection: mach=true listener=false peer=false name=com.apple.tccd.system
+-2025-11-05 14:57:40.955 I  HushDesk[9742:120a8] [com.apple.TCC:access] SEND: 0/7 synchronous to com.apple.tccd.system: request: msgID=9742.1, function=TCCAccessRequest, service=kTCCServiceListenEvent,
+-2025-11-05 14:57:40.957 I  HushDesk[9742:120a8] [com.apple.TCC:access] RECV: synchronous reply <dictionary: 0x87fb98100> { count = 5, transaction: 0, voucher = 0x0, contents =
+-	"prompt_type" => <uint64: 0xa64a07559caec97f>: 1
+-	"auth_value" => <uint64: 0xa64a07559caec97f>: 1
++2025-11-05 15:20:45.382 A  HushDesk[14715:17eff] (libsystem_info.dylib) Retrieve User by ID
++2025-11-05 15:20:45.382 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0x102e03cd0] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.daemon
++2025-11-05 15:20:45.382 Df HushDesk[14715:17f57] [com.apple.xpc:connection] [0x102e04240] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.agent
++2025-11-05 15:20:45.384 Df HushDesk[14715:17f56] [com.apple.securityd:security_exception] MacOS error: -67030
++2025-11-05 15:20:45.384 Df HushDesk[14715:17f56] [com.apple.securityd:security_exception] MacOS error: -67030
++2025-11-05 15:20:45.430 I  HushDesk[14715:17eff] [com.apple.CarbonCore:coreservicesdaemon] SCSession():SCSession( id=100, this=0x0x102e08bf0 option=65538) created, forUID=501 mach_port_t=0x1b0b.
++2025-11-05 15:20:45.430 I  HushDesk[14715:17eff] [com.apple.CarbonCore:coreservicesdaemon] SCSession():SCSession( id=101, this=0x0x102e08d30 option=65538) created, forUID=501 mach_port_t=0xe0b.
++2025-11-05 15:20:45.430 I  HushDesk[14715:17eff] [com.apple.CarbonCore:coreservicesdaemon] connectToCoreServicesD():Instantiating server (coreservicesd based) SCSession, port=0x1b0b serverOptions=0x10002.
++2025-11-05 15:20:45.431 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0x102e090f0] activating connection: mach=true listener=false peer=false name=com.apple.distributed_notifications@Uv3
++2025-11-05 15:20:45.432 Df HushDesk[14715:17eff] (libMobileGestalt.dylib) No persisted cache on this platform.
++2025-11-05 15:20:45.432 A  HushDesk[14715:17eff] (TCC) TCCAccessRequest() IPC
++2025-11-05 15:20:45.432 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc140] activating connection: mach=true listener=false peer=false name=com.apple.tccd.system
++2025-11-05 15:20:45.432 I  HushDesk[14715:17eff] [com.apple.TCC:access] SEND: 0/7 synchronous to com.apple.tccd.system: request: msgID=14715.1, function=TCCAccessRequest, service=kTCCServiceListenEvent,
++2025-11-05 15:20:45.434 I  HushDesk[14715:17eff] [com.apple.TCC:access] RECV: synchronous reply <dictionary: 0xb28030100> { count = 5, transaction: 0, voucher = 0x0, contents =
++	"prompt_type" => <uint64: 0x82d7e7a06f4448bf>: 1
++	"auth_value" => <uint64: 0x82d7e7a06f4448bf>: 1
+ 	"preflight_unknown" => <bool: 0x20e26c580>: true
+-	"auth_version" => <uint64: 0xa64a07559caec97f>: 1
+-	"auth_reason" => <uint64: 0xa64a07559caec95f>: 5
++	"auth_version" => <uint64: 0x82d7e7a06f4448bf>: 1
++	"auth_reason" => <uint64: 0x82d7e7a06f44489f>: 5
+ }
+-2025-11-05 14:57:40.957 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e424140] invalidated after the last release of the connection object
+-2025-11-05 14:57:40.957 Df HushDesk[9742:120a8] [com.apple.SkyLight:default] server port 0x00002a1b, session port 0x00002a1b
+-2025-11-05 14:57:40.958 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e424140] activating connection: mach=true listener=false peer=false name=com.apple.coreservices.launchservicesd
+-2025-11-05 14:57:40.958 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] Registering for notification <private> on default queue, to re-boostrap client connection.
+-2025-11-05 14:57:40.959 I  HushDesk[9742:120d2] [com.apple.SkyLight:processes] 0[outside of RPC]: First connection id 852083 mapped to ctx = 0x87eb6c000
+-2025-11-05 14:57:40.959 Df HushDesk[9742:120a8] [com.apple.SkyLight:default] New connection 0xd0073 main
+-2025-11-05 14:57:40.962 Df HushDesk[9742:120a8] [com.apple.AppKit:Appearance] Current system appearance, (HLTB: 2), (SLS: 1)
+-2025-11-05 14:57:40.963 Df HushDesk[9742:120a8] [com.apple.AppKit:Appearance] Current system appearance, (HLTB: 2), (SLS: 1)
+-2025-11-05 14:57:40.963 Df HushDesk[9742:120a8] [com.apple.AppKit:Appearance] Post-registration system appearance: (HLTB: 2)
+-2025-11-05 14:57:40.963 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e424280] activating connection: mach=true listener=false peer=false name=com.apple.pasteboard.1
+-2025-11-05 14:57:40.964 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0x880071840> 7C656B03-AC62-42BD-8EC6-8874378E6331) gen: -1 item: 1264739405 flavor: 'DefaultAsciiKeyboardLayoutFlavor')
+-2025-11-05 14:57:40.965 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:cache] Rebuilding cache for 'DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0x880071840> 7C656B03-AC62-42BD-8EC6-8874378E6331)
+-2025-11-05 14:57:40.965 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: -8 generation: 0 null data flags: 0
+-2025-11-05 14:57:40.965 A  HushDesk[9742:120a8] (CoreFoundation) Loading Preferences From User CFPrefsD
+-2025-11-05 14:57:40.965 A  HushDesk[9742:120a8] (CoreFoundation) Loading Preferences From System CFPrefsD
+-2025-11-05 14:57:40.965 A  HushDesk[9742:120a8] (libsystem_info.dylib) Membership API: translate identifier
+-2025-11-05 14:57:40.965 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0x8800719e0> CC2CF7BD-CD1F-4010-9FF2-193CC908251B) gen: -1 item: 1 flavor: '-32766 1768845414')
+-2025-11-05 14:57:40.965 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:cache] Rebuilding cache for 'AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0x8800719e0> CC2CF7BD-CD1F-4010-9FF2-193CC908251B)
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:general] Will request data from daemon
+-2025-11-05 14:57:40.966 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e424500] activating connection: mach=true listener=false peer=false name=com.apple.lsd.mapdb
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.launchservices:db] LaunchServices database schema version: 18874393
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (310 bytes) flags: 0
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0x8800719e0> CC2CF7BD-CD1F-4010-9FF2-193CC908251B) gen: -1 item: 1 flavor: '-32765 1802264953')
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:general] Will request data from daemon
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (306 bytes) flags: 0
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0x8800719e0> CC2CF7BD-CD1F-4010-9FF2-193CC908251B) gen: -1 item: 1 flavor: '-32764 1802264953')
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:general] Will request data from daemon
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (281 bytes) flags: 0
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0x8800719e0> CC2CF7BD-CD1F-4010-9FF2-193CC908251B) gen: -1 item: 1 flavor: '-32763 1802264953')
+-2025-11-05 14:57:40.966 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:general] Will request data from daemon
+-2025-11-05 14:57:40.967 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (321 bytes) flags: 0
+-2025-11-05 14:57:40.967 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0x8800719e0> CC2CF7BD-CD1F-4010-9FF2-193CC908251B) gen: -1 item: 1 flavor: '-32765 1768845414')
+-2025-11-05 14:57:40.967 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:general] Will request data from daemon
+-2025-11-05 14:57:40.967 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (303 bytes) flags: 0
+-2025-11-05 14:57:40.967 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0x8800719e0> CC2CF7BD-CD1F-4010-9FF2-193CC908251B) gen: -1 item: 1 flavor: '-32763 1768845414')
+-2025-11-05 14:57:40.967 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:general] Will request data from daemon
+-2025-11-05 14:57:40.967 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (318 bytes) flags: 0
+-2025-11-05 14:57:40.973 Df HushDesk[9742:120a8] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) No windows open yet
+-2025-11-05 14:57:40.974 I  HushDesk[9742:120a8] [com.apple.hiservices:processmgr] Checking in with CAS, pid=9742
+-2025-11-05 14:57:40.974 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] LSApplicationCheckIn(), app being registered is:"/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk"
+-2025-11-05 14:57:40.974 I  HushDesk[9742:120a8] [com.apple.launchservices:cas]  { "ApplicationType"="Foreground", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "Flavor"=3, "LSApplicationCategoryType"="public.app-category.productivity", "LSArchitecture"="arm64", "LSBundlePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app", "LSBundlePathSandboxExtensionKey"="3e08144c1ae3d3d371ed735d5162c7f866907d6c80804308db8256507238a61b;00;00000000;00000000;00000000;000000000000001a;com.apple.app-sandbox.read;01;0100000e;0000000000239449;01;/users/hushdesk/projects/hushdesk-macos/dist/hushdesk.app", "LSCheckInTime*"=now-ish 2025/11/05 14:57:40, "LSDYLDP<…>
+-2025-11-05 14:57:40.974 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] CHECKIN: pid=9742
+-2025-11-05 14:57:40.975 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] CHECKEDIN: pid=9742 asn=0x0-0x4c04c foreground=1
+-2025-11-05 14:57:40.975 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] Setting processControlState to default PROC_SETPC_SUSPEND because application does not have LSProcessControlValue key
+-2025-11-05 14:57:40.975 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4243c0] activating connection: mach=false listener=true peer=false name=(anonymous)
+-2025-11-05 14:57:40.975 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4243c0] Connection returned listener port: 0x4b03
+-2025-11-05 14:57:40.975 Df HushDesk[9742:120d3] [com.apple.xpc:connection] [0x88018c300] activating connection: mach=false listener=false peer=true name=com.apple.xpc.anonymous.0x87e4243c0.peer[365].0x88018c300
+-2025-11-05 14:57:40.976 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] FRONTLOGGING: version 1
+-2025-11-05 14:57:40.976 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] Registered, pid=9742 ASN=0x0,0x4c04c
+-2025-11-05 14:57:40.976 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e424640] activating connection: mach=true listener=false peer=false name=com.apple.analyticsd
+-2025-11-05 14:57:40.976 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Daemon status changed from 0 to 1
+-2025-11-05 14:57:40.976 I  HushDesk[9742:120a8] [com.apple.hiservices:processmgr] _RegisterApplication( pid 9742 => 0x0,0x4c04c) type=foreground
+-2025-11-05 14:57:40.976 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4243c0] Connection returned listener port: 0x4b03
+-2025-11-05 14:57:40.977 Df HushDesk[9742:120d5] [com.apple.CoreAnalytics:client] Received configuration update from daemon (initial)
+-2025-11-05 14:57:40.977 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] CFArrayRef _LSCopyLaunchModifiers(LSSessionID, LSASNRef _Nonnull), result for psn [ kLSCurrentApp ASN, 0x0,0x2]  is 1 items.
+-2025-11-05 14:57:40.977 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] BringForward: pid=9742 asn=0x0-0x4c04c bringForward=1 foreground=1 uiElement=0 launchedByLS=1 modifiersCount=1 allDisabled=0
+-2025-11-05 14:57:40.977 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] BringFrontModifier: pid=9742 asn=0x0-0x4c04c Modifier 0 hideAfter=0 hideOthers=0 dontMakeFrontmost=0 mouseDown=0/0 seed=0/0
+-2025-11-05 14:57:40.977 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] BringForward: pid=9742 asn=0x0-0x4c04c
+-2025-11-05 14:57:40.977 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] SetFrontProcess: asn=0x0-0x4c04c options=0
+-2025-11-05 14:57:40.977 I  HushDesk[9742:120a8] [com.apple.SkyLight:processes] 0[outside of RPC]: SLPSetFrontProcess(0x0-0x4c04c window=0 options=0x0
+-2025-11-05 14:57:40.977 I  HushDesk[9742:120d2] [com.apple.launchservices:default] Unable to load Info.plist exceptions (eGPUOverrides)
+-2025-11-05 14:57:40.977 I  HushDesk[9742:120d2] [com.apple.launchservices:default] Unable to load Info.plist exceptions (gameModeOverrides)
+-2025-11-05 14:57:40.977 I  HushDesk[9742:120d2] [com.apple.launchservices:default] Unable to load Info.plist exceptions (identifiedGameOverrides)
+-2025-11-05 14:57:40.977 I  HushDesk[9742:120d2] [com.apple.launchservices:default] Unable to load Info.plist exceptions (SystemHiddenPreferred)
+-2025-11-05 14:57:40.979 I  HushDesk[9742:120d5] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=1919, "LSApplicationReadyToBeFrontab<…>
+-2025-11-05 14:57:40.980 Df HushDesk[9742:120a8] [com.apple.FrontBoard:Common] FBSWorkspace: endpoint monitoring is disabled.
+-2025-11-05 14:57:40.980 Df HushDesk[9742:120a8] [com.apple.FrontBoard:Common] FBSWorkspace: default shell endpoint is disabled.
+-2025-11-05 14:57:40.980 Df HushDesk[9742:120a8] [com.apple.runningboard:connection] Initializing connection
+-2025-11-05 14:57:40.980 Df HushDesk[9742:120a8] [com.apple.runningboard:process] Removing all cached process handles
+-2025-11-05 14:57:40.980 Df HushDesk[9742:120d2] [com.apple.runningboard:connection] Sending handshake request attempt #1 to server
+-2025-11-05 14:57:40.980 Df HushDesk[9742:120d2] [com.apple.runningboard:connection] Creating connection to com.apple.runningboard
+-2025-11-05 14:57:40.980 Df HushDesk[9742:120d2] [com.apple.xpc:connection] [0x87e424780] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+-2025-11-05 14:57:40.980 A  HushDesk[9742:120d3] (RunningBoardServices) didChangeInheritances
+-2025-11-05 14:57:40.980 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4243c0] Connection returned listener port: 0x4b03
+-2025-11-05 14:57:40.980 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=1919, "LSApplicationReadyToBeFrontab<…>
+-2025-11-05 14:57:40.981 Df HushDesk[9742:120d2] [com.apple.runningboard:connection] Handshake succeeded
+-2025-11-05 14:57:40.981 Df HushDesk[9742:120d2] [com.apple.runningboard:connection] Identity resolved as app<application.com.nottingham.hushdesk.2331721.2332259.BDC6DB6B-F8F5-4933-B626-9652476A59DB(501)>
+-2025-11-05 14:57:40.982 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4243c0] Connection returned listener port: 0x4b03
+-2025-11-05 14:57:40.983 Df HushDesk[9742:120d3] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
+-2025-11-05 14:57:40.983 Df HushDesk[9742:120d3] [com.apple.xpc:connection] [0x87e424a00] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
+-2025-11-05 14:57:40.983 Df HushDesk[9742:120d3] [com.apple.appintents:Connection] Activated connection to com.apple.linkd.autoShortcut (ApplicationService)
+-2025-11-05 14:57:40.983 Df HushDesk[9742:120d3] [com.apple.xpc:connection] [0x87e424b40] activating connection: mach=false listener=true peer=false name=(anonymous)
+-2025-11-05 14:57:40.983 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=1919, "LSApplicationReadyToBeFrontab<…>
+-2025-11-05 14:57:40.983 I  HushDesk[9742:120a8] [com.apple.hiservices:processmgr] TransformProcessType(0x0,0x2 => 1 wasFront=1 pickNew=0)
+-2025-11-05 14:57:40.983 I  HushDesk[9742:120d3] [com.apple.appintents:Execution] LNAppConnectionListener instantiated
+-2025-11-05 14:57:40.984 Df HushDesk[9742:120d3] [com.apple.xpc:connection] [0x87e424b40] Connection returned listener port: 0x8103
+-2025-11-05 14:57:40.984 Df HushDesk[9742:120d3] [com.apple.appintents:Connection] Registered process with identifier 9742-19827
+-2025-11-05 14:57:40.985 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:57:40.987 Df HushDesk[9742:120a8] [com.apple.AppKit:Appearance] NSApp cache appearance:
++2025-11-05 15:20:45.434 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc140] invalidated after the last release of the connection object
++2025-11-05 15:20:45.434 Df HushDesk[14715:17eff] [com.apple.SkyLight:default] server port 0x00002a33, session port 0x00002a33
++2025-11-05 15:20:45.435 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc140] activating connection: mach=true listener=false peer=false name=com.apple.coreservices.launchservicesd
++2025-11-05 15:20:45.435 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] Registering for notification <private> on default queue, to re-boostrap client connection.
++2025-11-05 15:20:45.436 I  HushDesk[14715:17f58] [com.apple.SkyLight:processes] 0[outside of RPC]: First connection id 713323 mapped to ctx = 0xb2802c300
++2025-11-05 15:20:45.436 Df HushDesk[14715:17eff] [com.apple.SkyLight:default] New connection 0xae26b main
++2025-11-05 15:20:45.436 Df HushDesk[14715:17eff] [com.apple.AppKit:Appearance] Current system appearance, (HLTB: 2), (SLS: 1)
++2025-11-05 15:20:45.436 Df HushDesk[14715:17eff] [com.apple.AppKit:Appearance] Current system appearance, (HLTB: 2), (SLS: 1)
++2025-11-05 15:20:45.437 Df HushDesk[14715:17eff] [com.apple.AppKit:Appearance] Post-registration system appearance: (HLTB: 2)
++2025-11-05 15:20:45.437 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc280] activating connection: mach=true listener=false peer=false name=com.apple.pasteboard.1
++2025-11-05 15:20:45.438 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0xb27ffb8a0> 0D2F26ED-74B6-4BC9-86B6-5E4CFBE54FDB) gen: -1 item: 1264739405 flavor: 'DefaultAsciiKeyboardLayoutFlavor')
++2025-11-05 15:20:45.438 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:cache] Rebuilding cache for 'DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0xb27ffb8a0> 0D2F26ED-74B6-4BC9-86B6-5E4CFBE54FDB)
++2025-11-05 15:20:45.438 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: -8 generation: 0 null data flags: 0
++2025-11-05 15:20:45.438 A  HushDesk[14715:17eff] (CoreFoundation) Loading Preferences From User CFPrefsD
++2025-11-05 15:20:45.438 A  HushDesk[14715:17eff] (CoreFoundation) Loading Preferences From System CFPrefsD
++2025-11-05 15:20:45.439 A  HushDesk[14715:17eff] (libsystem_info.dylib) Membership API: translate identifier
++2025-11-05 15:20:45.439 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0xb27ffb920> 0900A3C1-BE83-417C-9DAF-F317183CBDBA) gen: -1 item: 1 flavor: '-32766 1768845414')
++2025-11-05 15:20:45.439 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:cache] Rebuilding cache for 'AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0xb27ffb920> 0900A3C1-BE83-417C-9DAF-F317183CBDBA)
++2025-11-05 15:20:45.439 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:general] Will request data from daemon
++2025-11-05 15:20:45.440 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc500] activating connection: mach=true listener=false peer=false name=com.apple.lsd.mapdb
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.launchservices:db] LaunchServices database schema version: 18874393
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (310 bytes) flags: 0
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0xb27ffb920> 0900A3C1-BE83-417C-9DAF-F317183CBDBA) gen: -1 item: 1 flavor: '-32765 1802264953')
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:general] Will request data from daemon
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (306 bytes) flags: 0
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0xb27ffb920> 0900A3C1-BE83-417C-9DAF-F317183CBDBA) gen: -1 item: 1 flavor: '-32764 1802264953')
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:general] Will request data from daemon
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (281 bytes) flags: 0
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0xb27ffb920> 0900A3C1-BE83-417C-9DAF-F317183CBDBA) gen: -1 item: 1 flavor: '-32763 1802264953')
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:general] Will request data from daemon
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (321 bytes) flags: 0
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0xb27ffb920> 0900A3C1-BE83-417C-9DAF-F317183CBDBA) gen: -1 item: 1 flavor: '-32765 1768845414')
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:general] Will request data from daemon
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (303 bytes) flags: 0
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('AppleIntlFileCacheModificationDatePasteboard' (<CFUUID 0xb27ffb920> 0900A3C1-BE83-417C-9DAF-F317183CBDBA) gen: -1 item: 1 flavor: '-32763 1768845414')
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:general] Will request data from daemon
++2025-11-05 15:20:45.440 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (318 bytes) flags: 0
++2025-11-05 15:20:45.447 Df HushDesk[14715:17eff] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) No windows open yet
++2025-11-05 15:20:45.447 I  HushDesk[14715:17eff] [com.apple.hiservices:processmgr] Checking in with CAS, pid=14715
++2025-11-05 15:20:45.447 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] LSApplicationCheckIn(), app being registered is:"/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk"
++2025-11-05 15:20:45.447 I  HushDesk[14715:17eff] [com.apple.launchservices:cas]  { "ApplicationType"="Foreground", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "Flavor"=3, "LSArchitecture"="arm64", "LSBundlePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app", "LSBundlePathSandboxExtensionKey"="436e8cb2b3f2e0a09d34f06f7faab428a1dbdb57832411b776cdce3ef20cd96f;00;00000000;00000000;00000000;000000000000001a;com.apple.app-sandbox.read;01;0100000e;000000000023a78f;01;/users/hushdesk/projects/hushdesk-macos/dist/hushdesk.app", "LSCheckInTime*"=now-ish 2025/11/05 15:20:45, "LSDYLDPlatformKey"=1, "LSDisplayName"="HushDesk", "LSExecutableFil<…>
++2025-11-05 15:20:45.447 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] CHECKIN: pid=14715
++2025-11-05 15:20:45.448 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] CHECKEDIN: pid=14715 asn=0x0-0x65065 foreground=1
++2025-11-05 15:20:45.448 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] Setting processControlState to default PROC_SETPC_SUSPEND because application does not have LSProcessControlValue key
++2025-11-05 15:20:45.448 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc3c0] activating connection: mach=false listener=true peer=false name=(anonymous)
++2025-11-05 15:20:45.448 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc3c0] Connection returned listener port: 0x4b03
++2025-11-05 15:20:45.449 Df HushDesk[14715:17f57] [com.apple.xpc:connection] [0xb281e8300] activating connection: mach=false listener=false peer=true name=com.apple.xpc.anonymous.0xb264bc3c0.peer[365].0xb281e8300
++2025-11-05 15:20:45.449 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] FRONTLOGGING: version 1
++2025-11-05 15:20:45.449 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] Registered, pid=14715 ASN=0x0,0x65065
++2025-11-05 15:20:45.449 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc640] activating connection: mach=true listener=false peer=false name=com.apple.analyticsd
++2025-11-05 15:20:45.449 I  HushDesk[14715:17eff] [com.apple.CoreAnalytics:client] Daemon status changed from 0 to 1
++2025-11-05 15:20:45.449 Df HushDesk[14715:17f62] [com.apple.CoreAnalytics:client] Received configuration update from daemon (initial)
++2025-11-05 15:20:45.450 I  HushDesk[14715:17eff] [com.apple.hiservices:processmgr] _RegisterApplication( pid 14715 => 0x0,0x65065) type=foreground
++2025-11-05 15:20:45.450 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc3c0] Connection returned listener port: 0x4b03
++2025-11-05 15:20:45.450 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] CFArrayRef _LSCopyLaunchModifiers(LSSessionID, LSASNRef _Nonnull), result for psn [ kLSCurrentApp ASN, 0x0,0x2]  is 1 items.
++2025-11-05 15:20:45.450 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] BringForward: pid=14715 asn=0x0-0x65065 bringForward=1 foreground=1 uiElement=0 launchedByLS=1 modifiersCount=1 allDisabled=1
++2025-11-05 15:20:45.450 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] BringFrontModifier: pid=14715 asn=0x0-0x65065 Modifier 0 hideAfter=0 hideOthers=0 dontMakeFrontmost=0 mouseDown=0/0 seed=0/0
++2025-11-05 15:20:45.450 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] BringForward: pid=14715 asn=0x0-0x65065
++2025-11-05 15:20:45.450 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] SetFrontProcess: asn=0x0-0x65065 options=0
++2025-11-05 15:20:45.450 I  HushDesk[14715:17eff] [com.apple.SkyLight:processes] 0[outside of RPC]: SLPSetFrontProcess(0x0-0x65065 window=0 options=0x0
++2025-11-05 15:20:45.450 I  HushDesk[14715:17f58] [com.apple.launchservices:default] Unable to load Info.plist exceptions (eGPUOverrides)
++2025-11-05 15:20:45.450 I  HushDesk[14715:17f58] [com.apple.launchservices:default] Unable to load Info.plist exceptions (gameModeOverrides)
++2025-11-05 15:20:45.450 I  HushDesk[14715:17f58] [com.apple.launchservices:default] Unable to load Info.plist exceptions (identifiedGameOverrides)
++2025-11-05 15:20:45.450 I  HushDesk[14715:17f58] [com.apple.launchservices:default] Unable to load Info.plist exceptions (SystemHiddenPreferred)
++2025-11-05 15:20:45.453 I  HushDesk[14715:17f62] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LSArchitecture"="arm64", "LSAuditToken"=$F501<…>
++2025-11-05 15:20:45.453 Df HushDesk[14715:17eff] [com.apple.FrontBoard:Common] FBSWorkspace: endpoint monitoring is disabled.
++2025-11-05 15:20:45.453 Df HushDesk[14715:17eff] [com.apple.FrontBoard:Common] FBSWorkspace: default shell endpoint is disabled.
++2025-11-05 15:20:45.453 Df HushDesk[14715:17eff] [com.apple.runningboard:connection] Initializing connection
++2025-11-05 15:20:45.453 Df HushDesk[14715:17eff] [com.apple.runningboard:process] Removing all cached process handles
++2025-11-05 15:20:45.453 Df HushDesk[14715:17f58] [com.apple.runningboard:connection] Sending handshake request attempt #1 to server
++2025-11-05 15:20:45.453 Df HushDesk[14715:17f58] [com.apple.runningboard:connection] Creating connection to com.apple.runningboard
++2025-11-05 15:20:45.453 Df HushDesk[14715:17f58] [com.apple.xpc:connection] [0xb264bc780] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
++2025-11-05 15:20:45.454 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc3c0] Connection returned listener port: 0x4b03
++2025-11-05 15:20:45.454 A  HushDesk[14715:17f57] (RunningBoardServices) didChangeInheritances
++2025-11-05 15:20:45.454 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LSArchitecture"="arm64", "LSAuditToken"=$F501<…>
++2025-11-05 15:20:45.454 Df HushDesk[14715:17f58] [com.apple.runningboard:connection] Handshake succeeded
++2025-11-05 15:20:45.454 Df HushDesk[14715:17f58] [com.apple.runningboard:connection] Identity resolved as app<application.com.nottingham.hushdesk.2336655.2337192.1A54DE62-0461-4D07-B2A1-D77073B026E7(501)>
++2025-11-05 15:20:45.455 Df HushDesk[14350:17798] [com.apple.BoardServices:XPCErrors] [C:3] Alloc com.apple.backboard.hid-services.xpc
++2025-11-05 15:20:45.455 Df HushDesk[14350:17798] [com.apple.xpc:connection] [0xb26477200] activating connection: mach=false listener=false peer=false name=(anonymous)
++2025-11-05 15:20:45.455 Df HushDesk[14350:17f6a] [com.apple.BackBoard:EventDelivery] BKSHIDEventDeliveryManager - connection activation
++2025-11-05 15:20:45.456 I  HushDesk[14350:17798] [com.apple.AppKit:Window] order window: 25a op: 0 relative: 0 related: 0
++2025-11-05 15:20:45.456 I  HushDesk[14350:17798] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport credentialSelected:] with nil credential
++2025-11-05 15:20:45.456 I  HushDesk[14350:17798] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport oneTimeCodeSelected:] with nil code
++2025-11-05 15:20:45.456 I  HushDesk[14350:17798] [com.apple.CFPasteboard:entry] CopyData('DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0xb280e7f80> 75FB07ED-7ECF-4ADA-9DEC-BA839599F5FC) gen: -1 item: 1264739405 flavor: 'DefaultAsciiKeyboardLayoutFlavor')
++2025-11-05 15:20:45.456 I  HushDesk[14350:17798] [com.apple.CFPasteboard:exit] (not-in-cache) - result: -8 generation: 0 null data flags: 0
++2025-11-05 15:20:45.457 I  HushDesk[14350:17798] [com.apple.AppKit:Window] context (cf8768bc -> 0) for window 25a
++2025-11-05 15:20:45.460 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc3c0] Connection returned listener port: 0x4b03
++2025-11-05 15:20:45.463 Df HushDesk[14715:17f62] [com.apple.appintents:Connection] Created a new Process Instance Registry XPC connection (inactive)
++2025-11-05 15:20:45.463 Df HushDesk[14715:17f62] [com.apple.xpc:connection] [0xb264bca00] activating connection: mach=true listener=false peer=false name=com.apple.linkd.autoShortcut
++2025-11-05 15:20:45.463 Df HushDesk[14715:17f62] [com.apple.appintents:Connection] Activated connection to com.apple.linkd.autoShortcut (ApplicationService)
++2025-11-05 15:20:45.463 Df HushDesk[14715:17f62] [com.apple.xpc:connection] [0xb264bcb40] activating connection: mach=false listener=true peer=false name=(anonymous)
++2025-11-05 15:20:45.463 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LSArchitecture"="arm64", "LSAuditToken"=$F501<…>
++2025-11-05 15:20:45.463 I  HushDesk[14715:17eff] [com.apple.hiservices:processmgr] TransformProcessType(0x0,0x2 => 1 wasFront=1 pickNew=0)
++2025-11-05 15:20:45.464 I  HushDesk[14715:17f62] [com.apple.appintents:Execution] LNAppConnectionListener instantiated
++2025-11-05 15:20:45.464 Df HushDesk[14715:17f62] [com.apple.xpc:connection] [0xb264bcb40] Connection returned listener port: 0xa903
++2025-11-05 15:20:45.464 Df HushDesk[14715:17f62] [com.apple.appintents:Connection] Registered process with identifier 14715-27363
++2025-11-05 15:20:45.465 I  HushDesk[14715:17eff] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
++2025-11-05 15:20:45.467 Df HushDesk[14715:17eff] [com.apple.AppKit:Appearance] NSApp cache appearance:
+ -NSRequiresAquaSystemAppearance: 0
+ -appearance: (null)
+--effectiveAppearance: <NSCompositeAppearance: 0x87fb945a0
++-effectiveAppearance: <NSCompositeAppearance: 0xb26b985a0
+  (
+-    "<NSDarkAquaAppearance: 0x87fb94460>",
+-    "<NSSystemAppearance: 0x87fb94140>"
++    "<NSDarkAquaAppearance: 0xb26b98460>",
++    "<NSSystemAppearance: 0xb26b98140>"
+ )>
+-2025-11-05 14:57:40.988 I  HushDesk[9742:120a8] [com.apple.CarbonCore:nameddata] getCSNamedDataConnection_block_invoke NAMEDDATA: Creating connection object.
+-2025-11-05 14:57:40.988 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e424c80] activating connection: mach=false listener=false peer=false name=com.apple.carboncore.csnameddata
+-2025-11-05 14:57:40.991 I  HushDesk[9742:120a8] [com.apple.CarbonCore:nameddata] _CSGetNamedData _CSGetNamedData(/System/Library/Colors/System.clr/System.clr, err=0 data=0x1057b4000/14131
+-2025-11-05 14:57:40.993 I  HushDesk[9742:120a8] [com.apple.CarbonCore:nameddata] _CSReleaseNamedData _CSReleaseNamedData(/System/Library/Colors/System.clr/System.clr, data=0x1057b4000/14131
+-2025-11-05 14:57:40.993 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e424dc0] activating connection: mach=true listener=false peer=false name=com.apple.fonts
+-2025-11-05 14:57:41.043 A  HushDesk[9742:120a8] (CoreFoundation) Loading Preferences From User CFPrefsD
+-2025-11-05 14:57:41.044 A  HushDesk[9742:120a8] (CoreFoundation) Loading Preferences From User CFPrefsD
+-2025-11-05 14:57:41.049 Df HushDesk[9742:120a8] [com.apple.BoardServices:XPCErrors] [C:1] Alloc <private>
+-2025-11-05 14:57:41.049 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4252c0] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:57:41.051 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e425400] activating connection: mach=true listener=false peer=false name=com.apple.appkit.restoration_storage
+-2025-11-05 14:57:41.055 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> a6b483de) for window 132
+-2025-11-05 14:57:41.056 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:57:41.056 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:57:41.057 Df HushDesk[9742:120d3] [com.apple.xpc:connection] [0x87e425900] activating connection: mach=true listener=false peer=false name=com.apple.dock.fullscreen
+-2025-11-05 14:57:41.058 Df HushDesk[9742:120d3] [com.apple.corespotlight:index] (<private>) deleteSearchableItemsWithDomainIdentifiers, protectionClass:(null), domainIdentifiers number:1
+-2025-11-05 14:57:41.058 A  HushDesk[9742:120d3] (CoreSpotlight) delete-domains
+-2025-11-05 14:57:41.058 Df HushDesk[9742:120d3] (CoreSpotlight) sConnectionName: com.apple.spotlight.IndexAgent
+-2025-11-05 14:57:41.058 Df HushDesk[9742:120d3] (CoreSpotlight) Start service name com.apple.spotlight.IndexAgent
+-2025-11-05 14:57:41.058 Df HushDesk[9742:120d3] [com.apple.xpc:connection] [0x87e425a40] activating connection: mach=true listener=false peer=false name=com.apple.spotlight.IndexAgent
+-2025-11-05 14:57:41.066 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=1919, "LSApplicationReadyToBeFrontab<…>
+-2025-11-05 14:57:41.067 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=1919, "LSApplicationReadyToBeFrontab<…>
+-2025-11-05 14:57:41.067 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e425b80] activating connection: mach=false listener=false peer=false name=com.apple.ViewBridgeAuxiliary
+-2025-11-05 14:57:41.067 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e425cc0] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:57:41.067 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e425e00] activating connection: mach=false listener=true peer=false name=(anonymous)
+-2025-11-05 14:57:41.067 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e425e00] Connection returned listener port: 0xf803
+-2025-11-05 14:57:41.067 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e425b80] invalidated after the last release of the connection object
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValuesBulk SetGestaltValuesBulk( count=22 tuples=0x1a4327e20
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(alis 1C9) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(os   FE) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(addr 7) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(fs   3D332) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(fold 11) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(lram 7FFFF000) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(mmap 1) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(cfrg 1) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(thds 7) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(tmgr E) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(vers 7) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(cbon 160) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(cltn 1108000) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(cpnt 8) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(rsrc 3) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(rmbg 11F) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(vm   11) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(srad 4170706C) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(sysa 14) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(copl 9) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(xlat 0) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(stdf 0) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(ram  0x1a429fda0) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(ramm 0x1a429fda0) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cput 0x1a429fe90) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cpuf 0x1a429fec0) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(bclk 0x1a429fef0) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(bclm 0x1a429fef0) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(pclk 0x1a429ff90) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(mclk 0x1a429ff90) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(a/ux 0x1a42a00a8) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(pgsz 0x1a42a00b0) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(csiz 0x1a42a00f0) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(sysv 0x1a424b1a4) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(sys1 0x1a424b1a4) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(sys2 0x1a424b1a4) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(sys3 0x1a424b1a4) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cdfl 0x1a42a0130) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cdrm 0x1a42a038c) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cpus 0x1a42a03d4) => 0
+-2025-11-05 14:57:41.068 I  HushDesk[9742:120a8] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(swex 1) => 0
+-2025-11-05 14:57:41.073 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> 4c5193c8) for window 133
+-2025-11-05 14:57:41.074 Df HushDesk[9742:120a8] [com.apple.inputmethodkitClient:Client] +[IMKClient subclass]: chose IMKClient_Modern
+-2025-11-05 14:57:41.074 Df HushDesk[9742:120a8] [com.apple.BoardServices:XPCErrors] [C:2] Alloc com.apple.backboard.hid-services.xpc
+-2025-11-05 14:57:41.074 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e425f40] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:57:41.074 E  HushDesk[9742:120d3] [com.apple.BaseBoard:Common] Unable to obtain a task name port right for pid 398: (os/kern) failure (0x5)
+-2025-11-05 14:57:41.074 Df HushDesk[9742:120d3] [com.apple.xpc:connection] [0x87e426080] activating connection: mach=false listener=false peer=false name=com.apple.TextInputUI.xpc.CursorUIViewService
+-2025-11-05 14:57:41.075 Df HushDesk[9742:120d3] [com.apple.xpc:connection] [0x87e426080] invalidated after the last release of the connection object
+-2025-11-05 14:57:41.075 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:57:41.076 I  HushDesk[9742:120a8] [com.apple.launchservices:datasep] application record search init. Node: <FSNode 0x87e75fd00> { isDir = y, path = <private> } bundleID: (null) itemID: 0
+-2025-11-05 14:57:41.076 I  HushDesk[9742:120a8] [com.apple.launchservices:datasep] application record search init. Node: <FSNode 0x87e75fd00> { isDir = y, path = <private> } bundleID: (null) itemID: 0
+-2025-11-05 14:57:41.076 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e426580] activating connection: mach=true listener=false peer=false name=com.apple.iconservices
+-2025-11-05 14:57:41.076 A  HushDesk[9742:120da] (RunningBoardServices) didChangeInheritances
+-2025-11-05 14:57:41.077 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4266c0] activating connection: mach=true listener=false peer=false name=com.apple.iconservices.store
+-2025-11-05 14:57:41.077 I  HushDesk[9742:120a8] [com.apple.launchservices:datasep] application record search init. Node: <FSNode 0x87e5f8f40> { isDir = ?, path = <private> } bundleID: (null) itemID: 0
+-2025-11-05 14:57:41.078 I  HushDesk[9742:120a8] [com.apple.iconservices:foundation] layer data size zero
+-2025-11-05 14:57:41.078 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window front conditionally: 132 related: 0
+-2025-11-05 14:57:41.078 Df HushDesk[9742:120a8] [com.apple.AppKit:AutomaticTermination] void _NSEnableAutomaticTerminationAndLog(NSString *) No windows open yet
+-2025-11-05 14:57:41.078 I  HushDesk[9742:120a8] [com.apple.AppKit:Intelligence] starting collection observation
+-2025-11-05 14:57:41.078 Df HushDesk[9742:120d3] [com.apple.UIIntelligenceSupport:xpc] establishing connection to agent
+-2025-11-05 14:57:41.079 Df HushDesk[9742:120d3] [com.apple.xpc:session] [0x87e786170] Session created.
+-2025-11-05 14:57:41.079 Df HushDesk[9742:120d3] [com.apple.xpc:session] [0x87e786170] Session created from connection [0x87e426080]
+-2025-11-05 14:57:41.079 Df HushDesk[9742:120d3] [com.apple.xpc:connection] [0x87e426080] activating connection: mach=true listener=false peer=false name=com.apple.uiintelligencesupport.agent
+-2025-11-05 14:57:41.079 Df HushDesk[9742:120d3] [com.apple.xpc:session] [0x87e786170] Session activated
+-2025-11-05 14:57:41.079 Df HushDesk[9742:120d3] [com.apple.UIIntelligenceSupport:xpc] Connection established with agent PID: 1225
+-2025-11-05 14:57:41.079 Df HushDesk[9742:120a8] [com.apple.dt.xctest:Default] Registering for test daemon availability notify post.
+-2025-11-05 14:57:41.079 Df HushDesk[9742:120a8] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+-2025-11-05 14:57:41.079 Df HushDesk[9742:120a8] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+-2025-11-05 14:57:41.079 Df HushDesk[9742:120a8] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+-2025-11-05 14:57:41.085 I  HushDesk[9742:120a8] [com.apple.GenerativeModels:availability] useCaseIdentifier: com.apple.WritingTools has externalModelProviders: <private> and providerSettingsUseCaseIdentifiers: <private>
+-2025-11-05 14:57:41.085 I  HushDesk[9742:120a8] [com.apple.GenerativeModels:availability] Current availability state: available, use cases: com.apple.WritingTools, language: <any>, api: <private>
+-2025-11-05 14:57:41.085 Df HushDesk[9742:120a8] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.gms.availability.notification
+-2025-11-05 14:57:41.085 Df HushDesk[9742:120a8] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.os-eligibility-domain.change.greymatter
+-2025-11-05 14:57:41.085 Df HushDesk[9742:120a8] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.language.changed
+-2025-11-05 14:57:41.085 Df HushDesk[9742:120a8] [com.apple.WritingTools:Default] isAvailable value changed: isMDMAllowed = true, gmAvailable (current) = true
+-2025-11-05 14:57:41.091 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=1919, "LSApplicationReadyToBeFrontab<…>
+-2025-11-05 14:57:41.091 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:57:41.091 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=1919, "LSApplicationReadyToBeFrontab<…>
+-2025-11-05 14:57:41.091 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e426300] activating connection: mach=true listener=false peer=false name=com.apple.coreservices.appleevents
+-2025-11-05 14:57:41.092 I  HushDesk[9742:120a8] [com.apple.appleevents:main] _AEGetRegisteredMachPort() created default port (port:49667/0xc203 rcv:1 send:1 limit:5) and registered it with server
+-2025-11-05 14:57:41.092 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4243c0] Connection returned listener port: 0x4b03
+-2025-11-05 14:57:41.092 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=1919, "LSApplicationReadyToBeFrontab<…>
+-2025-11-05 14:57:41.092 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] SignalReady: pid=9742 asn=0x0-0x4c04c
+-2025-11-05 14:57:41.092 Df HushDesk[9742:120a8] [com.apple.processmanager:front-35286506] SIGNAL: pid=9742 asn=0x0x-0x4c04c
+-2025-11-05 14:57:41.092 I  HushDesk[9742:120a8] [com.apple.appleevents:main] aeGenerateFakeFirstOAPPEventIfNecessary()
+-2025-11-05 14:57:41.092 I  HushDesk[9742:120a8] [com.apple.appleevents:main] aeGenerateFakeFirstOAPPEventIfNecessary(), needToCreateFakeOAPPEventIfFirstEvent == true
+-2025-11-05 14:57:41.092 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] Removing cached information for app [ 0x0-0x4c04c]  "HushDesk", as its seed is different from that in shared memory ( 533 vs 535)
+-2025-11-05 14:57:41.093 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> f9902d0) for window 137
+-2025-11-05 14:57:41.093 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> 24f39eb6) for window 136
+-2025-11-05 14:57:41.093 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> fc998633) for window 135
+-2025-11-05 14:57:41.093 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> 419fef77) for window 134
+-2025-11-05 14:57:41.102 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:57:41.104 I  HushDesk[9742:120a8] [com.apple.coreimage:api] Software context does not yet support 8bit working format
+-2025-11-05 14:57:41.105 I  HushDesk[9742:120d3] [com.apple.CoreAnalytics:client] Dropping "com.apple.coreimage.CreateCIContext" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:57:41.106 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:57:41.109 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0x880071840> 7C656B03-AC62-42BD-8EC6-8874378E6331) gen: -1 item: 1264739405 flavor: 'DefaultAsciiKeyboardLayoutFlavor')
+-2025-11-05 14:57:41.109 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: -8 generation: 0 null data flags: 0
+-2025-11-05 14:57:41.109 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport credentialSelected:] with nil credential
+-2025-11-05 14:57:41.109 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport oneTimeCodeSelected:] with nil code
+-2025-11-05 14:57:41.109 Df HushDesk[9742:120f3] [com.apple.xpc:connection] [0x87e426bc0] activating connection: mach=false listener=false peer=false name=com.apple.SafariPlatformSupport.Helper
+-2025-11-05 14:57:41.110 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4261c0] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:57:41.110 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e426d00] activating connection: mach=false listener=false peer=false name=com.apple.ViewBridgeAuxiliary
+-2025-11-05 14:57:41.110 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e426e40] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:57:41.110 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e426d00] invalidated after the last release of the connection object
+-2025-11-05 14:57:41.115 I  HushDesk[9742:120a8] [com.apple.CarbonCore:coreservicesdaemon] findOrCreateCacheable():findOrCreateCacheable(), factoryName=3 cacheableName=<private> fCacheables.size()=0
+-2025-11-05 14:57:41.115 I  HushDesk[9742:120a8] [com.apple.CarbonCore:coreservicesdaemon] findOrCreateCacheable():findOrCreateCacheable(), result = 0x880521040 (should be non-NULL)
+-2025-11-05 14:57:41.115 Df HushDesk[9742:120a8] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) Restoring windows
+-2025-11-05 14:57:41.116 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSApplication _reopenWindowsAsNecessaryIncludingRestorableState:withFullFidelity:completionHandler:] shouldRestoreState=1 hasPersistentStateToRestore=1 shouldStillRestoreStateAfterPrompting=1
+-2025-11-05 14:57:41.116 I  HushDesk[9742:120a8] [com.apple.SkyLight:processes] 0[outside of RPC]: SLSSetFrontProcessWithInfo(0x0-0x2 window=0 options=0x1
+-2025-11-05 14:57:41.117 Df HushDesk[9742:120a8] [com.apple.AppKit:AutomaticTermination] void _NSEnableAutomaticTerminationAndLog(NSString *) Restoring windows
+-2025-11-05 14:57:41.117 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalition<…>
+-2025-11-05 14:57:41.117 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] _LSSetMetaApplicationInfo({
++2025-11-05 15:20:45.468 I  HushDesk[14715:17eff] [com.apple.CarbonCore:nameddata] getCSNamedDataConnection_block_invoke NAMEDDATA: Creating connection object.
++2025-11-05 15:20:45.468 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bcc80] activating connection: mach=false listener=false peer=false name=com.apple.carboncore.csnameddata
++2025-11-05 15:20:45.471 I  HushDesk[14715:17eff] [com.apple.CarbonCore:nameddata] _CSGetNamedData _CSGetNamedData(/System/Library/Colors/System.clr/System.clr, err=0 data=0x108844000/14131
++2025-11-05 15:20:45.472 I  HushDesk[14715:17eff] [com.apple.CarbonCore:nameddata] _CSReleaseNamedData _CSReleaseNamedData(/System/Library/Colors/System.clr/System.clr, data=0x108844000/14131
++2025-11-05 15:20:45.473 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bcdc0] activating connection: mach=true listener=false peer=false name=com.apple.fonts
++2025-11-05 15:20:45.523 A  HushDesk[14715:17eff] (CoreFoundation) Loading Preferences From User CFPrefsD
++2025-11-05 15:20:45.523 A  HushDesk[14715:17eff] (CoreFoundation) Loading Preferences From User CFPrefsD
++2025-11-05 15:20:45.528 Df HushDesk[14715:17eff] [com.apple.BoardServices:XPCErrors] [C:1] Alloc <private>
++2025-11-05 15:20:45.528 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bd2c0] activating connection: mach=false listener=false peer=false name=(anonymous)
++2025-11-05 15:20:45.530 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bd400] activating connection: mach=true listener=false peer=false name=com.apple.appkit.restoration_storage
++2025-11-05 15:20:45.531 Df HushDesk[14350:17f6a] [com.apple.AppKit:StateRestoration] -[NSPersistentUIRemoteStorageClient permanentlyElideAllWriting] connection=<NSXPCConnection: 0xb26b2e260> connection to service with pid 617 named com.apple.appkit.restoration_storage
++2025-11-05 15:20:45.534 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] context (0 -> ef1ec282) for window 25b
++2025-11-05 15:20:45.535 I  HushDesk[14715:17eff] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
++2025-11-05 15:20:45.535 I  HushDesk[14715:17eff] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
++2025-11-05 15:20:45.536 Df HushDesk[14715:17f62] [com.apple.xpc:connection] [0xb264bd900] activating connection: mach=true listener=false peer=false name=com.apple.dock.fullscreen
++2025-11-05 15:20:45.536 Df HushDesk[14715:17f62] [com.apple.corespotlight:index] (<private>) deleteSearchableItemsWithDomainIdentifiers, protectionClass:(null), domainIdentifiers number:1
++2025-11-05 15:20:45.536 A  HushDesk[14715:17f62] (CoreSpotlight) delete-domains
++2025-11-05 15:20:45.536 Df HushDesk[14715:17f62] (CoreSpotlight) sConnectionName: com.apple.spotlight.IndexAgent
++2025-11-05 15:20:45.536 Df HushDesk[14715:17f62] (CoreSpotlight) Start service name com.apple.spotlight.IndexAgent
++2025-11-05 15:20:45.536 Df HushDesk[14715:17f62] [com.apple.xpc:connection] [0xb264bda40] activating connection: mach=true listener=false peer=false name=com.apple.spotlight.IndexAgent
++2025-11-05 15:20:45.545 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LSArchitecture"="arm64", "LSAuditToken"=$F501<…>
++2025-11-05 15:20:45.545 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LSArchitecture"="arm64", "LSAuditToken"=$F501<…>
++2025-11-05 15:20:45.545 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bdb80] activating connection: mach=false listener=false peer=false name=com.apple.ViewBridgeAuxiliary
++2025-11-05 15:20:45.546 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bdcc0] activating connection: mach=false listener=false peer=false name=(anonymous)
++2025-11-05 15:20:45.546 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bde00] activating connection: mach=false listener=true peer=false name=(anonymous)
++2025-11-05 15:20:45.546 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bde00] Connection returned listener port: 0xfa03
++2025-11-05 15:20:45.546 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bdb80] invalidated after the last release of the connection object
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValuesBulk SetGestaltValuesBulk( count=22 tuples=0x1a4327e20
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(alis 1C9) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(os   FE) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(addr 7) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(fs   3D332) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(fold 11) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(lram 7FFFF000) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(mmap 1) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(cfrg 1) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(thds 7) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(tmgr E) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(vers 7) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(cbon 160) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(cltn 1108000) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(cpnt 8) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(rsrc 3) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(rmbg 11F) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(vm   11) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(srad 4170706C) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(sysa 14) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(copl 9) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(xlat 0) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(stdf 0) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(ram  0x1a429fda0) => 0
++2025-11-05 15:20:45.546 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(ramm 0x1a429fda0) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cput 0x1a429fe90) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cpuf 0x1a429fec0) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(bclk 0x1a429fef0) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(bclm 0x1a429fef0) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(pclk 0x1a429ff90) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(mclk 0x1a429ff90) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(a/ux 0x1a42a00a8) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(pgsz 0x1a42a00b0) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(csiz 0x1a42a00f0) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(sysv 0x1a424b1a4) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(sys1 0x1a424b1a4) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(sys2 0x1a424b1a4) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(sys3 0x1a424b1a4) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cdfl 0x1a42a0130) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cdrm 0x1a42a038c) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] _NewGestalt _NewGestalt(cpus 0x1a42a03d4) => 0
++2025-11-05 15:20:45.547 I  HushDesk[14715:17eff] [com.apple.CarbonCore:gestalt] SetGestaltValue SetGestaltValue(swex 1) => 0
++2025-11-05 15:20:45.549 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] context (0 -> 3041aac0) for window 25c
++2025-11-05 15:20:45.550 Df HushDesk[14715:17eff] [com.apple.inputmethodkitClient:Client] +[IMKClient subclass]: chose IMKClient_Modern
++2025-11-05 15:20:45.550 Df HushDesk[14715:17eff] [com.apple.BoardServices:XPCErrors] [C:2] Alloc com.apple.backboard.hid-services.xpc
++2025-11-05 15:20:45.550 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bdf40] activating connection: mach=false listener=false peer=false name=(anonymous)
++2025-11-05 15:20:45.550 E  HushDesk[14715:17f6b] [com.apple.BaseBoard:Common] Unable to obtain a task name port right for pid 398: (os/kern) failure (0x5)
++2025-11-05 15:20:45.550 Df HushDesk[14715:17f6b] [com.apple.xpc:connection] [0xb264be080] activating connection: mach=false listener=false peer=false name=com.apple.TextInputUI.xpc.CursorUIViewService
++2025-11-05 15:20:45.550 Df HushDesk[14715:17f6b] [com.apple.xpc:connection] [0xb264be080] invalidated after the last release of the connection object
++2025-11-05 15:20:45.551 I  HushDesk[14715:17eff] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
++2025-11-05 15:20:45.552 I  HushDesk[14715:17eff] [com.apple.launchservices:datasep] application record search init. Node: <FSNode 0xb2676bd00> { isDir = y, path = <private> } bundleID: (null) itemID: 0
++2025-11-05 15:20:45.552 I  HushDesk[14715:17eff] [com.apple.launchservices:datasep] application record search init. Node: <FSNode 0xb2676bd00> { isDir = y, path = <private> } bundleID: (null) itemID: 0
++2025-11-05 15:20:45.552 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264be580] activating connection: mach=true listener=false peer=false name=com.apple.iconservices
++2025-11-05 15:20:45.552 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264be6c0] activating connection: mach=true listener=false peer=false name=com.apple.iconservices.store
++2025-11-05 15:20:45.553 I  HushDesk[14715:17eff] [com.apple.launchservices:datasep] application record search init. Node: <FSNode 0xb26678900> { isDir = ?, path = <private> } bundleID: (null) itemID: 0
++2025-11-05 15:20:45.553 I  HushDesk[14715:17eff] [com.apple.iconservices:foundation] layer data size zero
++2025-11-05 15:20:45.554 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] order window front conditionally: 25b related: 0
++2025-11-05 15:20:45.554 Df HushDesk[14715:17eff] [com.apple.AppKit:AutomaticTermination] void _NSEnableAutomaticTerminationAndLog(NSString *) No windows open yet
++2025-11-05 15:20:45.554 A  HushDesk[14350:17f6a] (RunningBoardServices) didChangeInheritances
++2025-11-05 15:20:45.554 A  HushDesk[14715:17f62] (RunningBoardServices) didChangeInheritances
++2025-11-05 15:20:45.555 I  HushDesk[14715:17eff] [com.apple.AppKit:Intelligence] starting collection observation
++2025-11-05 15:20:45.555 Df HushDesk[14715:17f6b] [com.apple.UIIntelligenceSupport:xpc] establishing connection to agent
++2025-11-05 15:20:45.555 Df HushDesk[14715:17f6b] [com.apple.xpc:session] [0xb2679a350] Session created.
++2025-11-05 15:20:45.555 Df HushDesk[14715:17f6b] [com.apple.xpc:session] [0xb2679a350] Session created from connection [0xb264be800]
++2025-11-05 15:20:45.555 Df HushDesk[14715:17f6b] [com.apple.xpc:connection] [0xb264be800] activating connection: mach=true listener=false peer=false name=com.apple.uiintelligencesupport.agent
++2025-11-05 15:20:45.555 Df HushDesk[14715:17f6b] [com.apple.xpc:session] [0xb2679a350] Session activated
++2025-11-05 15:20:45.556 Df HushDesk[14715:17f6b] [com.apple.UIIntelligenceSupport:xpc] Connection established with agent PID: 1225
++2025-11-05 15:20:45.556 Df HushDesk[14715:17eff] [com.apple.dt.xctest:Default] Registering for test daemon availability notify post.
++2025-11-05 15:20:45.556 Df HushDesk[14715:17eff] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
++2025-11-05 15:20:45.556 Df HushDesk[14715:17eff] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
++2025-11-05 15:20:45.556 Df HushDesk[14715:17eff] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
++2025-11-05 15:20:45.560 Df HushDesk[14350:17798] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]
++2025-11-05 15:20:45.560 Df HushDesk[14350:17798] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges] finishing enqueued operations
++2025-11-05 15:20:45.560 Df HushDesk[14350:17f71] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]_block_invoke asyncing to main queue
++2025-11-05 15:20:45.560 Df HushDesk[14350:17f71] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]_block_invoke writing records
++2025-11-05 15:20:45.562 I  HushDesk[14715:17eff] [com.apple.GenerativeModels:availability] useCaseIdentifier: com.apple.WritingTools has externalModelProviders: <private> and providerSettingsUseCaseIdentifiers: <private>
++2025-11-05 15:20:45.562 I  HushDesk[14715:17eff] [com.apple.GenerativeModels:availability] Current availability state: available, use cases: com.apple.WritingTools, language: <any>, api: <private>
++2025-11-05 15:20:45.563 Df HushDesk[14715:17eff] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.gms.availability.notification
++2025-11-05 15:20:45.563 Df HushDesk[14715:17eff] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.os-eligibility-domain.change.greymatter
++2025-11-05 15:20:45.563 Df HushDesk[14715:17eff] [com.apple.GenerativeModels:availability] registering darwin observer for name: com.apple.language.changed
++2025-11-05 15:20:45.563 Df HushDesk[14715:17eff] [com.apple.WritingTools:Default] isAvailable value changed: isMDMAllowed = true, gmAvailable (current) = true
++2025-11-05 15:20:45.567 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LSArchitecture"="arm64", "LSAuditToken"=$F501<…>
++2025-11-05 15:20:45.567 I  HushDesk[14715:17eff] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
++2025-11-05 15:20:45.567 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LSArchitecture"="arm64", "LSAuditToken"=$F501<…>
++2025-11-05 15:20:45.567 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264be940] activating connection: mach=true listener=false peer=false name=com.apple.coreservices.appleevents
++2025-11-05 15:20:45.567 I  HushDesk[14715:17eff] [com.apple.appleevents:main] _AEGetRegisteredMachPort() created default port (port:48643/0xbe03 rcv:1 send:1 limit:5) and registered it with server
++2025-11-05 15:20:45.567 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bc3c0] Connection returned listener port: 0x4b03
++2025-11-05 15:20:45.567 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 533 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=533, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LSArchitecture"="arm64", "LSAuditToken"=$F501<…>
++2025-11-05 15:20:45.567 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] SignalReady: pid=14715 asn=0x0-0x65065
++2025-11-05 15:20:45.568 Df HushDesk[14715:17eff] [com.apple.processmanager:front-35286506] SIGNAL: pid=14715 asn=0x0x-0x65065
++2025-11-05 15:20:45.568 I  HushDesk[14715:17eff] [com.apple.appleevents:main] aeGenerateFakeFirstOAPPEventIfNecessary()
++2025-11-05 15:20:45.568 I  HushDesk[14715:17eff] [com.apple.appleevents:main] aeGenerateFakeFirstOAPPEventIfNecessary(), needToCreateFakeOAPPEventIfFirstEvent == true
++2025-11-05 15:20:45.568 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] Removing cached information for app [ 0x0-0x65065]  "HushDesk", as its seed is different from that in shared memory ( 533 vs 535)
++2025-11-05 15:20:45.568 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] context (0 -> cca7926e) for window 260
++2025-11-05 15:20:45.568 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] context (0 -> 24aa5a68) for window 25f
++2025-11-05 15:20:45.568 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] context (0 -> aa72c6c8) for window 25e
++2025-11-05 15:20:45.568 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] context (0 -> a220432) for window 25d
++2025-11-05 15:20:45.578 I  HushDesk[14715:17eff] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
++2025-11-05 15:20:45.580 I  HushDesk[14715:17eff] [com.apple.coreimage:api] Software context does not yet support 8bit working format
++2025-11-05 15:20:45.580 I  HushDesk[14715:17f62] [com.apple.CoreAnalytics:client] Dropping "com.apple.coreimage.CreateCIContext" as it isn't used in any transform (not in the config or budgeted?)
++2025-11-05 15:20:45.581 I  HushDesk[14715:17eff] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
++2025-11-05 15:20:45.585 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0xb27ffb8a0> 0D2F26ED-74B6-4BC9-86B6-5E4CFBE54FDB) gen: -1 item: 1264739405 flavor: 'DefaultAsciiKeyboardLayoutFlavor')
++2025-11-05 15:20:45.585 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: -8 generation: 0 null data flags: 0
++2025-11-05 15:20:45.585 I  HushDesk[14715:17eff] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport credentialSelected:] with nil credential
++2025-11-05 15:20:45.585 I  HushDesk[14715:17eff] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport oneTimeCodeSelected:] with nil code
++2025-11-05 15:20:45.585 Df HushDesk[14715:17f57] [com.apple.xpc:connection] [0xb264bebc0] activating connection: mach=false listener=false peer=false name=com.apple.SafariPlatformSupport.Helper
++2025-11-05 15:20:45.585 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264be1c0] activating connection: mach=false listener=false peer=false name=(anonymous)
++2025-11-05 15:20:45.585 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bed00] activating connection: mach=false listener=false peer=false name=com.apple.ViewBridgeAuxiliary
++2025-11-05 15:20:45.586 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bee40] activating connection: mach=false listener=false peer=false name=(anonymous)
++2025-11-05 15:20:45.586 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bed00] invalidated after the last release of the connection object
++2025-11-05 15:20:45.590 I  HushDesk[14715:17eff] [com.apple.CarbonCore:coreservicesdaemon] findOrCreateCacheable():findOrCreateCacheable(), factoryName=3 cacheableName=<private> fCacheables.size()=0
++2025-11-05 15:20:45.590 I  HushDesk[14715:17eff] [com.apple.CarbonCore:coreservicesdaemon] findOrCreateCacheable():findOrCreateCacheable(), result = 0xb2833cac0 (should be non-NULL)
++2025-11-05 15:20:45.590 Df HushDesk[14715:17eff] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) Restoring windows
++2025-11-05 15:20:45.591 Df HushDesk[14715:17eff] [com.apple.AppKit:StateRestoration] -[NSApplication _reopenWindowsAsNecessaryIncludingRestorableState:withFullFidelity:completionHandler:] shouldRestoreState=1 hasPersistentStateToRestore=1 shouldStillRestoreStateAfterPrompting=1
++2025-11-05 15:20:45.592 I  HushDesk[14715:17eff] [com.apple.SkyLight:processes] 0[outside of RPC]: SLSSetFrontProcessWithInfo(0x0-0x2 window=0 options=0x1
++2025-11-05 15:20:45.592 Df HushDesk[14715:17eff] [com.apple.AppKit:AutomaticTermination] void _NSEnableAutomaticTerminationAndLog(NSString *) Restoring windows
++2025-11-05 15:20:45.592 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LS<…>
++2025-11-05 15:20:45.592 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] _LSSetMetaApplicationInfo({
+     LSFrontReservationExists = 1;
+ })
+-2025-11-05 14:57:41.117 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalition<…>
+-2025-11-05 14:57:41.117 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalition<…>
+-2025-11-05 14:57:41.117 I  HushDesk[9742:120a8] [com.apple.SkyLight:processes] 0[outside of RPC]: SLSSetFrontProcessWithInfo(0x0-0x2 window=0 options=0x100 allWindows
+-2025-11-05 14:57:41.118 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalition<…>
+-2025-11-05 14:57:41.119 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalition<…>
+-2025-11-05 14:57:41.125 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e426d00] activating connection: mach=true listener=false peer=false name=com.apple.window_proxies
+-2025-11-05 14:57:41.125 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e426d00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+-2025-11-05 14:57:41.126 I  HushDesk[9742:120a8] [com.apple.showhide:pr-59900543] SHOWHIDE: SHOW id=8 0x0-0x4C04C, err=0 eventTime=3396403834625 windowID=0
+-2025-11-05 14:57:41.126 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order all windows front 3396403834625
+-2025-11-05 14:57:41.127 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalition<…>
+-2025-11-05 14:57:41.127 I  HushDesk[9742:120a8] [com.apple.showhide:pr-59900543] SHOWHIDE: CONFIRM, id=8, err=0
+-2025-11-05 14:57:41.127 I  HushDesk[9742:120a8] [com.apple.runningboard:assertion] Acquiring assertion: <RBSAssertionDescriptor| "AppNap adapter assertion" ID:(null) target:9742>
+-2025-11-05 14:57:41.134 Df HushDesk[9742:120a8] [com.apple.TextInputUI:CursorUI] -[TUINSCursorUIController activate:]_block_invoke: Create CursorUIViewService: TUINSRemoteViewController
+-2025-11-05 14:57:41.134 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] window <TUINSWindow: 0x880166f80> windowNumber=133 finishing close
+-2025-11-05 14:57:41.134 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 133 op: 0 relative: 0 related: 0
+-2025-11-05 14:57:41.151 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] information in shared memory for 0x0-0x4c04c with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2332259, "CFBundleIconFile"="hushdesk", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.204501", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x4c04c:, "LSApplicationCategoryType"="public.app-category.productivity", "LSApplicationCoalitionIDKey"=1919, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalition<…>
+-2025-11-05 14:57:41.158 A  HushDesk[9742:120da] (RunningBoardServices) didChangeInheritances
+-2025-11-05 14:57:41.166 Df HushDesk[9742:120da] [com.apple.xpc:connection] [0x87e426bc0] invalidated after the last release of the connection object
+-2025-11-05 14:57:41.166 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e426d00] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:57:41.166 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e426bc0] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:57:41.206 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> e0d2222b) for window 13c
+-2025-11-05 14:57:41.206 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13c op: 0 relative: 0 related: 0
+-2025-11-05 14:57:41.210 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SPSafariPlatformSupport completionListPreferredContentSizeDidUpdate] with size {0, 0}, in window that is visible
+-2025-11-05 14:57:41.211 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13c op: 0 relative: 0 related: 0
+-2025-11-05 14:57:41.236 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e4270c0] activating connection: mach=false listener=false peer=false name=com.apple.hiservices-xpcservice
+-2025-11-05 14:57:41.306 I  HushDesk[9742:120f3] [com.apple.AppKit:WindowTab] Indexing 1 items
+-2025-11-05 14:57:41.306 A  HushDesk[9742:120f3] (CoreSpotlight) end-index-batch
+-2025-11-05 14:57:41.306 Df HushDesk[9742:120f3] [com.apple.corespotlight:index] *warn* MailCS ======%%% _setMailMessageAttributes skip:1
+-2025-11-05 14:57:41.308 Df HushDesk[9742:120f3] (CoreSpotlight) Start service name com.apple.spotlightknowledged
+-2025-11-05 14:57:41.309 Df HushDesk[9742:120f3] [com.apple.corespotlight:default] [GMS] availability notification token 65
+-2025-11-05 14:57:41.309 I  HushDesk[9742:120f3] [com.apple.GenerativeModels:availability] useCaseIdentifier: textUnderstanding.TextPersonExtraction has externalModelProviders: <private> and providerSettingsUseCaseIdentifiers: <private>
+-2025-11-05 14:57:41.309 I  HushDesk[9742:120f3] [com.apple.GenerativeModels:availability] Current availability state: available, use cases: textUnderstanding.TextPersonExtraction, language: en, api: <private>
+-2025-11-05 14:57:41.309 I  HushDesk[9742:120f3] [com.apple.GenerativeModels:availability] useCaseIdentifier: com.apple.Settings.AppleIntelligence has externalModelProviders: <private> and providerSettingsUseCaseIdentifiers: <private>
+-2025-11-05 14:57:41.310 I  HushDesk[9742:120f3] [com.apple.GenerativeModels:availability] Current availability state: available, use cases: com.apple.Settings.AppleIntelligence, language: <any>, api: <private>
+-2025-11-05 14:57:41.310 A  HushDesk[9742:120f3] (CoreSpotlight) index-items
+-2025-11-05 14:57:41.378 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('ApplePerContextInputPasteboard' (<CFUUID 0x880620920> CF79DE5B-FE65-487C-B0AD-5315586753A3) gen: -1 item: 1264739405 flavor: 'ApplePerContextInputFlavor')
+-2025-11-05 14:57:41.378 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:cache] Rebuilding cache for 'ApplePerContextInputPasteboard' (<CFUUID 0x880620920> CF79DE5B-FE65-487C-B0AD-5315586753A3)
+-2025-11-05 14:57:41.378 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:general] Will request data from daemon
+-2025-11-05 14:57:41.378 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (182 bytes) flags: 0
+-2025-11-05 14:57:41.378 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0x880071840> 7C656B03-AC62-42BD-8EC6-8874378E6331) gen: -1 item: 1264739405 flavor: 'DefaultAsciiKeyboardLayoutFlavor')
+-2025-11-05 14:57:41.378 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: -8 generation: 0 null data flags: 0
+-2025-11-05 14:57:41.549 I  HushDesk[9742:120a8] [com.apple.HIToolbox:MBDisplays] <private>
+-2025-11-05 14:57:41.549 I  HushDesk[9742:120a8] [com.apple.HIToolbox:MBDisplays] <private>
+-2025-11-05 14:57:46.052 Df HushDesk[9742:120a8] [com.apple.AppKit:AutomaticTermination] void _updateToReflectAutomaticTerminationState(void) Setting _kLSApplicationWouldBeTerminatedByTALKey=0
+-2025-11-05 14:57:52.043 Df HushDesk[9742:120d5] [com.apple.launchservices:default] LSExceptions shared instance invalidated for timeout.
+-2025-11-05 14:57:56.212 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]
+-2025-11-05 14:57:56.212 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges] Emptying for initial flush.
+-2025-11-05 14:57:56.217 I  HushDesk[9742:120a8] [com.apple.launchservices:cas] Removing cached information for app [ 0x0-0x4c04c]  "HushDesk", as its seed is different from that in shared memory ( 535 vs 538)
+-2025-11-05 14:57:56.217 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges] finishing enqueued operations
+-2025-11-05 14:57:56.218 Df HushDesk[9742:12188] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]_block_invoke asyncing to main queue
+-2025-11-05 14:57:56.218 Df HushDesk[9742:120d5] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]_block_invoke writing records
+-2025-11-05 14:58:11.218 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]
+-2025-11-05 14:58:11.230 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges] finishing enqueued operations
+-2025-11-05 14:58:11.230 Df HushDesk[9742:12188] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]_block_invoke asyncing to main queue
+-2025-11-05 14:58:11.230 Df HushDesk[9742:12260] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]_block_invoke writing records
+-2025-11-05 14:58:31.867 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> 5570d84d) for window 13d
+-2025-11-05 14:58:31.868 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:58:31.868 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:58:31.870 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:58:31.870 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:58:31.871 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:58:31.874 A  HushDesk[9742:120a8] (CoreFoundation) Loading Preferences From User CFPrefsD
+-2025-11-05 14:58:31.874 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:58:31.887 I  HushDesk[9742:120a8] [com.apple.DesignLibrary:defaults] liveTuning=false
+-2025-11-05 14:58:31.890 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:58:31.891 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13d op: 1 relative: 0 related: 0
+-2025-11-05 14:58:31.891 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13d op: 1 relative: 0 related: 0
+-2025-11-05 14:58:31.891 I  HushDesk[9742:120a8] [com.apple.inputAnalytics.client:IATextInputActions] initWithAnalyticsMetadataObserver service
+-2025-11-05 14:58:31.891 I  HushDesk[9742:120a8] [com.apple.inputAnalytics.client:IAXPCClient] Initialized 0x87eb738e0
+-2025-11-05 14:58:31.891 I  HushDesk[9742:120a8] [com.apple.inputAnalytics.client:IAXPCClient] 0x87eb738e0 using shared remote object proxy
+-2025-11-05 14:58:31.891 I  HushDesk[9742:120a8] [com.apple.inputAnalytics.client:IAXPCClient] 0x87eb738e0 calling connection resume after shared instance
+-2025-11-05 14:58:31.891 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e427d40] activating connection: mach=true listener=false peer=false name=com.apple.inputanalyticsd
+-2025-11-05 14:58:31.891 I  HushDesk[9742:120a8] [com.apple.inputAnalytics.client:IAXPCClient] IAXPCclient 0x87eb738e0 init created _connection 0x87fb96f80 _server 0x0 with IXAXPCProtocol
+-2025-11-05 14:58:31.891 I  HushDesk[9742:120a8] [com.apple.inputAnalytics.client:IATextInputActions] initialized new <private> xpc client 0x87eb738e0 with server 0x87e0a5db0
+-2025-11-05 14:58:31.892 I  HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Dropping "com.apple.appkit.app_config" as it isn't used in any transform (not in the config or budgeted?)
+-2025-11-05 14:58:32.072 I  HushDesk[9742:12261] [com.apple.AppKit:WindowTab] Indexing 1 items
+-2025-11-05 14:58:32.072 A  HushDesk[9742:12261] (CoreSpotlight) end-index-batch
+-2025-11-05 14:58:32.073 A  HushDesk[9742:12261] (CoreSpotlight) index-items
+-2025-11-05 14:58:32.364 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> 74e10f08) for window 13e
+-2025-11-05 14:58:32.411 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13c op: 0 relative: 0 related: 0
+-2025-11-05 14:58:32.412 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport credentialSelected:] with nil credential
+-2025-11-05 14:58:32.412 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport oneTimeCodeSelected:] with nil code
+-2025-11-05 14:58:32.412 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] window <NSPopupMenuWindow: 0x87e0f7900> windowNumber=13e finishing close
+-2025-11-05 14:58:32.412 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13e op: 0 relative: 0 related: 0
+-2025-11-05 14:58:33.708 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] window <NSPopupMenuWindow: 0x87e745500> windowNumber=13d finishing close
+-2025-11-05 14:58:33.709 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13d op: 0 relative: 0 related: 0
+-2025-11-05 14:58:33.713 Df HushDesk[9742:120a8] [com.apple.BoardServices:XPCErrors] [C:3] Alloc com.apple.backboard.hid-services.xpc
+-2025-11-05 14:58:33.713 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e124b40] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:58:33.714 A  HushDesk[9742:120a8] (AppKit) perform action for menu item
+-2025-11-05 14:58:33.714 Df HushDesk[9742:12340] [com.apple.BackBoard:EventDelivery] BKSHIDEventDeliveryManager - connection activation
+-2025-11-05 14:58:33.714 A  HushDesk[9742:120a8] (AppKit) sendAction:
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:Application] terminate:
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:AutomaticTermination] void _NSDisableAutomaticTerminationAndLog(NSString *) Terminating
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:Application] -[NSApplication _setShouldRestoreStateOnNextLaunch:] shouldRestore=0
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSApplication _pushPersistentStateTerminationGeneration] sPersistentStateTerminateStackHeight -> 1
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager discardAllPersistentStateAndClose]
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish] finishing pending changes
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _finishEncodingImmediatelyWithCompletionHandler:] _encodingQueue=0x87e528870
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish] observer=0x880750a00
+-2025-11-05 14:58:33.714 Df HushDesk[9742:12260] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish]_block_invoke asyncing to main runloop
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish] spinning the runloop
+-2025-11-05 14:58:33.714 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish]_block_invoke observer=0x880750a00 activity=1 depth=0 finished=0
+-2025-11-05 14:58:33.715 Df HushDesk[9742:12340] [com.apple.xpc:connection] [0x87e124c80] activating connection: mach=false listener=false peer=false name=com.apple.TextInputUI.xpc.CursorUIViewService
+-2025-11-05 14:58:33.715 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish]_block_invoke finished=YES
+-2025-11-05 14:58:33.715 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport credentialSelected:] with nil credential
+-2025-11-05 14:58:33.715 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport oneTimeCodeSelected:] with nil code
+-2025-11-05 14:58:33.715 Df HushDesk[9742:12261] [com.apple.xpc:connection] [0x87e124c80] invalidated after the last release of the connection object
+-2025-11-05 14:58:33.716 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (0 -> f0f5a46c) for window 13f
+-2025-11-05 14:58:33.717 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13f op: 0 relative: 0 related: 0
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e124dc0] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.xpc:connection] [0x87e124f00] activating connection: mach=false listener=false peer=false name=(anonymous)
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish]_block_invoke observer=0x880750a00 activity=128 depth=1 finished=1
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish] completed spinning the runloop
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish] finished waiting
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _flushPendingPostEncodingChangesSynchronously] workQueue=0x8802eb400
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _flushPendingPostEncodingChangesSynchronously]_block_invoke _windowSnapshotter=0x87e43f340
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIWindowSnapshotter flushPendingSnapshotsSynchronously] _workQueue=0x8802eb480
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _flushPendingPostEncodingChangesSynchronously]_block_invoke _store=0x88030db60
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager _waitForPendingChangesToFinish] finished flushing
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:Application] Attempting sudden termination (1st attempt)
+-2025-11-05 14:58:33.719 Df HushDesk[9742:120a8] [com.apple.AppKit:Application] Checking whether app should terminate
+-2025-11-05 14:58:33.720 Df HushDesk[9742:120a8] [com.apple.AppKit:Application] Asking app delegate whether applicationShouldTerminate:
+-2025-11-05 14:58:33.724 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] Updating completion list window visibility to false after parent window 'visible' changed; parent window is visible: false; completion list has content to show: false
+-2025-11-05 14:58:33.724 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13f op: 0 relative: 0 related: 0
+-2025-11-05 14:58:33.725 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:entry] CopyData('DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0x880071840> 7C656B03-AC62-42BD-8EC6-8874378E6331) gen: -1 item: 1264739405 flavor: 'DefaultAsciiKeyboardLayoutFlavor')
+-2025-11-05 14:58:33.725 I  HushDesk[9742:120a8] [com.apple.CFPasteboard:exit] (not-in-cache) - result: -8 generation: 0 null data flags: 0
+-2025-11-05 14:58:33.726 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] Cleaning up AutoFill session in response to NSWindowDidResignKeyNotification
+-2025-11-05 14:58:33.726 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport credentialSelected:] with nil credential
+-2025-11-05 14:58:33.726 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] order window: 13f op: 0 relative: 0 related: 0
+-2025-11-05 14:58:33.726 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport oneTimeCodeSelected:] with nil code
+-2025-11-05 14:58:33.728 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSApplication _pushPersistentStateTerminationGeneration] sPersistentStateTerminateStackHeight -> 2
+-2025-11-05 14:58:33.728 I  HushDesk[9742:120a8] [com.apple.AppKit:Intelligence] stopping collection observation
+-2025-11-05 14:58:33.728 Df HushDesk[9742:12340] [com.apple.xpc:connection] [0x87e426080] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+-2025-11-05 14:58:33.729 Df HushDesk[9742:12340] [com.apple.xpc:session] [0x87e786170] Session canceled.
+-2025-11-05 14:58:33.729 Df HushDesk[9742:12261] [com.apple.UIIntelligenceSupport:xpc] agent connection cancelled (details: Session manually canceled)
+-2025-11-05 14:58:33.729 Df HushDesk[9742:12261] [com.apple.xpc:session] [0x87e786170] Disposing of session
+-2025-11-05 14:58:33.729 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (f0f5a46c -> 0) for window 13f
+-2025-11-05 14:58:33.730 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport credentialSelected:] with nil credential
+-2025-11-05 14:58:33.730 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport oneTimeCodeSelected:] with nil code
+-2025-11-05 14:58:33.730 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] window <QNSWindow: 0x880165400> windowNumber=132 finishing close
+-2025-11-05 14:58:33.731 Df HushDesk[9742:120a8] [com.apple.AppKit:Application] applicationShouldTerminate: NSTerminateCancel
+-2025-11-05 14:58:33.731 Df HushDesk[9742:120a8] [com.apple.AppKit:Application] replyToApplicationShouldTerminate:NO
+-2025-11-05 14:58:33.731 Df HushDesk[9742:120a8] [com.apple.AppKit:Application] App termination canceled
+-2025-11-05 14:58:33.731 Df HushDesk[9742:120a8] [com.apple.AppKit:StateRestoration] -[NSApplication _popPersistentStateTerminationGeneration] sPersistentStateTerminateStackHeight -> 1
+-2025-11-05 14:58:33.731 Df HushDesk[9742:120a8] [com.apple.AppKit:AutomaticTermination] void _NSEnableAutomaticTerminationAndLog(NSString *) Terminating
+-2025-11-05 14:58:33.731 Df HushDesk[9742:120a8] [com.apple.AppKit:Application] Termination aborted
+-2025-11-05 14:58:33.734 I  HushDesk[9742:120a8] [com.apple.AppKit:Menu] Donating invocation type Mouse for menu item <QCocoaNSMenuItem: 0x8802d46c0, ke='Command-Q', action: terminate:, action image: Quit_app>
+-2025-11-05 14:58:33.735 Df HushDesk[9742:12261] [com.apple.xpc:connection] [0x87e125180] activating connection: mach=true listener=false peer=false name=com.apple.proactive.app-client.donation
+-2025-11-05 14:58:33.736 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (74e10f08 -> 0) for window 13e
+-2025-11-05 14:58:33.738 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (5570d84d -> 0) for window 13d
+-2025-11-05 14:58:33.747 I  HushDesk[9742:120a8] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SPSafariPlatformSupport completionListPreferredContentSizeDidUpdate] with size {0, 0}, in window that is NOT visible
+-2025-11-05 14:58:33.747 I  HushDesk[9742:120a8] [com.apple.AppKit:Window] context (e0d2222b -> 0) for window 13c
+-2025-11-05 14:58:33.750 Df HushDesk[9742:120a8] [com.apple.appleevents:main] OSErr AERemoveEventHandler(AEEventClass, AEEventID, AEEventHandlerUPP, Boolean)(GURL,GURL handler=0x1a1b1b638 isSys=NO) err=0/noErr
+-2025-11-05 14:58:33.766 Df HushDesk[9742:12340] [com.apple.xpc:connection] [0x87e124000] activating connection: mach=true listener=false peer=false name=com.apple.powerlog.plxpclogger.xpc
+-2025-11-05 14:58:33.766 Df HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Entering exit handler.
+-2025-11-05 14:58:33.766 Df HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Queueing exit procedure onto XPC queue. Any further messages sent will be discarded. activeSendTransactions=0
+-2025-11-05 14:58:33.766 Df HushDesk[9742:12260] [com.apple.CoreAnalytics:client] Cancelling XPC connection. Any further reply handler invocations will not retry messages
+-2025-11-05 14:58:33.766 Df HushDesk[9742:12260] [com.apple.xpc:connection] [0x87e424640] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+-2025-11-05 14:58:33.766 Df HushDesk[9742:120a8] [com.apple.CoreAnalytics:client] Exiting exit handler.
+-2025-11-05 14:58:33.766 Df HushDesk[9742:1235c] [com.apple.CoreAnalytics:client] XPC connection invalidated (daemon unloaded/disabled)
++2025-11-05 15:20:45.593 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LS<…>
++2025-11-05 15:20:45.593 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LS<…>
++2025-11-05 15:20:45.593 I  HushDesk[14715:17eff] [com.apple.SkyLight:processes] 0[outside of RPC]: SLSSetFrontProcessWithInfo(0x0-0x2 window=0 options=0x100 allWindows
++2025-11-05 15:20:45.593 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LS<…>
++2025-11-05 15:20:45.594 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LS<…>
++2025-11-05 15:20:45.596 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bef80] activating connection: mach=true listener=false peer=false name=com.apple.window_proxies
++2025-11-05 15:20:45.596 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bef80] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
++2025-11-05 15:20:45.596 I  HushDesk[14715:17f76] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LS<…>
++2025-11-05 15:20:45.597 I  HushDesk[14715:17eff] [com.apple.showhide:pr-59900543] SHOWHIDE: SHOW id=28 0x0-0x65065, err=0 eventTime=4780879072166 windowID=0
++2025-11-05 15:20:45.597 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] order all windows front 4780879072166
++2025-11-05 15:20:45.597 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LS<…>
++2025-11-05 15:20:45.597 I  HushDesk[14715:17eff] [com.apple.showhide:pr-59900543] SHOWHIDE: CONFIRM, id=28, err=0
++2025-11-05 15:20:45.598 I  HushDesk[14715:17eff] [com.apple.runningboard:assertion] Acquiring assertion: <RBSAssertionDescriptor| "AppNap adapter assertion" ID:(null) target:14715>
++2025-11-05 15:20:45.609 Df HushDesk[14715:17eff] [com.apple.TextInputUI:CursorUI] -[TUINSCursorUIController activate:]_block_invoke: Create CursorUIViewService: TUINSRemoteViewController
++2025-11-05 15:20:45.610 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] window <TUINSWindow: 0xb281a6f80> windowNumber=25c finishing close
++2025-11-05 15:20:45.610 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] order window: 25c op: 0 relative: 0 related: 0
++2025-11-05 15:20:45.630 A  HushDesk[14715:17f57] (RunningBoardServices) didChangeInheritances
++2025-11-05 15:20:45.632 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] information in shared memory for 0x0-0x65065 with seed 535 was still valid, so using cached info { "ApplicationType"="Foreground", "BundleIdentifierLowerCase"="com.nottingham.hushdesk", "CFBundleDisplayName"="HushDesk", "CFBundleExecutable"="HushDesk", "CFBundleExecutablePath"="/Users/hushdesk/Projects/hushdesk-macos/dist/HushDesk.app/Contents/MacOS/HushDesk", "CFBundleExecutablePathDeviceID"=16777230, "CFBundleExecutablePathINode"=2337192, "CFBundleIconFile"="hushdesk.icns", "CFBundleIdentifier"="com.nottingham.hushdesk", "CFBundleInfoDictionaryVersion"="6.0", "CFBundleName"="HushDesk", "CFBundleNameLowerCase"="hushdesk", "CFBundleNumericVersion"=0, "CFBundlePackageType"="APPL", "CFBundleShortVersionString"="0.1.0", "CFBundleSignature"="????", "CFBundleVersion"="20251105.151316", "CanBecomeFrontmost"=true, "ChangeCount"=535, "Flavor"=3, "Hidden"=false, "LSASN"=ASN:0x0-0x65065:, "LSApplicationCoalitionIDKey"=2089, "LSApplicationHasRegistered"=true, "LSApplicationHasSignalledItIsReady"=true, "LSApplicationMemberCoalitionIDKey"=2089, "LSApplicationReadyToBeFrontableKey"=true, "LS<…>
++2025-11-05 15:20:45.647 Df HushDesk[14715:17f62] [com.apple.xpc:connection] [0xb264bebc0] invalidated after the last release of the connection object
++2025-11-05 15:20:45.647 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bef80] activating connection: mach=false listener=false peer=false name=(anonymous)
++2025-11-05 15:20:45.647 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bebc0] activating connection: mach=false listener=false peer=false name=(anonymous)
++2025-11-05 15:20:45.690 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] context (0 -> a1f24eeb) for window 264
++2025-11-05 15:20:45.691 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] order window: 264 op: 0 relative: 0 related: 0
++2025-11-05 15:20:45.692 I  HushDesk[14715:17eff] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SPSafariPlatformSupport completionListPreferredContentSizeDidUpdate] with size {0, 0}, in window that is visible
++2025-11-05 15:20:45.692 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] order window: 264 op: 0 relative: 0 related: 0
++2025-11-05 15:20:45.714 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bf0c0] activating connection: mach=false listener=false peer=false name=com.apple.hiservices-xpcservice
++2025-11-05 15:20:45.765 I  HushDesk[14715:17f57] [com.apple.AppKit:WindowTab] Indexing 1 items
++2025-11-05 15:20:45.765 A  HushDesk[14715:17f57] (CoreSpotlight) end-index-batch
++2025-11-05 15:20:45.765 Df HushDesk[14715:17f57] [com.apple.corespotlight:index] *warn* MailCS ======%%% _setMailMessageAttributes skip:1
++2025-11-05 15:20:45.766 Df HushDesk[14715:17f57] (CoreSpotlight) Start service name com.apple.spotlightknowledged
++2025-11-05 15:20:45.767 Df HushDesk[14715:17f57] [com.apple.corespotlight:default] [GMS] availability notification token 65
++2025-11-05 15:20:45.767 I  HushDesk[14715:17f57] [com.apple.GenerativeModels:availability] useCaseIdentifier: textUnderstanding.TextPersonExtraction has externalModelProviders: <private> and providerSettingsUseCaseIdentifiers: <private>
++2025-11-05 15:20:45.767 I  HushDesk[14715:17f57] [com.apple.GenerativeModels:availability] Current availability state: available, use cases: textUnderstanding.TextPersonExtraction, language: en, api: <private>
++2025-11-05 15:20:45.767 I  HushDesk[14715:17f57] [com.apple.GenerativeModels:availability] useCaseIdentifier: com.apple.Settings.AppleIntelligence has externalModelProviders: <private> and providerSettingsUseCaseIdentifiers: <private>
++2025-11-05 15:20:45.768 I  HushDesk[14715:17f57] [com.apple.GenerativeModels:availability] Current availability state: available, use cases: com.apple.Settings.AppleIntelligence, language: <any>, api: <private>
++2025-11-05 15:20:45.768 A  HushDesk[14715:17f57] (CoreSpotlight) index-items
++2025-11-05 15:20:45.849 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('ApplePerContextInputPasteboard' (<CFUUID 0xb283f7940> 0A25E6D3-C4DC-4BAF-B7B6-5048F27B95CE) gen: -1 item: 1264739405 flavor: 'ApplePerContextInputFlavor')
++2025-11-05 15:20:45.849 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:cache] Rebuilding cache for 'ApplePerContextInputPasteboard' (<CFUUID 0xb283f7940> 0A25E6D3-C4DC-4BAF-B7B6-5048F27B95CE)
++2025-11-05 15:20:45.849 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:general] Will request data from daemon
++2025-11-05 15:20:45.850 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: 0 generation: 1 data (182 bytes) flags: 0
++2025-11-05 15:20:45.850 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0xb27ffb8a0> 0D2F26ED-74B6-4BC9-86B6-5E4CFBE54FDB) gen: -1 item: 1264739405 flavor: 'DefaultAsciiKeyboardLayoutFlavor')
++2025-11-05 15:20:45.850 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: -8 generation: 0 null data flags: 0
++2025-11-05 15:20:46.014 I  HushDesk[14715:17eff] [com.apple.HIToolbox:MBDisplays] <private>
++2025-11-05 15:20:46.014 I  HushDesk[14715:17eff] [com.apple.HIToolbox:MBDisplays] <private>
++2025-11-05 15:20:50.532 Df HushDesk[14715:17eff] [com.apple.AppKit:AutomaticTermination] void _updateToReflectAutomaticTerminationState(void) Setting _kLSApplicationWouldBeTerminatedByTALKey=0
++2025-11-05 15:20:56.520 Df HushDesk[14715:17f6b] [com.apple.launchservices:default] LSExceptions shared instance invalidated for timeout.
++2025-11-05 15:21:03.266 Df HushDesk[14715:17eff] [com.apple.BoardServices:XPCErrors] [C:3] Alloc com.apple.backboard.hid-services.xpc
++2025-11-05 15:21:03.266 Df HushDesk[14715:17eff] [com.apple.xpc:connection] [0xb264bf200] activating connection: mach=false listener=false peer=false name=(anonymous)
++2025-11-05 15:21:03.266 Df HushDesk[14715:17f57] [com.apple.BackBoard:EventDelivery] BKSHIDEventDeliveryManager - connection activation
++2025-11-05 15:21:03.266 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] order window: 264 op: 0 relative: 0 related: 0
++2025-11-05 15:21:03.266 I  HushDesk[14715:17eff] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport credentialSelected:] with nil credential
++2025-11-05 15:21:03.267 I  HushDesk[14715:17eff] [com.apple.SafariPlatformSupport:SafariPlatformSupport] -[SFSafariPlatformSupport oneTimeCodeSelected:] with nil code
++2025-11-05 15:21:03.267 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:entry] CopyData('DefaultAsciiKeyboardLayoutPasteboard' (<CFUUID 0xb27ffb8a0> 0D2F26ED-74B6-4BC9-86B6-5E4CFBE54FDB) gen: -1 item: 1264739405 flavor: 'DefaultAsciiKeyboardLayoutFlavor')
++2025-11-05 15:21:03.267 I  HushDesk[14715:17eff] [com.apple.CFPasteboard:exit] (not-in-cache) - result: -8 generation: 0 null data flags: 0
++2025-11-05 15:21:03.269 I  HushDesk[14715:17eff] [com.apple.AppKit:Window] context (a1f24eeb -> 0) for window 264
++2025-11-05 15:21:03.364 A  HushDesk[14715:17f92] (RunningBoardServices) didChangeInheritances
++2025-11-05 15:21:03.370 Df HushDesk[14715:17eff] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]
++2025-11-05 15:21:03.370 Df HushDesk[14715:17eff] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges] Emptying for initial flush.
++2025-11-05 15:21:03.383 I  HushDesk[14715:17eff] [com.apple.launchservices:cas] Removing cached information for app [ 0x0-0x65065]  "HushDesk", as its seed is different from that in shared memory ( 535 vs 538)
++2025-11-05 15:21:03.383 Df HushDesk[14715:17eff] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges] finishing enqueued operations
++2025-11-05 15:21:03.383 Df HushDesk[14715:17f92] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]_block_invoke asyncing to main queue
++2025-11-05 15:21:03.383 Df HushDesk[14715:17f57] [com.apple.AppKit:StateRestoration] -[NSPersistentUIManager flushAllChanges]_block_invoke writing records
++2025-11-05 15:21:03.461 A  HushDesk[14350:17f77] (RunningBoardServices) didChangeInheritances
++2025-11-05 15:21:03.515 A  HushDesk[14350:180cf] (RunningBoardServices) didChangeInheritances
++2025-11-05 15:21:03.625 A  HushDesk[14715:17f92] (RunningBoardServices) didChangeInheritances
++2025-11-05 15:21:03.696 A  HushDesk[14715:17f57] (RunningBoardServices) didChangeInheritances
+diff --git a/debug/plist.txt b/debug/plist.txt
+index a865f75..490cddf 100644
+--- a/debug/plist.txt
++++ b/debug/plist.txt
+@@ -1,4 +1,5 @@
+ CFBundlePackageType: APPL
+ CFBundleExecutable: HushDesk
+ CFBundleShortVersionString: 0.1.0
+-CFBundleVersion: 20251105.204501
++CFBundleVersion: 20251105.151316
++CFBundleDisplayName: HushDesk
+diff --git a/scripts/build b/scripts/build
+index 32edb7b..6d205e6 100755
+--- a/scripts/build
++++ b/scripts/build
+@@ -1,90 +1,16 @@
+ #!/usr/bin/env bash
+-
+-set -euo pipefail
+-set -E
+-
+-trap 'status=$?; cmd=${BASH_COMMAND:-}; if [ "${status}" -ne 0 ]; then echo "Build failed: ${cmd}" >&2; fi' ERR
+-
+-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+-DIST_DIR="${REPO_ROOT}/dist"
+-PYINSTALLER_BIN="${PYINSTALLER_BIN:-pyinstaller}"
+-ICON_PATH="${REPO_ROOT}/assets/icons/hushdesk.icns"
+-PLIST_BUDDY="/usr/libexec/PlistBuddy"
+-
+-if ! command -v "${PYINSTALLER_BIN}" >/dev/null 2>&1; then
+-  echo "error: ${PYINSTALLER_BIN} is required (install PyInstaller)" >&2
+-  exit 1
+-fi
+-
+-if [ ! -f "${ICON_PATH}" ]; then
+-  echo "error: ${ICON_PATH} not found. Run ./scripts/make_icns first." >&2
+-  exit 1
+-fi
+-
+-if [ ! -x "${PLIST_BUDDY}" ]; then
+-  echo "error: PlistBuddy not found at ${PLIST_BUDDY}" >&2
+-  exit 1
+-fi
+-
+-cd "${REPO_ROOT}"
+-
+-echo "Cleaning ${DIST_DIR}"
+-rm -rf "${DIST_DIR}"
+-mkdir -p "${DIST_DIR}"
+-
+-"${PYINSTALLER_BIN}" -y --noconfirm --name "HushDesk" --windowed \
+-  --add-data "hushdesk/config:config" \
+-  --icon "${ICON_PATH}" \
+-  --osx-bundle-identifier "com.nottingham.hushdesk" \
+-  src/hushdesk/app.py
+-
+-if [ ! -d "${DIST_DIR}/HushDesk.app" ]; then
+-  echo "error: dist/HushDesk.app was not generated" >&2
+-  exit 1
+-fi
+-
+-"${REPO_ROOT}/scripts/stamp_version"
+-
+-PLIST="${DIST_DIR}/HushDesk.app/Contents/Info.plist"
+-
+-set_plist_value() {
+-  local key="$1"
+-  local value="$2"
+-  if "${PLIST_BUDDY}" -c "Set :${key} ${value}" "${PLIST}" 2>/dev/null; then
+-    return 0
+-  fi
+-  "${PLIST_BUDDY}" -c "Add :${key} string ${value}" "${PLIST}"
+-}
+-
+-set_plist_bool() {
+-  local key="$1"
+-  local value="$2"
+-  if "${PLIST_BUDDY}" -c "Set :${key} ${value}" "${PLIST}" 2>/dev/null; then
+-    return 0
+-  fi
+-  "${PLIST_BUDDY}" -c "Add :${key} bool ${value}" "${PLIST}"
+-}
+-
+-set_plist_value "CFBundleIconFile" "hushdesk"
+-set_plist_value "CFBundleName" "HushDesk"
+-set_plist_value "CFBundleDisplayName" "HushDesk"
+-set_plist_value "CFBundleIdentifier" "com.nottingham.hushdesk"
+-set_plist_bool "NSHighResolutionCapable" true
+-set_plist_value "LSApplicationCategoryType" "public.app-category.productivity"
+-
+-hdiutil create -volname "HushDesk" \
+-  -srcfolder "${DIST_DIR}/HushDesk.app" \
+-  -ov -format UDZO "${DIST_DIR}/HushDesk.dmg"
+-
+-if [ ! -f "${DIST_DIR}/HushDesk.dmg" ]; then
+-  echo "error: dist/HushDesk.dmg was not generated" >&2
+-  exit 1
+-fi
+-
+-if [ "${DESKTOP_ALIAS:-0}" = "1" ]; then
+-  "${REPO_ROOT}/scripts/desktop_alias"
+-fi
+-
+-echo "Build artifacts ready:"
+-echo "  App: ${DIST_DIR}/HushDesk.app"
+-echo "  DMG: ${DIST_DIR}/HushDesk.dmg"
++set -Eeuo pipefail
++ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
++APP="$ROOT/dist/HushDesk.app"
++PYINSTALLER="${PYINSTALLER_BIN:-$(command -v pyinstaller || true)}"
++[[ -x "$PYINSTALLER" ]] || { echo "PyInstaller not found. Set PYINSTALLER_BIN or install it."; exit 1; }
++echo "==> Building with: $PYINSTALLER"
++rm -rf "$ROOT/dist"
++mkdir -p "$ROOT/dist"
++"$PYINSTALLER" --noconfirm "$ROOT/HushDesk.spec"
++echo "==> Stamping Info.plist"
++"$ROOT/scripts/stamp_version" "$APP"
++echo "==> Clearing quarantine (local-only)"
++xattr -dr com.apple.quarantine "$APP" || true
++[[ "${DESKTOP_ALIAS:-0}" == "1" ]] && osascript -e 'tell application "Finder" to make new alias file at (path to desktop) to POSIX file "'"$APP"'"' && echo "Desktop alias → $APP" || true
++echo "Build: PASS"
+diff --git a/scripts/stamp_version b/scripts/stamp_version
+index f3b0c4e..bc4787d 100755
+--- a/scripts/stamp_version
++++ b/scripts/stamp_version
+@@ -1,57 +1,29 @@
+ #!/usr/bin/env bash
+-
+-set -euo pipefail
+-
+-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+-PLIST="${REPO_ROOT}/dist/HushDesk.app/Contents/Info.plist"
+-INIT_FILE="${REPO_ROOT}/src/hushdesk/__init__.py"
+-
+-if [ ! -f "${PLIST}" ]; then
+-  echo "error: Info.plist not found at ${PLIST}" >&2
+-  exit 1
+-fi
+-
+-VERSION_VALUE="${VERSION:-}"
+-if [ -z "${VERSION_VALUE}" ]; then
+-  VERSION_VALUE="$(
+-    python3 - "${INIT_FILE}" <<'PY'
+-import re
+-import sys
+-from pathlib import Path
+-
+-try:
+-    text = Path(sys.argv[1]).read_text(encoding="utf-8")
+-except FileNotFoundError:
+-    pass
++set -Eeuo pipefail
++repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
++app="${1:-"$repo_root/dist/HushDesk.app"}"
++plist="$app/Contents/Info.plist"
++version="${VERSION:-$(python3 - <<'PY'
++import re, pathlib
++p = pathlib.Path('src/hushdesk/__init__.py')
++if p.exists():
++    m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", p.read_text())
++    print(m.group(1) if m else "0.1.0")
+ else:
+-    match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", text)
+-    if match:
+-        print(match.group(1), end="")
++    print("0.1.0")
+ PY
+-  )"
+-fi
+-
+-if [ -z "${VERSION_VALUE}" ]; then
+-  VERSION_VALUE="0.1.0"
+-fi
+-
+-BUILD_VALUE="${BUILD:-}"
+-if [ -z "${BUILD_VALUE}" ]; then
+-  BUILD_VALUE="$(date -u +%Y%m%d%H%M%S)"
++)}"
++build_raw="${BUILD:-$(/bin/date +%Y%m%d.%H%M%S)}"
++IFS='.' read -r -a seg <<<"$build_raw"
++if ((${#seg[@]}==1)); then
++  ymd="${build_raw:0:8}"; hms="${build_raw:8:6}"; build="${ymd}.${hms:-000000}"
++else
++  build="$build_raw"
+ fi
+-
+-VERSION="${VERSION_VALUE}"
+-BUILD="${BUILD_VALUE}"
+-
+-/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "${PLIST}" 2>/dev/null \
+-  || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string ${VERSION}" "${PLIST}"
+-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD}" "${PLIST}" 2>/dev/null \
+-  || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${BUILD}" "${PLIST}"
+-/usr/libexec/PlistBuddy -c "Set :CFBundleName HushDesk" "${PLIST}" 2>/dev/null \
+-  || /usr/libexec/PlistBuddy -c "Add :CFBundleName string HushDesk" "${PLIST}"
+-/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName HushDesk" "${PLIST}" 2>/dev/null \
+-  || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string HushDesk" "${PLIST}"
+-
+-echo "Stamped VERSION: ${VERSION}"
+-echo "Stamped BUILD:   ${BUILD}"
++IFS='.' read -r -a seg <<<"$build"
++((${#seg[@]}>=1 && ${#seg[@]}<=3)) || { echo "BUILD must have 1–3 integer segments: $build" >&2; exit 1; }
++for s in "${seg[@]}"; do [[ "$s" =~ ^[0-9]+$ ]] || { echo "BUILD must be integers: $build" >&2; exit 1; }; (( s <= 2147483647 )) || { echo "BUILD segment too large: $s" >&2; exit 1; }; done
++/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string $version" "$plist"
++/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $build" "$plist"
++echo "Stamped VERSION: $version"
++echo "Stamped BUILD:   $build"
+diff --git a/src/hushdesk/app.py b/src/hushdesk/app.py
+index 2945b4d..9c46eaf 100644
+--- a/src/hushdesk/app.py
++++ b/src/hushdesk/app.py
+@@ -19,15 +19,23 @@ def _ensure_application_support_dir() -> Path:
+ 
+ def main() -> int:
+     """Create the QApplication and launch the main window."""
++    print("HushDesk: launching GUI", flush=True)
++    runtime_base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
++    print(f"HushDesk: runtime base {runtime_base}", flush=True)
++    print(f"HushDesk: executable {Path(sys.executable).resolve()}", flush=True)
+     app = QApplication.instance() or QApplication(sys.argv)
+     app.setApplicationName("HushDesk")
+     app.setOrganizationName("HushDesk")
+ 
+     app_support_dir = _ensure_application_support_dir()
++    print(f"HushDesk: using support dir {app_support_dir}", flush=True)
+     window = MainWindow(app_support_dir=app_support_dir)
+     window.show()
++    print("HushDesk: main window shown", flush=True)
+ 
+-    return app.exec()
++    result = app.exec()
++    print(f"HushDesk: event loop exited ({result})", flush=True)
++    return result
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/src/hushdesk/engine/decide.py b/src/hushdesk/engine/decide.py
+index 9cb9d50..982c871 100644
+--- a/src/hushdesk/engine/decide.py
++++ b/src/hushdesk/engine/decide.py
+@@ -2,11 +2,15 @@
+ 
+ from __future__ import annotations
+ 
++import logging
+ from typing import Optional
+ 
+ from hushdesk.pdf.duecell import DueMark
+ 
+ 
++logger = logging.getLogger(__name__)
++
++
+ def rule_triggers(rule_kind: str, threshold: int, vital: Optional[int]) -> bool:
+     """Return ``True`` when ``vital`` satisfies the hold rule condition."""
+ 
+@@ -34,7 +38,10 @@ def decide_for_dose(rule_kind: str, threshold: int, vital: Optional[int], mark:
+     triggered = rule_triggers(rule_kind, threshold, vital)
+ 
+     if mark == DueMark.CODE_ALLOWED:
+-        return "HELD_OK" if triggered else "NONE"
++        if triggered:
++            return "HELD_OK"
++        logger.warning("Allowed code without trigger (ignored)")
++        return "NONE"
+ 
+     if mark in (DueMark.GIVEN_CHECK, DueMark.GIVEN_TIME):
+         return "HOLD_MISS" if triggered else "COMPLIANT"
+diff --git a/src/hushdesk/engine/rules.py b/src/hushdesk/engine/rules.py
+index c5dbb89..60cb022 100644
+--- a/src/hushdesk/engine/rules.py
++++ b/src/hushdesk/engine/rules.py
+@@ -76,14 +76,18 @@ def parse_rule_text(text: str) -> List[RuleSpec]:
+         word_value = match.group("word_value")
+ 
+         preceding_fragment = text[cursor : match.start()]
+-        if _CONNECTOR_RE.search(preceding_fragment):
+-            # connectors maintain context; nothing to do
+-            pass
+-        elif "hold" not in preceding_fragment.lower():
+-            hold_context = False
+ 
+         if prefix:
+             hold_context = True
++        elif _CONNECTOR_RE.search(preceding_fragment):
++            # connector tokens keep whichever context was already in effect
++            pass
++        else:
++            normalized = preceding_fragment.strip().lower()
++            if normalized:
++                hold_context = "hold" in normalized
++
++        cursor = match.end()
+ 
+         if not hold_context:
+             continue
+diff --git a/src/hushdesk/id/rooms.py b/src/hushdesk/id/rooms.py
+index d56c30d..f91207c 100644
+--- a/src/hushdesk/id/rooms.py
++++ b/src/hushdesk/id/rooms.py
+@@ -5,30 +5,19 @@ from __future__ import annotations
+ import json
+ import re
+ from functools import lru_cache
+-from pathlib import Path
+ from typing import Dict, Iterable, List, Optional, Tuple
+ 
++from hushdesk._paths import resource_path
++
+ ROOM_BED_PATTERN = re.compile(r"\b([1-4]\d{2})\s*[-/ ]?\s*([12])\b")
+ ROOM_ONLY_PATTERN = re.compile(r"\b([1-4]\d{2})\b")
+-DEFAULT_MASTER_PATH = "hushdesk/config/building_master_mac.json"
+-
+-
+-def _project_root() -> Path:
+-    return Path(__file__).resolve().parents[3]
+-
+-
+-def _resolve_path(path: str | Path) -> Path:
+-    candidate = Path(path)
+-    if candidate.is_absolute():
+-        return candidate
+-    resolved = _project_root() / candidate
+-    return resolved
++DEFAULT_MASTER_PATH = "config/building_master_mac.json"
+ 
+ 
+ @lru_cache(maxsize=4)
+ def load_building_master(path: str = DEFAULT_MASTER_PATH) -> Dict[str, object]:
+     """Load and cache the building master JSON."""
+-    resolved = _resolve_path(path)
++    resolved = resource_path(path)
+     with resolved.open("r", encoding="utf-8") as handle:
+         payload = json.load(handle)
+ 
+diff --git a/src/hushdesk/pdf/dates.py b/src/hushdesk/pdf/dates.py
+index 68f0e88..dd81036 100644
+--- a/src/hushdesk/pdf/dates.py
++++ b/src/hushdesk/pdf/dates.py
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import os
+ import re
+ from datetime import date, datetime, time, timedelta
+ from pathlib import Path
+@@ -49,6 +50,24 @@ def central_prev_day(value: date) -> date:
+     return previous.date()
+ 
+ 
++def dev_override_date() -> date | None:
++    """Return a developer-provided audit date when the override env var is set."""
++
++    raw_value = os.getenv("HUSHDESK_AUDIT_DATE_MMDDYYYY")
++    if not raw_value:
++        return None
++
++    match = re.fullmatch(r"\s*(\d{2})/(\d{2})/(\d{4})\s*", raw_value)
++    if not match:
++        return None
++
++    month, day, year = (int(group) for group in match.groups())
++    try:
++        return date(year=year, month=month, day=day)
++    except ValueError:
++        return None
++
++
+ def format_mmddyyyy(value: date) -> str:
+     """Return ``value`` formatted as ``MM/DD/YYYY``."""
+ 
+@@ -68,4 +87,3 @@ def resolve_audit_date(filename: Path) -> date:
+ 
+     today_central = datetime.now(tz=CENTRAL_TZ).date()
+     return central_prev_day(today_central)
+-
+diff --git a/src/hushdesk/pdf/rows.py b/src/hushdesk/pdf/rows.py
+index 7f1d1b0..0fafc95 100644
+--- a/src/hushdesk/pdf/rows.py
++++ b/src/hushdesk/pdf/rows.py
+@@ -22,6 +22,7 @@ _BP_LABEL_RE = re.compile(r"(?i)^\s*B\s*P\b")
+ _HR_LABEL_RE = re.compile(r"(?i)^\s*(?:HR|PULSE)\b")
+ _AM_LABEL_RE = re.compile(r"(?i)^(?:a\.?m\.?|a\s*m\b|morning)")
+ _PM_LABEL_RE = re.compile(r"(?i)^(?:p\.?m\.?|p\s*m\b|evening)")
++_TIME_RE = re.compile(r"\b(?:[0-1]?\d|2[0-3]):[0-5]\d\b")
+ 
+ 
+ @dataclass(slots=True)
+@@ -83,32 +84,10 @@ def find_row_bands_for_block(page: "fitz.Page", block_bbox: Tuple[float, float,
+ 
+     auto_am_pm_split = False
+     if row_bands["am"] is None and row_bands["pm"] is None and row_bands["bp"] is not None:
+-        bp_band = row_bands["bp"]
+-        dose_top = max(y0, min(y1, bp_band[1]))
+-        dose_bottom = y1
+-        if dose_bottom > dose_top:
+-            height = dose_bottom - dose_top
+-            midpoint = dose_top + height / 2.0
+-
+-            am_top = dose_top
+-            am_bottom = max(am_top + _MIN_BAND_HALF_HEIGHT, midpoint)
+-            am_bottom = min(am_bottom, dose_bottom)
+-
+-            pm_top = max(am_bottom, midpoint)
+-            pm_bottom = dose_bottom
+-            if pm_bottom - pm_top < _MIN_BAND_HALF_HEIGHT:
+-                pm_top = max(dose_top, pm_bottom - _MIN_BAND_HALF_HEIGHT)
+-
+-            if am_bottom > pm_top:
+-                overlap = am_bottom - pm_top
+-                pm_top += overlap
+-                if pm_top >= pm_bottom:
+-                    pm_top = am_bottom
+-
+-            if am_bottom <= pm_top and pm_top < pm_bottom:
+-                row_bands["am"] = (am_top, am_bottom)
+-                row_bands["pm"] = (pm_top, pm_bottom)
+-                auto_am_pm_split = True
++        auto_split = _auto_split_am_pm(text, block_bbox, row_bands["bp"])
++        if auto_split is not None:
++            row_bands["am"], row_bands["pm"] = auto_split
++            auto_am_pm_split = True
+ 
+     return RowBands(
+         bp=row_bands["bp"],
+@@ -209,6 +188,72 @@ def _band_from_center(
+     return top, bottom
+ 
+ 
++def _auto_split_am_pm(
++    text_dict: dict,
++    block_bbox: Tuple[float, float, float, float],
++    bp_band: Tuple[float, float],
++) -> Optional[Tuple[Tuple[float, float], Tuple[float, float]]]:
++    block_x0, block_y0, block_x1, block_y1 = normalize_rect(block_bbox)
++    _bp_top, bp_bottom = sorted(bp_band)
++    dose_top = max(block_y0, min(block_y1, bp_bottom))
++    dose_bottom = block_y1
++    if dose_bottom <= dose_top:
++        return None
++
++    height = dose_bottom - dose_top
++    default_midpoint = dose_top + height / 2.0
++
++    time_positions = _collect_time_positions(text_dict, (block_x0, dose_top, block_x1, dose_bottom))
++
++    midpoint_ratio = 0.5
++    if time_positions:
++        above = sum(1 for pos in time_positions if pos <= default_midpoint)
++        below = len(time_positions) - above
++        if above and not below:
++            midpoint_ratio = 0.55
++        elif below and not above:
++            midpoint_ratio = 0.45
++
++    midpoint = dose_top + height * midpoint_ratio
++    min_am_bottom = dose_top + _MIN_BAND_HALF_HEIGHT
++    max_pm_top = dose_bottom - _MIN_BAND_HALF_HEIGHT
++    midpoint = min(max(midpoint, min_am_bottom), max_pm_top)
++
++    am_top = dose_top
++    am_bottom = midpoint
++    pm_top = midpoint
++    pm_bottom = dose_bottom
++
++    if am_bottom - am_top < _MIN_BAND_HALF_HEIGHT:
++        am_bottom = min(dose_bottom - _MIN_BAND_HALF_HEIGHT, am_top + _MIN_BAND_HALF_HEIGHT)
++        pm_top = am_bottom
++    if pm_bottom - pm_top < _MIN_BAND_HALF_HEIGHT:
++        pm_top = max(dose_top + _MIN_BAND_HALF_HEIGHT, pm_bottom - _MIN_BAND_HALF_HEIGHT)
++        am_bottom = pm_top
++
++    if am_bottom <= am_top or pm_bottom <= pm_top:
++        return None
++
++    return (am_top, am_bottom), (pm_top, pm_bottom)
++
++
++def _collect_time_positions(
++    text_dict: dict,
++    bbox: Tuple[float, float, float, float],
++) -> List[float]:
++    x0, y0, x1, y1 = normalize_rect(bbox)
++    positions: List[float] = []
++    for span_bbox, raw_text in _iter_spans_within(text_dict, (x0, y0, x1, y1)):
++        text = str(raw_text)
++        if not text:
++            continue
++        if not _TIME_RE.search(text):
++            continue
++        pos_y = (span_bbox[1] + span_bbox[3]) / 2.0
++        positions.append(pos_y)
++    return positions
++
++
+ def _box_center(box: LabelBox) -> float:
+     return (box[1] + box[3]) / 2.0
+ 
+diff --git a/src/hushdesk/report/txt_writer.py b/src/hushdesk/report/txt_writer.py
+index 902cb99..e7359ce 100644
+--- a/src/hushdesk/report/txt_writer.py
++++ b/src/hushdesk/report/txt_writer.py
+@@ -5,7 +5,7 @@ from __future__ import annotations
+ import re
+ from datetime import datetime
+ from pathlib import Path
+-from typing import Iterable, List, Optional
++from typing import Dict, Iterable, List, Optional
+ from zoneinfo import ZoneInfo
+ 
+ from .model import DecisionRecord
+@@ -47,18 +47,28 @@ def write_report(
+     exceptions = [record for record in records if record.kind in {"HOLD-MISS", "HELD-OK"}]
+     lines.append("Exceptions —")
+     if exceptions:
+-        for record in _iter_sorted(exceptions):
++        for record in _iter_sorted_by_room(exceptions):
+             lines.append(_format_record_line(record))
+     else:
+         lines.append("Hold-Miss: 0 (no exceptions)")
+ 
+     lines.append("")
+     lines.append("All Reviewed —")
+-    sorted_records = list(_iter_sorted(records))
++    grouped: Dict[str, List[DecisionRecord]] = {kind: [] for kind in _KIND_ORDER}
++    fallback_bucket: List[DecisionRecord] = []
++    for record in records:
++        if record.kind in grouped:
++            grouped[record.kind].append(record)
++        else:
++            fallback_bucket.append(record)
++
+     for kind in _KIND_ORDER:
+-        for record in sorted_records:
+-            if record.kind == kind:
+-                lines.append(_format_record_line(record))
++        for record in _iter_sorted_by_room(grouped[kind]):
++            lines.append(_format_record_line(record))
++
++    if fallback_bucket:
++        for record in _iter_sorted_by_room(fallback_bucket):
++            lines.append(_format_record_line(record))
+ 
+     note_lines: List[str] = []
+     seen_notes: set[str] = set()
+@@ -100,16 +110,15 @@ def write_report(
+     out_path.write_text("\n".join(lines), encoding="utf-8")
+ 
+ 
+-def _iter_sorted(records: Iterable[DecisionRecord]) -> Iterable[DecisionRecord]:
+-    return sorted(records, key=_record_sort_key)
++def _iter_sorted_by_room(records: Iterable[DecisionRecord]) -> Iterable[DecisionRecord]:
++    return sorted(records, key=_room_sort_key)
+ 
+ 
+-def _record_sort_key(record: DecisionRecord) -> tuple:
++def _room_sort_key(record: DecisionRecord) -> tuple:
+     room = record.room_bed or "Unknown"
+     room_key = (room.lower() == "unknown", room)
+     dose_key = _DOSE_ORDER.get(record.dose, 0)
+-    kind_key = _KIND_ORDER.index(record.kind) if record.kind in _KIND_ORDER else len(_KIND_ORDER)
+-    return (room_key, dose_key, kind_key, record.rule_text)
++    return (room_key, dose_key, record.rule_text)
+ 
+ 
+ def _format_record_line(record: DecisionRecord) -> str:
+diff --git a/src/hushdesk/ui/main_window.py b/src/hushdesk/ui/main_window.py
+index d330738..22d14a7 100644
+--- a/src/hushdesk/ui/main_window.py
++++ b/src/hushdesk/ui/main_window.py
+@@ -697,7 +697,12 @@ class MainWindow(QMainWindow):
+         toast.open()
+ 
+     def closeEvent(self, event) -> None:  # noqa: N802
+-        if self._thread and self._thread.isRunning():
+-            self._thread.quit()
+-            self._thread.wait(1000)
++        thread = self._thread
++        if thread is not None:
++            try:
++                if thread.isRunning():
++                    thread.quit()
++                    thread.wait(1000)
++            except RuntimeError:
++                pass
+         super().closeEvent(event)
+diff --git a/tests/test_duecell.py b/tests/test_duecell.py
+index 7f76ea4..5f078e3 100644
+--- a/tests/test_duecell.py
++++ b/tests/test_duecell.py
+@@ -17,51 +17,81 @@ from hushdesk.pdf.duecell import DueMark, detect_due_mark  # noqa: E402
+ 
+ 
+ class DummyRect:
+-    def __init__(self, *_: float) -> None:
+-        pass
++    def __init__(self, *args: float | tuple[float, float]) -> None:
++        if len(args) == 4:
++            x0, y0, x1, y1 = args  # type: ignore[assignment]
++        elif len(args) == 2:
++            (x0, y0), (x1, y1) = args  # type: ignore[assignment]
++        else:  # pragma: no cover - defensive
++            raise ValueError("Unsupported Rect args")
++        self.x0 = float(x0)
++        self.y0 = float(y0)
++        self.x1 = float(x1)
++        self.y1 = float(y1)
+ 
+     def intersects(self, other: "DummyRect") -> bool:  # noqa: D401
+         return True
+ 
+ 
+ class DummyPage:
+-    def __init__(self, text: str) -> None:
+-        self._text = text
+-
+-    def get_text(self, kind: str, clip: object = None) -> str:  # noqa: D401
+-        return self._text
++    def __init__(self, spans: list[tuple[str, tuple[float, float, float, float]]], drawings: list | None = None) -> None:
++        self._spans = spans
++        self._drawings = drawings or []
++
++    def get_text(self, kind: str, clip: object = None) -> dict:  # noqa: D401
++        if kind != "dict":
++            raise AssertionError(f"Unexpected kind request: {kind}")
++        return {
++            "blocks": [
++                {
++                    "lines": [
++                        {
++                            "spans": [
++                                {"text": text, "bbox": bbox}
++                                for text, bbox in self._spans
++                            ]
++                        }
++                    ]
++                }
++            ]
++        }
+ 
+     def get_drawings(self) -> list:  # noqa: D401
+-        return []
++        return self._drawings
+ 
+ 
+ class DueCellDetectionTests(unittest.TestCase):
+     def test_detect_dcd_from_text_x(self) -> None:
+-        page = DummyPage("X")
++        page = DummyPage([("X", (0.0, 0.0, 1.0, 1.0))])
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.DCD)
+ 
+     def test_code_allowed_overrides_given(self) -> None:
+-        page = DummyPage("15 √")
++        page = DummyPage(
++            [
++                ("15", (0.1, 0.1, 0.4, 0.4)),
++                ("√", (0.6, 0.2, 0.9, 0.5)),
++            ]
++        )
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.CODE_ALLOWED)
+ 
+     def test_detect_given_check(self) -> None:
+-        page = DummyPage("√")
++        page = DummyPage([("√", (0.0, 0.0, 1.0, 1.0))])
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.GIVEN_CHECK)
+ 
+     def test_detect_given_time(self) -> None:
+-        page = DummyPage("09:45")
++        page = DummyPage([("09:45", (0.0, 0.0, 1.0, 1.0))])
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.GIVEN_TIME)
+ 
+     def test_detect_none(self) -> None:
+-        page = DummyPage("")
++        page = DummyPage([])
+         with patch("hushdesk.pdf.duecell.fitz", SimpleNamespace(Rect=DummyRect)):
+             mark = detect_due_mark(page, 0, 1, 0, 1)
+         self.assertEqual(mark, DueMark.NONE)
+diff --git a/tests/test_rules_parse.py b/tests/test_rules_parse.py
+index 235b7b9..850886c 100644
+--- a/tests/test_rules_parse.py
++++ b/tests/test_rules_parse.py
+@@ -30,6 +30,15 @@ class RuleParsingTests(unittest.TestCase):
+         specs = parse_rule_text(text)
+         self.assertEqual(specs, [])
+ 
++    def test_and_or_dual_rules(self) -> None:
++        text = "Hold if SBP < 100 and/or HR < 60"
++        specs = parse_rule_text(text)
++        self.assertEqual(len(specs), 2)
++        self.assertEqual(specs[0].kind, "SBP<")
++        self.assertEqual(specs[0].threshold, 100)
++        self.assertEqual(specs[1].kind, "HR<")
++        self.assertEqual(specs[1].threshold, 60)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
+diff --git a/tests/test_txt_writer.py b/tests/test_txt_writer.py
+index 7e5ca00..7b3d859 100644
+--- a/tests/test_txt_writer.py
++++ b/tests/test_txt_writer.py
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import re
+ import unittest
+ from pathlib import Path
+ from tempfile import TemporaryDirectory
+@@ -11,7 +12,7 @@ from hushdesk.report.txt_writer import write_report
+ 
+ 
+ class TxtWriterTests(unittest.TestCase):
+-    def test_write_report_formats_sections(self) -> None:
++    def test_write_report_respects_sectioning_and_order(self) -> None:
+         records = [
+             DecisionRecord(
+                 hall="Bridgeman",
+@@ -20,7 +21,7 @@ class TxtWriterTests(unittest.TestCase):
+                 room_bed="307-1",
+                 dose="AM",
+                 kind="HOLD-MISS",
+-                rule_text="Hold if SBP < 110",
++                rule_text="Hold if SBP < 110 | Source: Policy 2025",
+                 vital_text="BP 101/44",
+                 code=None,
+                 dcd_reason=None,
+@@ -65,9 +66,26 @@ class TxtWriterTests(unittest.TestCase):
+                 dcd_reason="X in due cell",
+                 notes=None,
+             ),
++            DecisionRecord(
++                hall="Bridgeman",
++                date_mmddyyyy="11/03/2025",
++                source_basename="sample.pdf",
++                room_bed="305-2",
++                dose="PM",
++                kind="HOLD-MISS",
++                rule_text="Hold if HR < 58",
++                vital_text="HR 57",
++                code=None,
++                dcd_reason=None,
++                notes=None,
++            ),
++        ]
++        counts = {"reviewed": 5, "hold_miss": 2, "held_ok": 1, "compliant": 1, "dcd": 1}
++        notes = [
++            "Vitals missing (unexpected) — 309-1 (AM)",
++            "Vitals missing (unexpected) — 309-1 (AM (split))",
++            "Room not resolved for block on page 3",
+         ]
+-        counts = {"reviewed": 4, "hold_miss": 1, "held_ok": 1, "compliant": 1, "dcd": 1}
+-        notes = ["Room not resolved for block on page 3"]
+ 
+         with TemporaryDirectory() as tmpdir:
+             out_path = Path(tmpdir) / "report.txt"
+@@ -77,22 +95,57 @@ class TxtWriterTests(unittest.TestCase):
+         self.assertEqual(content[0], "11/03/2025 · Hall: BRIDGEMAN · Source: sample.pdf")
+         self.assertEqual(
+             content[1],
+-            "Reviewed: 4 · Hold-Miss: 1 · Held-OK: 1 · Compliant: 1 · DC'D: 1",
++            "Reviewed: 5 · Hold-Miss: 2 · Held-OK: 1 · Compliant: 1 · DC'D: 1",
+         )
+-        self.assertIn("Exceptions —", content)
+-        self.assertTrue(
+-            any(
+-                "HOLD-MISS — 307-1 (AM (split)) — Hold if SBP < 110; BP 101/44" in line
+-                for line in content
+-            )
++
++        exceptions_idx = content.index("Exceptions —")
++        all_reviewed_idx = content.index("All Reviewed —")
++
++        exceptions_lines = [
++            line
++            for line in content[exceptions_idx + 1 : all_reviewed_idx]
++            if line.strip()
++        ]
++
++        pattern = re.compile(r"^(?P<kind>[^—]+) — (?P<room>[^()]+?) \((?P<dose>[^)]+)\)")
++        exception_keys = [pattern.match(line).groups() for line in exceptions_lines]
++        self.assertEqual(
++            exception_keys,
++            [
++                ("HOLD-MISS", "305-2", "PM"),
++                ("HOLD-MISS", "307-1", "AM"),
++                ("HELD-OK", "307-1", "PM"),
++            ],
++        )
++
++        all_notes_start = next((i for i, line in enumerate(content) if line.startswith("Notes —")), len(content))
++        reviewed_lines = [
++            line
++            for line in content[all_reviewed_idx + 1 : all_notes_start]
++            if line.strip()
++        ]
++        reviewed_keys = [pattern.match(line).groups() for line in reviewed_lines]
++        self.assertEqual(
++            reviewed_keys,
++            [
++                ("HOLD-MISS", "305-2", "PM"),
++                ("HOLD-MISS", "307-1", "AM"),
++                ("HELD-OK", "307-1", "PM"),
++                ("COMPLIANT", "305-1", "AM"),
++                ("DC'D", "309-1", "PM"),
++            ],
+         )
++
+         self.assertTrue(
+-            any(
+-                line.startswith("HELD-OK — 307-1 (PM)") and "| code 12" in line for line in content
+-            )
++            any("Hold if SBP < 110" in line and "Source" not in line for line in reviewed_lines)
+         )
+-        self.assertIn("All Reviewed —", content)
+-        self.assertTrue(any(line.startswith("Notes — Room not resolved") for line in content))
++
++        note_lines = [line for line in content if line.startswith("Notes —")]
++        self.assertEqual(len(note_lines), 3)
++        self.assertIn("Notes — AM/PM labels missing (split)", note_lines)
++        self.assertTrue(any(line.startswith("Notes — Room not resolved") for line in note_lines))
++        self.assertTrue(any(line.startswith("Notes — Vitals missing") for line in note_lines))
++
+         self.assertTrue(content[-1].startswith("Generated: "))
+ 
+ 
+diff --git a/tests/test_vitals.py b/tests/test_vitals.py
+index 8a1a60c..0833d69 100644
+--- a/tests/test_vitals.py
++++ b/tests/test_vitals.py
+@@ -5,13 +5,20 @@ from __future__ import annotations
+ import sys
+ import unittest
+ from pathlib import Path
++from types import SimpleNamespace
++from unittest.mock import patch
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+ SRC_PATH = ROOT / "src"
+ if str(SRC_PATH) not in sys.path:
+     sys.path.insert(0, str(SRC_PATH))
+ 
+-from hushdesk.pdf.vitals import parse_bp_token, parse_hr_token  # noqa: E402
++from hushdesk.pdf.vitals import (  # noqa: E402
++    extract_vitals_in_band,
++    extract_vitals_in_band_fallback,
++    parse_bp_token,
++    parse_hr_token,
++)
+ 
+ 
+ class VitalParsingTests(unittest.TestCase):
+@@ -26,11 +33,100 @@ class VitalParsingTests(unittest.TestCase):
+         self.assertEqual(parse_hr_token("Pulse 78"), 78)
+ 
+     def test_parse_hr_token_plain_number(self) -> None:
+-        self.assertEqual(parse_hr_token("64"), 64)
++        self.assertIsNone(parse_hr_token("64"))
+ 
+     def test_parse_hr_token_invalid(self) -> None:
+         self.assertIsNone(parse_hr_token("N/A"))
+ 
++    def test_fallback_extracts_bp_and_hr(self) -> None:
++        sample_dict = {
++            "blocks": [
++                {
++                    "lines": [
++                        {
++                            "spans": [
++                                {"text": "BP 118/70 HR 74", "bbox": [100.0, 300.0, 180.0, 312.0]},
++                            ]
++                        },
++                        {
++                            "spans": [
++                                {"text": "P 68", "bbox": [110.0, 350.0, 140.0, 360.0]},
++                                {"text": "BP 132/82", "bbox": [150.0, 350.0, 200.0, 362.0]},
++                            ]
++                        },
++                    ]
++                }
++            ]
++        }
++
++        class StubPage:
++            def __init__(self, payload: dict) -> None:
++                self._payload = payload
++
++            def get_text(self, kind: str, clip: object = None) -> dict:
++                if kind != "dict":
++                    return {}
++                return self._payload
++
++        result = extract_vitals_in_band_fallback(StubPage(sample_dict), 90.0, 200.0, (0.0, 220.0))
++        self.assertEqual(len(result), 2)
++        self.assertEqual(result[0]["bp"], "118/70")
++        self.assertEqual(result[0]["hr"], 74)
++        self.assertEqual(result[1]["bp"], "132/82")
++        self.assertEqual(result[1]["hr"], 68)
++
++    def test_extract_vitals_uses_column_fallback(self) -> None:
++        fallback_dict = {
++            "blocks": [
++                {
++                    "lines": [
++                        {
++                            "spans": [
++                                {"text": "BP 120/78", "bbox": [100.0, 310.0, 160.0, 322.0]},
++                                {"text": "Pulse 70", "bbox": [100.0, 324.0, 150.0, 336.0]},
++                            ]
++                        },
++                        {
++                            "spans": [
++                                {"text": "BP 138/82", "bbox": [100.0, 360.0, 160.0, 372.0]},
++                            ]
++                        },
++                    ]
++                }
++            ]
++        }
++
++        class DummyRect:
++            def __init__(self, *args: float) -> None:
++                self.args = args
++
++        class StubPage:
++            def __init__(self, payload: dict) -> None:
++                self._payload = payload
++
++            def get_text(self, kind: str, clip: object = None) -> dict:
++                if kind != "dict":
++                    return {}
++                if clip is not None:
++                    return {"blocks": []}
++                return self._payload
++
++        page = StubPage(fallback_dict)
++        stub_fitz = SimpleNamespace(Rect=DummyRect)
++        with patch("hushdesk.pdf.vitals.fitz", stub_fitz):
++            result = extract_vitals_in_band(
++                page,
++                90.0,
++                180.0,
++                300.0,
++                340.0,
++                dose_hint="AM",
++                dose_bands={"AM": (290.0, 330.0), "PM": (340.0, 380.0)},
++            )
++        self.assertEqual(result["bp"], "120/78")
++        self.assertEqual(result["hr"], 70)
++        self.assertIn("_fallback_selected", result)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

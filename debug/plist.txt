@@ -1,0 +1,5 @@
+CFBundlePackageType: APPL
+CFBundleExecutable: HushDesk
+CFBundleShortVersionString: 0.1.0
+CFBundleVersion: 20251105.151316
+CFBundleDisplayName: HushDesk

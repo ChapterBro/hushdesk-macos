@@ -6,8 +6,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen, QPixmap, QRectF
+from PySide6.QtCore import Qt, QUrl, QRectF
+from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -207,8 +207,9 @@ class EvidencePanel(QWidget):
 
     @staticmethod
     def _launch_preview_script(pdf_path: Path, page_number: int) -> None:
+        escaped_pdf = str(pdf_path).replace('"', '\\"')
         script_lines = [
-            f'set pdfPath to POSIX file "{str(pdf_path).replace("\"", "\\\"")}"',
+            f'set pdfPath to POSIX file "{escaped_pdf}"',
             f'set pageNumber to {page_number}',
             "tell application \"Preview\"",
             "activate",

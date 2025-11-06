@@ -19,15 +19,23 @@ def _ensure_application_support_dir() -> Path:
 
 def main() -> int:
     """Create the QApplication and launch the main window."""
+    print("HushDesk: launching GUI", flush=True)
+    runtime_base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
+    print(f"HushDesk: runtime base {runtime_base}", flush=True)
+    print(f"HushDesk: executable {Path(sys.executable).resolve()}", flush=True)
     app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName("HushDesk")
     app.setOrganizationName("HushDesk")
 
     app_support_dir = _ensure_application_support_dir()
+    print(f"HushDesk: using support dir {app_support_dir}", flush=True)
     window = MainWindow(app_support_dir=app_support_dir)
     window.show()
+    print("HushDesk: main window shown", flush=True)
 
-    return app.exec()
+    result = app.exec()
+    print(f"HushDesk: event loop exited ({result})", flush=True)
+    return result
 
 
 if __name__ == "__main__":
