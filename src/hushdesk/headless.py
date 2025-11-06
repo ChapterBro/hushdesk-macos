@@ -45,6 +45,8 @@ class HeadlessResult:
     qa_png: Optional[Path]
     qa_paths: List[Path]
     log_file: Path
+    pages_with_band: int = 0
+    pages_total: int = 0
 
 
 def execute_headless(options: HeadlessOptions) -> HeadlessResult:
@@ -112,6 +114,10 @@ def execute_headless(options: HeadlessOptions) -> HeadlessResult:
     if audit_result.instrument_line:
         logs.append(audit_result.instrument_line)
     logs.append(summary_line)
+    coverage_line = (
+        f"COVERAGE page_bands={audit_result.pages_with_band}/{audit_result.pages_total}"
+    )
+    logs.append(coverage_line)
 
     exit_code = 0 if audit_result.records else 2
     LOGGER.info("Headless run completed exit_code=%s txt=%s", exit_code, report_path)
@@ -127,6 +133,8 @@ def execute_headless(options: HeadlessOptions) -> HeadlessResult:
         qa_png=audit_result.qa_paths[0] if audit_result.qa_paths else None,
         qa_paths=list(audit_result.qa_paths),
         log_file=log_file,
+        pages_with_band=audit_result.pages_with_band,
+        pages_total=audit_result.pages_total,
     )
 
 

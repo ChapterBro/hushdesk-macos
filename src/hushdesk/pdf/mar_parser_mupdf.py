@@ -5,12 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from hushdesk.fs.exports import resolve_qa_prefix
 from hushdesk.pdf.dates import format_mmddyyyy
 from hushdesk.pdf.mar_blocks import draw_med_blocks_debug
 from hushdesk.pdf.mar_grid_extract import DueRecord, PageExtraction, extract_pages
+from hushdesk.pdf.mar_header import band_for_date
 from hushdesk.pdf.mupdf_canon import CanonPage, iter_canon_pages
 from hushdesk.pdf.qa_overlay import QAHighlights, draw_overlay
 from hushdesk.report.model import DecisionRecord
@@ -34,6 +35,8 @@ class MarAuditResult:
     due_records: List[DueRecord] = field(default_factory=list)
     summary_line: str = ""
     instrument_line: str = ""
+    pages_total: int = 0
+    pages_with_band: int = 0
 
 
 @dataclass(slots=True)
@@ -84,6 +87,7 @@ def run_mar_audit(
             qa_file = None
 
     pages = list(iter_canon_pages(source_path))
+    pages_total, pages_with_band = _coverage_from_pages(pages, audit_date)
     extractions = extract_pages(pages, audit_date, hall_value)
 
     records: List[DecisionRecord] = []
@@ -148,6 +152,8 @@ def run_mar_audit(
         "empty": empty,
     }
     instrumentation["nonchip_record_delta"] = parametered_total - counts["reviewed"]
+    instrumentation["pages_total"] = pages_total
+    instrumentation["pages_with_band"] = pages_with_band
     extra_nonchip_categories = {
         key: value
         for key, value in nonchip_breakdown.items()
@@ -195,6 +201,8 @@ def run_mar_audit(
         due_records=all_due_records,
         summary_line=summary_line,
         instrument_line=instrument_line,
+        pages_total=pages_total,
+        pages_with_band=pages_with_band,
     )
     return result
 
@@ -250,6 +258,46 @@ def _instrumentation_metrics(
         "no_sbp": no_sbp,
         "no_hr": no_hr,
     }
+
+
+def _coverage_from_pages(
+    pages: Sequence[CanonPage],
+    audit_date: date,
+    *,
+    band_resolver: Callable[[CanonPage, date], Optional[Tuple[float, float]]] = band_for_date,
+) -> tuple[int, int]:
+    total = len(pages)
+    with_band = 0
+    for page in pages:
+        try:
+            band = band_resolver(page, audit_date)
+        except Exception:  # pragma: no cover - defensive guard
+            band = None
+        if band:
+            with_band += 1
+    return total, with_band
+
+
+@dataclass(slots=True)
+class _CoverageProbe:
+    """Test helper to validate coverage calculations over synthetic pages."""
+
+    total: int
+    with_band: int
+
+    def __call__(self) -> tuple[int, int]:
+        class _ProbePage:
+            __slots__ = ("has_band",)
+
+            def __init__(self, has_band: bool) -> None:
+                self.has_band = has_band
+
+        pages = [_ProbePage(index < self.with_band) for index in range(self.total)]
+
+        def _stub_band(page: object, _: date) -> Optional[Tuple[float, float]]:
+            return (0.0, 1.0) if getattr(page, "has_band", False) else None
+
+        return _coverage_from_pages(pages, date.today(), band_resolver=_stub_band)
 
 
 def _tally(record: DecisionRecord, counts: Dict[str, int]) -> None:
