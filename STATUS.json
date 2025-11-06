@@ -1,0 +1,12 @@
+{
+  "phase": "canon-ok",
+  "pdf": "/Users/hushdesk/Downloads/Administration Record Report 2025-11-05.pdf",
+  "scale": 2.0,
+  "checks": [
+    "bounds-within-pixmap",
+    "sample-rects-drawn"
+  ],
+  "artifacts": [
+    "debug/qa_p1_words.png"
+  ]
+}
