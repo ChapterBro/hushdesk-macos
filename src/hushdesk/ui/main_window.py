@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 import json
 import os
 import subprocess
 import tempfile
-import traceback
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from uuid import uuid4
@@ -39,7 +38,8 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
-from hushdesk.fs.exports import exports_dir, sanitize_filename, safe_write_text
+from hushdesk.fs.exports import exports_dir, qa_dir, sanitize_filename, safe_write_text
+from hushdesk.logs.rotating import get_logger, log_path
 from hushdesk.placeholders import build_placeholder_output
 from hushdesk.pdf.mar_header import audit_date_from_filename
 from hushdesk.pdf.mar_parser_mupdf import MarAuditResult, run_mar_audit
@@ -178,7 +178,9 @@ class MainWindow(QMainWindow):
         self._records_payload: list[dict] = []
         self._anomalies_payload: list[dict] = []
         self._selected_record: Optional[dict] = None
-        self._logs_path = (self._app_support_dir / "logs" / "gui_last_run.log")
+        get_logger()
+        self._logs_path = log_path()
+        self._gui_logger = logging.getLogger("hushdesk.gui")
 
         self._exports_dir = exports_dir()
         self._export_target_path = self._exports_dir
@@ -381,18 +383,40 @@ class MainWindow(QMainWindow):
     # --- Appearance helpers --------------------------------------------------
 
     def _add_export_toolbar_link(self, toolbar) -> None:
-        link_label = QLabel("<a href='#exports'>Open Export Folder</a>")
-        link_label.setObjectName("OpenExportsLink")
-        link_label.setTextFormat(Qt.TextFormat.RichText)
-        link_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
-        link_label.linkActivated.connect(self._on_status_link_activated)
-        link_label.setStyleSheet("font-size: 12px; margin-left: 8px;")
+        container = QWidget(self)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        export_label = QLabel("<a href='#exports'>Open Export Folder</a>")
+        export_label.setObjectName("OpenExportsLink")
+        export_label.setTextFormat(Qt.TextFormat.RichText)
+        export_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        export_label.linkActivated.connect(self._on_status_link_activated)
+        export_label.setStyleSheet("font-size: 12px; margin-left: 8px;")
+        layout.addWidget(export_label)
+
+        qa_label = QLabel("<a href='#qa'>Open QA Folder</a>")
+        qa_label.setObjectName("OpenQaLink")
+        qa_label.setTextFormat(Qt.TextFormat.RichText)
+        qa_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        qa_label.linkActivated.connect(self._on_qa_link_activated)
+        qa_label.setStyleSheet("font-size: 12px;")
+        layout.addWidget(qa_label)
+
+        logs_label = QLabel("<a href='#logs'>Open Logs</a>")
+        logs_label.setObjectName("OpenLogsLink")
+        logs_label.setTextFormat(Qt.TextFormat.RichText)
+        logs_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        logs_label.linkActivated.connect(self._on_logs_link_activated)
+        logs_label.setStyleSheet("font-size: 12px;")
+        layout.addWidget(logs_label)
 
         action = QWidgetAction(self)
-        action.setDefaultWidget(link_label)
+        action.setDefaultWidget(container)
         toolbar.addAction(action)
 
-        self._open_exports_widget = link_label
+        self._open_exports_widget = export_label
         self._open_exports_widget_action = action
 
     def _set_export_target(self, path: Path) -> None:
@@ -440,21 +464,41 @@ class MainWindow(QMainWindow):
             target.mkdir(parents=True, exist_ok=True)
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
 
-    def _open_logs_file(self) -> None:
-        log_path = self._logs_path
+    def _open_qa(self) -> None:
+        target = qa_dir()
         try:
-            log_path.parent.mkdir(parents=True, exist_ok=True)
-            log_path.touch(exist_ok=True)
+            target.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+        try:
+            subprocess.run(["open", str(target)], check=False)
+        except Exception:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
+
+    def _open_logs(self) -> None:
+        target = self._logs_path
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.touch(exist_ok=True)
         except OSError:
             return
         try:
-            subprocess.Popen(["open", "-a", "TextEdit", str(log_path)])
+            subprocess.run(["open", "-R", str(target)], check=False)
         except Exception:
-            QDesktopServices.openUrl(QUrl.fromLocalFile(str(log_path)))
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
+
+    def _on_qa_link_activated(self, _link: str) -> None:
+        self._open_qa()
+
+    def _on_logs_link_activated(self, _link: str) -> None:
+        self._open_logs()
 
     def _on_status_link_activated(self, link: str) -> None:
         if link == "#open-logs":
-            self._open_logs_file()
+            self._open_logs()
+            return
+        if link == "#qa":
+            self._open_qa()
             return
         self._open_export_folder()
 
@@ -825,21 +869,12 @@ class MainWindow(QMainWindow):
         self._audit_completed = False
 
     def _write_gui_log_entry(self, line: str, exc: Optional[BaseException] = None) -> None:
-        log_path = self._logs_path
-        try:
-            log_path.parent.mkdir(parents=True, exist_ok=True)
-        except OSError:
+        logger = getattr(self, "_gui_logger", None) or logging.getLogger("hushdesk.gui")
+        if exc is not None:
+            exc_info = (type(exc), exc, exc.__traceback__)
+            logger.error(line, exc_info=exc_info)
             return
-        try:
-            with log_path.open("a", encoding="utf-8") as handle:
-                handle.write(f"[{datetime.now().isoformat()}] {line}\n")
-                if exc is not None:
-                    handle.write(
-                        "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-                    )
-                    handle.write("\n")
-        except OSError:
-            pass
+        logger.info(line)
 
     @Slot(str)
     def _on_run_started(self, input_path: str) -> None:

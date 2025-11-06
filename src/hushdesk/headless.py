@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from hushdesk.fs.exports import exports_dir, sanitize_filename
+from hushdesk.logs.rotating import get_logger, log_path
 from hushdesk.pdf.dates import dev_override_date, format_mmddyyyy, resolve_audit_date
 from hushdesk.pdf.mar_header import audit_date_from_filename
 from hushdesk.pdf.mar_parser_mupdf import MarAuditResult, run_mar_audit
@@ -57,12 +58,18 @@ def execute_headless(options: HeadlessOptions) -> HeadlessResult:
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = (options.log_file or (log_dir / _default_log_name())).expanduser().resolve()
 
-    _configure_logging(log_file)
-    LOGGER.info("Headless run starting input=%s hall=%s", input_pdf, options.hall)
+    base_logger = _configure_logging(log_file, trace=options.trace)
+    hall_value = (options.hall or "UNKNOWN").upper()
+    LOGGER.info("Headless start: %s", input_pdf)
+    LOGGER.info("Headless hall: %s", hall_value)
+    if base_logger is not None and options.trace:
+        base_logger.debug("Trace mode enabled for headless execution.")
+
+    rotation_target = log_path()
+    print(f"LOG_ROTATION_OK path={rotation_target}", flush=True)
 
     print("PDF Engine: pymupdf", flush=True)
 
-    hall_value = (options.hall or "UNKNOWN").upper()
     audit_date, audit_label_base = _determine_audit_date(input_pdf, options.audit_date)
 
     try:
@@ -123,28 +130,36 @@ def execute_headless(options: HeadlessOptions) -> HeadlessResult:
     )
 
 
-def _configure_logging(log_file: Path) -> None:
+def _configure_logging(log_file: Path, *, trace: bool = False) -> logging.Logger:
     log_file.parent.mkdir(parents=True, exist_ok=True)
-    handlers: List[logging.Handler] = []
-    if not any(isinstance(handler, logging.FileHandler) for handler in logging.getLogger().handlers):
+    base_logger = get_logger()
+    level = logging.DEBUG if trace else logging.INFO
+    base_logger.setLevel(level)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+
+    if not any(isinstance(handler, logging.StreamHandler) for handler in root_logger.handlers):
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(level)
+        root_logger.addHandler(stream_handler)
+
+    existing_paths = {
+        getattr(handler, "baseFilename", None)
+        for handler in base_logger.handlers
+        if hasattr(handler, "baseFilename")
+    }
+    if str(log_file) not in existing_paths:
         file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(level)
         formatter = logging.Formatter(
             "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
             "%Y-%m-%d %H:%M:%S",
         )
         file_handler.setFormatter(formatter)
-        handlers.append(file_handler)
-    if not any(isinstance(handler, logging.StreamHandler) for handler in logging.getLogger().handlers):
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.INFO)
-        handlers.append(stream_handler)
+        base_logger.addHandler(file_handler)
 
-    if handlers:
-        root_logger = logging.getLogger()
-        root_logger.setLevel(logging.INFO)
-        for handler in handlers:
-            root_logger.addHandler(handler)
+    return base_logger
 
 
 def _build_summary_line(
