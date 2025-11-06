@@ -1,5 +1,7 @@
-phase: qa-redirect-ok
+phase: qa-logs-tests-ok
 receipts:
-  - QA_OVERLAY_DEST "~/Library/Application Support/HushDesk/QA"
-artifacts:
-  - "~/Library/Application Support/HushDesk/QA"
+  - LINKS_OK exports=/Users/hushdesk/Library/Application Support/HushDesk/Exports qa=/Users/hushdesk/Library/Application Support/HushDesk/QA logs=/Users/hushdesk/Library/Application Support/HushDesk/logs/hushdesk.log
+ui_links:
+  - Open Export Folder
+  - Open QA Folder
+  - Open Logs

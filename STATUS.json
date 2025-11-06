@@ -1,4 +1,7 @@
 {
-  "phase": "qa-redirect-ok",
-  "qa_dir": "~/Library/Application Support/HushDesk/QA"
+  "phase": "qa-logs-tests-ok",
+  "receipts": {
+    "links": "LINKS_OK exports=/Users/hushdesk/Library/Application Support/HushDesk/Exports qa=/Users/hushdesk/Library/Application Support/HushDesk/QA logs=/Users/hushdesk/Library/Application Support/HushDesk/logs/hushdesk.log"
+  },
+  "ui_links": ["Open Export Folder", "Open QA Folder", "Open Logs"]
 }
