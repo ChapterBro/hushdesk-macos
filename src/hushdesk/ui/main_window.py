@@ -190,6 +190,7 @@ class MainWindow(QMainWindow):
         self._last_report_path: Optional[Path] = None
         self._open_exports_widget: Optional[QLabel] = None
         self._open_exports_widget_action: Optional[QWidgetAction] = None
+        self._band_coverage_label: Optional[QLabel] = None
 
         self._refresh_header_colors()
         palette_changed = getattr(QGuiApplication, "paletteChanged", None)
@@ -323,6 +324,10 @@ class MainWindow(QMainWindow):
             self._chips_by_key[key] = chip
 
         chips_layout.addStretch(1)
+        self._band_coverage_label = QLabel("Bands: —")
+        self._band_coverage_label.setObjectName("BandCoverageLabel")
+        self._band_coverage_label.setStyleSheet("color: #6B7280; font-size: 12px;")
+        chips_layout.addWidget(self._band_coverage_label)
 
         self.review_explorer = ReviewExplorer()
         self.review_explorer.record_selected.connect(self._on_review_record_selected)
@@ -602,23 +607,45 @@ class MainWindow(QMainWindow):
             self.progress_label.setText("Band —")
             self._total_bands = 0
 
-    def _update_band_progress_from_stats(self, stats: MarAuditResult) -> None:
-        instrumentation = stats.instrumentation if isinstance(stats.instrumentation, dict) else {}
-        pages_total: Optional[int] = None
-        if isinstance(instrumentation, dict):
-            try:
-                pages_value = instrumentation.get("pages")
-                if pages_value is not None:
-                    pages_total = int(pages_value)
-            except (TypeError, ValueError):
-                pages_total = None
+    def _set_band_coverage_label(
+        self, pages_with_band: Optional[int], pages_total: Optional[int]
+    ) -> None:
+        label = self._band_coverage_label
+        if label is None:
+            return
+        if isinstance(pages_with_band, int) and isinstance(pages_total, int):
+            total = max(0, pages_total)
+            if total > 0:
+                current = max(0, min(pages_with_band, total))
+            else:
+                current = max(0, pages_with_band)
+            label.setText(f"Bands: {current}/{total}")
+        else:
+            label.setText("Bands: —")
 
-        page_indices: set[int] = set()
-        for record in getattr(stats, "due_records", []):
-            page_index = getattr(record, "page_index", None)
-            if isinstance(page_index, int):
-                page_indices.add(page_index)
-        pages_with_band: Optional[int] = len(page_indices) if page_indices else None
+    def _update_band_progress_from_stats(
+        self, stats: MarAuditResult
+    ) -> tuple[Optional[int], Optional[int]]:
+        def _to_int(value: object) -> Optional[int]:
+            try:
+                return int(value)  # type: ignore[arg-type]
+            except (TypeError, ValueError):
+                return None
+
+        pages_total = _to_int(getattr(stats, "pages_total", None))
+        pages_with_band = _to_int(getattr(stats, "pages_with_band", None))
+
+        instrumentation = stats.instrumentation if isinstance(stats.instrumentation, dict) else {}
+        if pages_total is None and isinstance(instrumentation, dict):
+            pages_total = _to_int(instrumentation.get("pages"))
+
+        if pages_with_band is None:
+            page_indices: set[int] = set()
+            for record in getattr(stats, "due_records", []):
+                page_index = getattr(record, "page_index", None)
+                if isinstance(page_index, int):
+                    page_indices.add(page_index)
+            pages_with_band = len(page_indices) if page_indices else None
 
         if pages_total is None and pages_with_band is not None:
             pages_total = pages_with_band
@@ -626,9 +653,12 @@ class MainWindow(QMainWindow):
             pages_with_band = pages_total
 
         self._set_band_progress_label(pages_with_band, pages_total)
+        self._set_band_coverage_label(pages_with_band, pages_total)
+        return pages_with_band, pages_total
 
     def _reset_progress(self) -> None:
         self._set_band_progress_label(None, None)
+        self._set_band_coverage_label(None, None)
         self.progress_bar.setRange(0, 1)
         self.progress_bar.setValue(0)
         self._set_audit_date_pending_label()
@@ -795,10 +825,18 @@ class MainWindow(QMainWindow):
         self._on_worker_saved(str(report_path))
         self._on_audit_finished(report_path)
 
-        self._update_band_progress_from_stats(stats)
+        pages_with_band, pages_total = self._update_band_progress_from_stats(stats)
         self.progress_bar.setRange(0, 1)
         self.progress_bar.setValue(0)
         self.status_banner.hide()
+
+        if isinstance(pages_with_band, int) and isinstance(pages_total, int):
+            coverage_line = f"COVERAGE page_bands={pages_with_band}/{pages_total}"
+        else:
+            coverage_line = "COVERAGE page_bands=—"
+        self._append_log_line(coverage_line)
+        print(coverage_line, flush=True)
+        self._write_gui_log_entry(coverage_line)
 
         ok_line = (
             f'GUI_AUDIT_OK source="{pdf_path}" '
@@ -864,6 +902,7 @@ class MainWindow(QMainWindow):
         self.copy_action.setEnabled(False)
         self.save_action.setEnabled(False)
         self._set_band_progress_label(None, None)
+        self._set_band_coverage_label(None, None)
         self.progress_bar.setRange(0, 1)
         self.progress_bar.setValue(0)
         self._audit_completed = False
