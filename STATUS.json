@@ -1,6 +1,16 @@
 {
-  "phase": "tests-pytest-ok",
-  "python": "3.11",
-  "pytest": ">=8,<9",
-  "quick_tests": "ok"
+  "phase": "gui-parity-locked",
+  "counts": {
+    "reviewed": 46,
+    "hold_miss": 0,
+    "held_appropriate": 2,
+    "compliant": 38,
+    "dcd": 6
+  },
+  "parity": true,
+  "artifacts": [
+    "~/Library/Application Support/HushDesk/logs/gui_last_run.log",
+    "~/Library/Application Support/HushDesk/logs/last_headless.json",
+    "~/Library/Application Support/HushDesk/logs/parity.json"
+  ]
 }
