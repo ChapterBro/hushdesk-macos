@@ -1,6 +1,7 @@
-phase: v0.1.3-zot-ok
+phase: v0.1.5-dc-ok
 receipts:
-  - SCOPE_OK
+  - DEDUP_OK
+  - DC_OK
   - ACCEPTANCE_OK
 notes:
-  - All evidence clipped to (audit date column) ∩ (med block); off-block tokens dropped
+  - One decision per due cell with precedence; column-X & cell-X collapsed to single DC’D

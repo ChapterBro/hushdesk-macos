@@ -28,12 +28,16 @@ _dedup_before_total = 0
 _dedup_after_total = 0
 _clip_tokens_before = 0
 _clip_tokens_after = 0
+_slot_raw_labels: set[str] = set()
+_slot_ids_seen: set[str] = set()
+_slot_fallback_hits = 0
+_dc_column_hits = 0
 
 _TIME_TOKEN_RE = re.compile(r"\b(?:[0-1]?\d|2[0-3]):?[0-5]\d\b")
 _CHECKMARK_RE = re.compile(r"[\u221A\u2713\u2714]")
 _X_TOKEN_RE = re.compile(r"(?i)\bx+\b")
 
-DueKey = Tuple[int, str, str, str]  # (page_idx, block_id, date_disp, time_slot)
+DueKey = Tuple[int, str, str, str]  # (page_idx, block_id, date_disp, slot_id)
 
 
 @dataclass(slots=True)
@@ -54,6 +58,7 @@ class _DueContext:
     room: str
     page_index: int
     time_slot: str
+    slot_id: str
     normalized_slot: str
     audit_band: Rect
     track_band: Tuple[float, float]
@@ -134,6 +139,45 @@ def _reset_clip_stats() -> None:
     _clip_tokens_after = 0
 
 
+def _reset_slot_stats() -> None:
+    global _slot_raw_labels, _slot_ids_seen, _slot_fallback_hits
+    _slot_raw_labels = set()
+    _slot_ids_seen = set()
+    _slot_fallback_hits = 0
+
+
+def _reset_dc_stats() -> None:
+    global _dc_column_hits
+    _dc_column_hits = 0
+
+
+def _record_slot(label: str, slot_id: str, fallback_used: bool) -> None:
+    global _slot_raw_labels, _slot_ids_seen, _slot_fallback_hits
+    text = (label or "").strip()
+    if text:
+        _slot_raw_labels.add(text)
+    if slot_id:
+        _slot_ids_seen.add(slot_id)
+    if fallback_used:
+        _slot_fallback_hits += 1
+
+
+def _slot_identifier(track: TrackSpec) -> Tuple[str, bool]:
+    slot_id = getattr(track, "slot_id", None)
+    if slot_id:
+        return slot_id, False
+    fallback = _fallback_slot_id(track)
+    return fallback, True
+
+
+def _fallback_slot_id(track: TrackSpec) -> str:
+    top = int(round(track.track_y0))
+    bottom = int(round(track.track_y1))
+    bp_top = int(round(track.bp_y0))
+    bp_bottom = int(round(track.bp_y1))
+    return f"BAND_{top}_{bottom}_{bp_top}_{bp_bottom}"
+
+
 def clip_tokens(
     words: Iterable[CanonWord],
     x0: float,
@@ -171,8 +215,19 @@ def dedup_totals() -> Tuple[int, int]:
     return (_dedup_before_total, _dedup_after_total)
 
 
-def _due_key(page_idx: int, block_id: str, date_disp: str, time_slot: str) -> DueKey:
-    return (page_idx, block_id, date_disp, time_slot)
+def dc_column_totals() -> int:
+    """Return the number of block-level DC column masks detected."""
+
+    return _dc_column_hits
+
+
+def _record_dc_column_hit() -> None:
+    global _dc_column_hits
+    _dc_column_hits += 1
+
+
+def _due_key(page_idx: int, block_id: str, date_disp: str, slot_id: str) -> DueKey:
+    return (page_idx, block_id, date_disp, slot_id)
 
 
 @dataclass(slots=True)
@@ -183,6 +238,7 @@ class DueRecord:
     room: str
     page_index: int
     time_slot: str
+    slot_id: str
     normalized_slot: str
     sbp: Optional[int]
     hr: Optional[int]
@@ -230,6 +286,8 @@ def extract_pages(
     telemetry_suppressed = 0
     _reset_dedup_stats()
     _reset_clip_stats()
+    _reset_slot_stats()
+    _reset_dc_stats()
 
     results: List[PageExtraction] = []
     pages_seen = 0
@@ -240,6 +298,16 @@ def extract_pages(
             results.append(extraction)
     try:
         print(f"SCOPE_OK tokens={_clip_tokens_before}->{_clip_tokens_after} page_hits={pages_seen}")
+    except Exception:
+        pass
+    try:
+        print(
+            "SLOT_OK "
+            f"normalized={len(_slot_ids_seen)} "
+            f"distinct_slots_before={len(_slot_raw_labels)} "
+            f"after={len(_slot_ids_seen)} "
+            f"fallback={_slot_fallback_hits}"
+        )
     except Exception:
         pass
     return results
@@ -278,16 +346,19 @@ def _extract_single_page(
     ]
 
     column_words = clip_tokens(page.words, x0, x1, 0.0, page.height)
-    block_scope_cache: Dict[int, Tuple[Tuple[float, float], List[CanonWord]]] = {}
+    block_scope_cache: Dict[int, Tuple[Tuple[float, float], List[CanonWord], bool]] = {}
 
-    def _block_scope(block_obj: MedBlock) -> Tuple[Tuple[float, float], List[CanonWord]]:
+    def _block_scope(block_obj: MedBlock) -> Tuple[Tuple[float, float], List[CanonWord], bool]:
         cache_key = id(block_obj)
         cached = block_scope_cache.get(cache_key)
         if cached is not None:
             return cached
         band = block_zot(block_obj, page.height)
         scoped_words = clip_tokens(column_words, x0, x1, band[0], band[1])
-        block_scope_cache[cache_key] = (band, scoped_words)
+        column_mask = _has_column_cross(page, (x0, band[0], x1, band[1]))
+        block_scope_cache[cache_key] = (band, scoped_words, column_mask)
+        if column_mask:
+            _record_dc_column_hit()
         return block_scope_cache[cache_key]
     agg: Dict[DueKey, Evidence] = {}
     contexts: Dict[DueKey, _DueContext] = {}
@@ -302,9 +373,9 @@ def _extract_single_page(
     for spec, block in zip(tracks, matched_blocks):
         block_id = block_ids.get(id(block)) if block is not None else None
         if block is not None:
-            block_band, scoped_words = _block_scope(block)
+            block_band, scoped_words, block_column_mask = _block_scope(block)
         else:
-            block_band, scoped_words = (None, ())
+            block_band, scoped_words, block_column_mask = (None, (), False)
         _collect_due_evidence_if_strict(
             spec,
             block,
@@ -319,6 +390,7 @@ def _extract_single_page(
             highlights=highlights,
             block_id=block_id,
             date_disp=date_disp,
+            column_mask=block_column_mask,
             agg=agg,
             contexts=contexts,
             duplicates=duplicate_keys,
@@ -429,6 +501,35 @@ def _has_drawn_cross(page: CanonPage, rect: Rect) -> bool:
     return False
 
 
+def _has_column_cross(page: CanonPage, rect: Rect) -> bool:
+    x0, y0, x1, y1 = rect
+    height = max(0.0, y1 - y0)
+    width = max(0.0, x1 - x0)
+    if height <= 0.0 or width <= 0.0:
+        return False
+    min_span = max(24.0, height * 0.75)
+    diag_pos = False
+    diag_neg = False
+    for p0, p1 in page.draw_segments:
+        if not _segment_intersects(p0, p1, rect):
+            continue
+        dx = p1[0] - p0[0]
+        dy = p1[1] - p0[1]
+        if abs(dx) < 3.0 or abs(dy) < 3.0:
+            continue
+        span = math.hypot(dx, dy)
+        if span < min_span:
+            continue
+        slope = dy / dx if dx != 0 else math.inf
+        if slope > 0:
+            diag_pos = True
+        else:
+            diag_neg = True
+        if diag_pos and diag_neg:
+            return True
+    return False
+
+
 def _segment_intersects(p0: Tuple[float, float], p1: Tuple[float, float], rect: Rect) -> bool:
     x0, y0, x1, y1 = rect
     min_x = min(p0[0], p1[0])
@@ -475,6 +576,7 @@ def _collect_due_evidence_if_strict(
     highlights: QAHighlights,
     block_id: Optional[str],
     date_disp: str,
+    column_mask: bool,
     agg: Dict[DueKey, Evidence],
     contexts: Dict[DueKey, _DueContext],
     duplicates: List[DueKey],
@@ -517,8 +619,10 @@ def _collect_due_evidence_if_strict(
     if hr is not None and hr_bbox and highlights is not None:
         highlights.vitals.append(VitalMark(bbox=hr_bbox, label=f"HR {hr}"))
 
+    slot_id, fallback_used = _slot_identifier(track)
+    _record_slot(track.label, slot_id, fallback_used)
     time_slot = _display_label(track)
-    key = _due_key(page.page_index, block_id, date_disp, time_slot)
+    key = _due_key(page.page_index, block_id, date_disp, slot_id)
     existing = key in agg
     evidence = agg.setdefault(key, Evidence())
     if existing:
@@ -529,6 +633,7 @@ def _collect_due_evidence_if_strict(
             room=room,
             page_index=page.page_index,
             time_slot=time_slot,
+            slot_id=slot_id,
             normalized_slot=track.normalized_label,
             audit_band=audit_band,
             track_band=(cell_y0, cell_y1),
@@ -549,6 +654,8 @@ def _collect_due_evidence_if_strict(
     if hr is not None:
         evidence.hr = hr
     if has_cross:
+        evidence.vec_x = True
+    if column_mask:
         evidence.vec_x = True
     if _has_text_x(due_text):
         evidence.text_x = True
@@ -605,6 +712,7 @@ def _build_due_record_from_ev(
         room=context.room,
         page_index=context.page_index,
         time_slot=context.time_slot,
+        slot_id=context.slot_id,
         normalized_slot=context.normalized_slot,
         sbp=evidence.sbp,
         hr=evidence.hr,
@@ -674,4 +782,12 @@ def _block_identifier(page_index: int, block_index: int, block: MedBlock) -> str
     return f"p{page_index + 1}-b{block_index + 1}-{slug}"
 
 
-__all__ = ["DueRecord", "PageExtraction", "clip_tokens", "extract_pages", "telemetry_suppressed", "dedup_totals"]
+__all__ = [
+    "DueRecord",
+    "PageExtraction",
+    "clip_tokens",
+    "extract_pages",
+    "telemetry_suppressed",
+    "dedup_totals",
+    "dc_column_totals",
+]

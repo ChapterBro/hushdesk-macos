@@ -187,8 +187,16 @@ def run_mar_audit(
         else:
             hall_value = "MIXED"
 
+    print(
+        f"SCOPE_OK hall={hall_value} date={audit_date_text} pages={pages_total} "
+        f"bands={pages_with_band}",
+        flush=True,
+    )
+
     blocks = sum(len(extraction.blocks) for extraction in extractions)
     tracks = len(all_due_records)
+
+    print(f"SLOT_OK tracks={tracks} parametered={counts['parametered']}", flush=True)
 
     if not records:
         print("DEPENDENCY_MISS sprint=6")
@@ -198,6 +206,12 @@ def run_mar_audit(
         f" Hold-Miss:{counts['hold_miss']} Held-Appropriate:{counts['held_appropriate']}"
         f" Compliant:{counts['compliant']} DC'D:{counts['dcd']}"
     )
+    dc_columns = grid_extract.dc_column_totals()
+    print(
+        f"DC_OK hold_miss={counts['hold_miss']} held_app={counts['held_appropriate']}"
+        f" compliant={counts['compliant']} dcd={counts['dcd']} columns={dc_columns}",
+        flush=True,
+    )
     print(f'ROOM_OK rooms_resolved={rooms_resolved} fallback={rooms_fallback}', flush=True)
     merged_before, merged_after = grid_extract.dedup_totals()
     duplicates_removed = max(0, merged_before - merged_after)
@@ -206,6 +220,25 @@ def run_mar_audit(
         flush=True,
     )
     print(f"RULE_GATE_OK param_only=true suppressed={suppressed}", flush=True)
+    preview_meta_entries = [record.preview for record in records if isinstance(record.preview, dict)]
+    roi_sizes: List[Tuple[float, float]] = []
+    for meta in preview_meta_entries:
+        roi = meta.get("roi") if isinstance(meta, dict) else None
+        if not isinstance(roi, (list, tuple)) or len(roi) < 4:
+            continue
+        try:
+            roi_width = float(roi[2])
+            roi_height = float(roi[3])
+        except (TypeError, ValueError):
+            continue
+        roi_sizes.append((roi_width, roi_height))
+    roi_count = len(roi_sizes)
+    avg_roi_width = int(round(sum(width for width, _ in roi_sizes) / roi_count)) if roi_count else 0
+    avg_roi_height = int(round(sum(height for _, height in roi_sizes) / roi_count)) if roi_count else 0
+    print(
+        f"PREVIEW_META_OK items={len(records)} with_roi={roi_count} avg_roi={avg_roi_width}x{avg_roi_height}",
+        flush=True,
+    )
     result = MarAuditResult(
         records=records,
         counts=counts,
@@ -358,6 +391,7 @@ def _decisions_for_due(
     extras_base: Dict[str, object] = {
         "page_index": due.page_index,
         "time_slot": due.time_slot,
+        "slot_id": due.slot_id,
         "normalized_slot": due.normalized_slot,
         "state": due.state,
         "sbp": due.sbp,
@@ -376,6 +410,7 @@ def _decisions_for_due(
     }
 
     records: List[DecisionRecord] = []
+    preview_meta = _preview_payload_for_due(due)
 
     is_parametered = due.parametered
 
@@ -396,6 +431,7 @@ def _decisions_for_due(
                 chip=is_parametered,
                 extras_base=extras_base,
                 entry_extras={"rule_entries": [entry.rule_text for entry in entries]},
+                preview=preview_meta,
             )
         )
         return records
@@ -416,6 +452,7 @@ def _decisions_for_due(
                         code=due.code,
                         message="Hold if strict rule documented",
                         chip=is_parametered,
+                        preview=preview_meta,
                     )
                 )
                 return records
@@ -442,6 +479,7 @@ def _decisions_for_due(
                             "triggered": triggered,
                             "state_detail": state_detail,
                         },
+                        preview=preview_meta,
                     )
                 )
             return records
@@ -462,6 +500,7 @@ def _decisions_for_due(
                     message="Hold if strict rule documented",
                     chip=False,
                     extra_flags={"out_of_scope": True},
+                    preview=preview_meta,
                 )
             )
             return records
@@ -490,6 +529,7 @@ def _decisions_for_due(
                         "out_of_scope": True,
                         "state_detail": state_detail,
                     },
+                    preview=preview_meta,
                 )
             )
         return records
@@ -509,6 +549,7 @@ def _decisions_for_due(
                 code=None,
                 message="Hold if strict rule documented",
                 chip=False,
+                preview=preview_meta,
                 )
             )
         return records
@@ -538,6 +579,7 @@ def _decisions_for_due(
                     "triggered": triggered,
                     "state_detail": state_detail,
                 },
+                preview=preview_meta,
             )
         )
     return records
@@ -628,6 +670,25 @@ def _hr_value_text(due: DueRecord) -> str:
     return "HR missing"
 
 
+def _preview_payload_for_due(due: DueRecord) -> Optional[Dict[str, object]]:
+    page_width, page_height = due.page_pixels if isinstance(due.page_pixels, tuple) else (0, 0)
+    width = int(page_width) if page_width else 0
+    height = int(page_height) if page_height else 0
+    if width <= 0 or height <= 0:
+        return None
+    roi_values = due.roi_pixels
+    payload: Dict[str, object] = {
+        "page_index": due.page_index,
+        "image_size": [width, height],
+        "slot": due.normalized_slot or due.time_slot,
+        "slot_id": due.slot_id,
+        "recommended_fit": "Region" if roi_values else "FitWidth",
+    }
+    if roi_values:
+        payload["roi"] = [float(component) for component in roi_values]
+    return payload
+
+
 def _build_record(
     *,
     hall: str,
@@ -644,6 +705,7 @@ def _build_record(
     chip: bool,
     extras_base: Dict[str, object],
     entry_extras: Optional[Dict[str, object]] = None,
+    preview: Optional[Dict[str, object]] = None,
 ) -> DecisionRecord:
     extras = dict(extras_base)
     extras["state_detail"] = state_detail
@@ -665,6 +727,7 @@ def _build_record(
         notes=None,
         extras=extras,
         chip=chip,
+        preview=dict(preview) if isinstance(preview, dict) else None,
     )
 
 
@@ -682,6 +745,7 @@ def _fallback_record(
     message: str,
     chip: bool,
     extra_flags: Optional[Dict[str, object]] = None,
+    preview: Optional[Dict[str, object]] = None,
 ) -> DecisionRecord:
     flags = dict(extra_flags or {})
     flags["fallback"] = True
@@ -700,6 +764,7 @@ def _fallback_record(
         chip=chip,
         extras_base=extras_base,
         entry_extras=flags,
+        preview=preview,
     )
 
 
