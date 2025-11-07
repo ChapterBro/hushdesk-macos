@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -49,6 +50,24 @@ def central_prev_day(value: date) -> date:
     return previous.date()
 
 
+def dev_override_date() -> date | None:
+    """Return a developer-provided audit date when the override env var is set."""
+
+    raw_value = os.getenv("HUSHDESK_AUDIT_DATE_MMDDYYYY")
+    if not raw_value:
+        return None
+
+    match = re.fullmatch(r"\s*(\d{2})/(\d{2})/(\d{4})\s*", raw_value)
+    if not match:
+        return None
+
+    month, day, year = (int(group) for group in match.groups())
+    try:
+        return date(year=year, month=month, day=day)
+    except ValueError:
+        return None
+
+
 def format_mmddyyyy(value: date) -> str:
     """Return ``value`` formatted as ``MM/DD/YYYY``."""
 
@@ -68,4 +87,3 @@ def resolve_audit_date(filename: Path) -> date:
 
     today_central = datetime.now(tz=CENTRAL_TZ).date()
     return central_prev_day(today_central)
-

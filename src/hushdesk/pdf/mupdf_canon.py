@@ -57,7 +57,7 @@ class CanonPage:
     hlines: List[CanonLine]
     matrix: "fitz.Matrix"
     pixmap: "fitz.Pixmap"
-    raw_page: Optional["fitz.Page"] = None
+    draw_segments: List[Tuple[Point, Point]]
 
 
 DocumentLike = Union[str, Path, "fitz.Document"]
@@ -108,7 +108,7 @@ def build_canon_page(page_index: int, page: "fitz.Page", *, scale: float = 2.0) 
     width = float(pixmap.width)
     height = float(pixmap.height)
     words = _extract_words(page, matrix, width, height)
-    vlines, hlines = _extract_lines(page, matrix, width, height)
+    vlines, hlines, draw_segments = _extract_lines(page, matrix, width, height)
     return CanonPage(
         page_index=page_index,
         width=width,
@@ -118,7 +118,7 @@ def build_canon_page(page_index: int, page: "fitz.Page", *, scale: float = 2.0) 
         hlines=hlines,
         matrix=matrix,
         pixmap=pixmap,
-        raw_page=page,
+        draw_segments=draw_segments,
     )
 
 
@@ -129,7 +129,7 @@ def _extract_words(
     page_height: float,
 ) -> List[CanonWord]:
     try:
-        raw_words = page.get_text("words", clip=page.rect)
+        raw_words = page.get_text("words")
     except RuntimeError:
         return []
 
@@ -150,10 +150,10 @@ def _extract_words(
         transformed = [pt * matrix for pt in corners]
         xs = [pt.x for pt in transformed]
         ys = [pt.y for pt in transformed]
-        nx0 = float(max(0.0, min(xs)))
-        nx1 = float(min(page_width, max(xs)))
-        ny0 = float(max(0.0, min(ys)))
-        ny1 = float(min(page_height, max(ys)))
+        nx0 = float(min(page_width, max(0.0, min(xs))))
+        nx1 = float(min(page_width, max(0.0, max(xs))))
+        ny0 = float(min(page_height, max(0.0, min(ys))))
+        ny1 = float(min(page_height, max(0.0, max(ys))))
         cx = (nx0 + nx1) / 2.0
         cy = (ny0 + ny1) / 2.0
         words.append(CanonWord(text=text, bbox=(nx0, ny0, nx1, ny1), center=(cx, cy)))
@@ -165,7 +165,7 @@ def _extract_lines(
     matrix: "fitz.Matrix",
     page_width: float,
     page_height: float,
-) -> Tuple[List[CanonLine], List[CanonLine]]:
+) -> Tuple[List[CanonLine], List[CanonLine], List[Tuple[Point, Point]]]:
     drawings: Sequence[dict]
     try:
         drawings = page.get_drawings()
@@ -174,6 +174,7 @@ def _extract_lines(
 
     vlines: List[CanonLine] = []
     hlines: List[CanonLine] = []
+    segments: List[Tuple[Point, Point]] = []
 
     for drawing in drawings:
         for item in drawing.get("items", ()):
@@ -188,8 +189,9 @@ def _extract_lines(
                 hlines.append(CanonLine("h", p0, p1))
             elif _is_vertical(p0, p1):
                 vlines.append(CanonLine("v", p0, p1))
+            segments.append((p0, p1))
 
-    return vlines, hlines
+    return vlines, hlines, segments
 
 
 def _transform_point(

@@ -22,6 +22,7 @@ _BP_LABEL_RE = re.compile(r"(?i)^\s*B\s*P\b")
 _HR_LABEL_RE = re.compile(r"(?i)^\s*(?:HR|PULSE)\b")
 _AM_LABEL_RE = re.compile(r"(?i)^(?:a\.?m\.?|a\s*m\b|morning)")
 _PM_LABEL_RE = re.compile(r"(?i)^(?:p\.?m\.?|p\s*m\b|evening)")
+_TIME_RE = re.compile(r"\b(?:[0-1]?\d|2[0-3]):[0-5]\d\b")
 
 
 @dataclass(slots=True)
@@ -83,32 +84,10 @@ def find_row_bands_for_block(page: "fitz.Page", block_bbox: Tuple[float, float, 
 
     auto_am_pm_split = False
     if row_bands["am"] is None and row_bands["pm"] is None and row_bands["bp"] is not None:
-        bp_band = row_bands["bp"]
-        dose_top = max(y0, min(y1, bp_band[1]))
-        dose_bottom = y1
-        if dose_bottom > dose_top:
-            height = dose_bottom - dose_top
-            midpoint = dose_top + height / 2.0
-
-            am_top = dose_top
-            am_bottom = max(am_top + _MIN_BAND_HALF_HEIGHT, midpoint)
-            am_bottom = min(am_bottom, dose_bottom)
-
-            pm_top = max(am_bottom, midpoint)
-            pm_bottom = dose_bottom
-            if pm_bottom - pm_top < _MIN_BAND_HALF_HEIGHT:
-                pm_top = max(dose_top, pm_bottom - _MIN_BAND_HALF_HEIGHT)
-
-            if am_bottom > pm_top:
-                overlap = am_bottom - pm_top
-                pm_top += overlap
-                if pm_top >= pm_bottom:
-                    pm_top = am_bottom
-
-            if am_bottom <= pm_top and pm_top < pm_bottom:
-                row_bands["am"] = (am_top, am_bottom)
-                row_bands["pm"] = (pm_top, pm_bottom)
-                auto_am_pm_split = True
+        auto_split = _auto_split_am_pm(text, block_bbox, row_bands["bp"])
+        if auto_split is not None:
+            row_bands["am"], row_bands["pm"] = auto_split
+            auto_am_pm_split = True
 
     return RowBands(
         bp=row_bands["bp"],
@@ -207,6 +186,72 @@ def _band_from_center(
         bottom = min(block_bottom, top + _MIN_BAND_HALF_HEIGHT * 2.0)
 
     return top, bottom
+
+
+def _auto_split_am_pm(
+    text_dict: dict,
+    block_bbox: Tuple[float, float, float, float],
+    bp_band: Tuple[float, float],
+) -> Optional[Tuple[Tuple[float, float], Tuple[float, float]]]:
+    block_x0, block_y0, block_x1, block_y1 = normalize_rect(block_bbox)
+    _bp_top, bp_bottom = sorted(bp_band)
+    dose_top = max(block_y0, min(block_y1, bp_bottom))
+    dose_bottom = block_y1
+    if dose_bottom <= dose_top:
+        return None
+
+    height = dose_bottom - dose_top
+    default_midpoint = dose_top + height / 2.0
+
+    time_positions = _collect_time_positions(text_dict, (block_x0, dose_top, block_x1, dose_bottom))
+
+    midpoint_ratio = 0.5
+    if time_positions:
+        above = sum(1 for pos in time_positions if pos <= default_midpoint)
+        below = len(time_positions) - above
+        if above and not below:
+            midpoint_ratio = 0.55
+        elif below and not above:
+            midpoint_ratio = 0.45
+
+    midpoint = dose_top + height * midpoint_ratio
+    min_am_bottom = dose_top + _MIN_BAND_HALF_HEIGHT
+    max_pm_top = dose_bottom - _MIN_BAND_HALF_HEIGHT
+    midpoint = min(max(midpoint, min_am_bottom), max_pm_top)
+
+    am_top = dose_top
+    am_bottom = midpoint
+    pm_top = midpoint
+    pm_bottom = dose_bottom
+
+    if am_bottom - am_top < _MIN_BAND_HALF_HEIGHT:
+        am_bottom = min(dose_bottom - _MIN_BAND_HALF_HEIGHT, am_top + _MIN_BAND_HALF_HEIGHT)
+        pm_top = am_bottom
+    if pm_bottom - pm_top < _MIN_BAND_HALF_HEIGHT:
+        pm_top = max(dose_top + _MIN_BAND_HALF_HEIGHT, pm_bottom - _MIN_BAND_HALF_HEIGHT)
+        am_bottom = pm_top
+
+    if am_bottom <= am_top or pm_bottom <= pm_top:
+        return None
+
+    return (am_top, am_bottom), (pm_top, pm_bottom)
+
+
+def _collect_time_positions(
+    text_dict: dict,
+    bbox: Tuple[float, float, float, float],
+) -> List[float]:
+    x0, y0, x1, y1 = normalize_rect(bbox)
+    positions: List[float] = []
+    for span_bbox, raw_text in _iter_spans_within(text_dict, (x0, y0, x1, y1)):
+        text = str(raw_text)
+        if not text:
+            continue
+        if not _TIME_RE.search(text):
+            continue
+        pos_y = (span_bbox[1] + span_bbox[3]) / 2.0
+        positions.append(pos_y)
+    return positions
 
 
 def _box_center(box: LabelBox) -> float:

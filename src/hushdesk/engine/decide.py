@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Optional
 
 from hushdesk.pdf.duecell import DueMark
+
+
+logger = logging.getLogger(__name__)
 
 
 def rule_triggers(rule_kind: str, threshold: int, vital: Optional[int]) -> bool:
@@ -34,7 +38,10 @@ def decide_for_dose(rule_kind: str, threshold: int, vital: Optional[int], mark: 
     triggered = rule_triggers(rule_kind, threshold, vital)
 
     if mark == DueMark.CODE_ALLOWED:
-        return "HELD_OK" if triggered else "NONE"
+        if triggered:
+            return "HELD_OK"
+        logger.warning("Allowed code without trigger (ignored)")
+        return "NONE"
 
     if mark in (DueMark.GIVEN_CHECK, DueMark.GIVEN_TIME):
         return "HOLD_MISS" if triggered else "COMPLIANT"

@@ -7,7 +7,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
 
-from PIL import Image, ImageDraw, ImageFont
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:  # pragma: no cover - optional dependency in headless automation
+    Image = None  # type: ignore[assignment]
+    ImageDraw = None  # type: ignore[assignment]
+    ImageFont = None  # type: ignore[assignment]
 
 try:  # pragma: no cover - optional dependency during docs builds
     import fitz  # type: ignore
@@ -62,6 +67,10 @@ def draw_overlay(
 
     if qa_prefix is False:  # type: ignore[comparison-overlap]
         print("QA_OVERLAY_SKIP reason=disabled")
+        return None
+
+    if Image is None or ImageDraw is None or ImageFont is None:
+        print("QA_OVERLAY_SKIP reason=PILUnavailable")
         return None
 
     try:

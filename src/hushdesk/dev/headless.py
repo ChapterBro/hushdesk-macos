@@ -26,7 +26,7 @@ from hushdesk.workers.audit_worker import AuditWorker
 
 DEFAULT_COUNTS: Dict[str, int] = {
     "reviewed": 0,
-    "held_ok": 0,
+    "held_appropriate": 0,
     "hold_miss": 0,
     "compliant": 0,
     "dcd": 0,
@@ -274,7 +274,7 @@ def _print_summary(summary: Dict[str, object]) -> None:
     bands = int(summary.get("bands") or 0)
     counts = summary.get("counts", DEFAULT_COUNTS)
     reviewed = int(counts.get("reviewed", 0))
-    held_ok = int(counts.get("held_ok", 0))
+    held_ok = int(counts.get("held_appropriate", 0))
     hold_miss = int(counts.get("hold_miss", 0))
     compliant = int(counts.get("compliant", 0))
     dcd = int(counts.get("dcd", 0))

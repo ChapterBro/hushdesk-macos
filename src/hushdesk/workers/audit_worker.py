@@ -1585,6 +1585,7 @@ class AuditWorker(QObject):
         source_meta = extras_copy.get("source_meta")
         if not isinstance(source_meta, dict):
             source_meta = {}
+        preview_meta = dict(record.preview) if isinstance(record.preview, dict) else None
         audit_band = overlay_pixels.get("audit_band")
         slot_bboxes = overlay_pixels.get("slot_bboxes") if isinstance(overlay_pixels.get("slot_bboxes"), dict) else {}
         vital_bbox = overlay_pixels.get("vital_bbox")
@@ -1629,6 +1630,7 @@ class AuditWorker(QObject):
             "overlay_labels": list(overlay_labels),
             "source_meta": dict(source_meta),
             "search_blob": search_blob,
+            "preview": preview_meta,
         }
 
     @staticmethod

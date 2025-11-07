@@ -5,13 +5,14 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional
 from zoneinfo import ZoneInfo
 
+from hushdesk.fs.exports import safe_write_text
 from .model import DecisionRecord
 
 _CENTRAL = ZoneInfo("America/Chicago")
-_KIND_ORDER = ["HOLD-MISS", "HELD-OK", "COMPLIANT", "DC'D"]
+_KIND_ORDER = ["HOLD-MISS", "HELD-APPROPRIATE", "COMPLIANT", "DC'D"]
 _DOSE_ORDER = {"AM": 0, "PM": 1}
 
 
@@ -23,42 +24,61 @@ def write_report(
     source_basename: str,
     out_path: Path,
     notes: Optional[Iterable[str]] = None,
-) -> None:
-    """Write the binder-ready TXT report to ``out_path``."""
+) -> Path:
+    """Write the binder-ready TXT report to ``out_path`` and return the final path."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     split_used = any("split" in _normalize_record_notes(record.notes) for record in records)
 
     hall_upper = hall.upper()
-    header = f"{audit_date_mmddyyyy} · Hall: {hall_upper} · Source: {source_basename}"
+    date_with_hyphen = audit_date_mmddyyyy.replace("/", "-")
+    lines: List[str] = [f"Date: {date_with_hyphen}", f"Hall: {hall_upper}"]
+    if source_basename:
+        lines.append(f"Source: {source_basename}")
+    lines.append("")
+
     counts_line = (
-        "Reviewed: {reviewed} · Hold-Miss: {hold_miss} · Held-OK: {held_ok} · "
-        "Compliant: {compliant} · DC'D: {dcd}"
+        "Counts (chips): Reviewed {reviewed} · Hold-Miss {hold_miss} · "
+        "Held-Appropriate {held_app} · Compliant {compliant} · DC'D {dcd}"
     ).format(
         reviewed=counts.get("reviewed", 0),
         hold_miss=counts.get("hold_miss", 0),
-        held_ok=counts.get("held_ok", 0),
+        held_app=counts.get("held_appropriate", 0),
         compliant=counts.get("compliant", 0),
         dcd=counts.get("dcd", 0),
     )
+    lines.append(counts_line)
+    lines.append("")
 
-    lines: List[str] = [header, counts_line, ""]
-
-    exceptions = [record for record in records if record.kind in {"HOLD-MISS", "HELD-OK"}]
+    exceptions = [
+        record
+        for record in records
+        if record.kind in {"HOLD-MISS", "HELD-APPROPRIATE"} and record.chip
+    ]
     lines.append("Exceptions —")
     if exceptions:
-        for record in _iter_sorted(exceptions):
+        for record in _iter_sorted_by_room(exceptions):
             lines.append(_format_record_line(record))
     else:
         lines.append("Hold-Miss: 0 (no exceptions)")
 
     lines.append("")
     lines.append("All Reviewed —")
-    sorted_records = list(_iter_sorted(records))
+    grouped: Dict[str, List[DecisionRecord]] = {kind: [] for kind in _KIND_ORDER}
+    fallback_bucket: List[DecisionRecord] = []
+    for record in records:
+        if record.kind in grouped:
+            grouped[record.kind].append(record)
+        else:
+            fallback_bucket.append(record)
+
     for kind in _KIND_ORDER:
-        for record in sorted_records:
-            if record.kind == kind:
-                lines.append(_format_record_line(record))
+        for record in _iter_sorted_by_room(grouped[kind]):
+            lines.append(_format_record_line(record))
+
+    if fallback_bucket:
+        for record in _iter_sorted_by_room(fallback_bucket):
+            lines.append(_format_record_line(record))
 
     note_lines: List[str] = []
     seen_notes: set[str] = set()
@@ -97,53 +117,57 @@ def write_report(
     generated_stamp = datetime.now(_CENTRAL).strftime("%m/%d/%Y %H:%M")
     lines.append(f"Generated: {generated_stamp} (Central)")
 
-    out_path.write_text("\n".join(lines), encoding="utf-8")
+    content = "\n".join(lines)
+    return safe_write_text(out_path, content)
 
 
-def _iter_sorted(records: Iterable[DecisionRecord]) -> Iterable[DecisionRecord]:
-    return sorted(records, key=_record_sort_key)
+def _iter_sorted_by_room(records: Iterable[DecisionRecord]) -> Iterable[DecisionRecord]:
+    return sorted(records, key=_room_sort_key)
 
 
-def _record_sort_key(record: DecisionRecord) -> tuple:
+def _room_sort_key(record: DecisionRecord) -> tuple:
     room = record.room_bed or "Unknown"
     room_key = (room.lower() == "unknown", room)
     dose_key = _DOSE_ORDER.get(record.dose, 0)
-    kind_key = _KIND_ORDER.index(record.kind) if record.kind in _KIND_ORDER else len(_KIND_ORDER)
-    return (room_key, dose_key, kind_key, record.rule_text)
+    return (room_key, dose_key, record.rule_text)
 
 
 def _format_record_line(record: DecisionRecord) -> str:
     dose_label = record.dose
+    prefix = f"{record.kind} — {record.room_bed} ({dose_label}) — "
 
     if record.kind == "DC'D":
-        reason = record.dcd_reason or "X in due cell"
-        return f"{record.kind} — {record.room_bed} ({dose_label}) — {reason}"
+        reason = record.dcd_reason or "Due cell DC'd"
+        return f"{prefix}{reason}"
 
-    rule_text = _strip_source_suffix(record.rule_text)
-    base = f"{record.kind} — {record.room_bed} ({dose_label}) — {rule_text}"
-    detail_parts: List[str] = []
+    reason = _compose_reason(record)
+    return f"{prefix}{reason}"
+
+
+def _compose_reason(record: DecisionRecord) -> str:
+    rule_text = _ensure_hold_if_prefix(_strip_source_suffix(record.rule_text))
+    parts: List[str] = [rule_text]
+
     vital_text = record.vital_text.strip()
     if vital_text:
-        detail_parts.append(vital_text)
-    if record.kind == "HELD-OK" and record.code is not None:
-        detail_parts.append(f"| code {record.code}")
+        parts.append(vital_text)
 
-    if not detail_parts:
-        return base
+    state_detail = str(record.extras.get("state_detail", "")).strip()
+    if state_detail:
+        parts.append(state_detail)
+    elif record.kind == "HELD-APPROPRIATE" and record.code is not None:
+        parts.append(f"code {record.code}")
 
-    if detail_parts[0].startswith("|"):
-        return f"{base} {detail_parts[0]}"
+    reason = "; ".join(part for part in parts if part)
 
-    if len(detail_parts) == 1:
-        return f"{base}; {detail_parts[0]}"
+    if record.kind == "COMPLIANT" and not record.chip:
+        suffix = " (reviewed)"
+        if reason:
+            reason = f"{reason}{suffix}"
+        else:
+            reason = f"Hold if strict rule documented{suffix}"
 
-    formatted = "; ".join(part for part in detail_parts if not part.startswith("|"))
-    suffix = " ".join(part for part in detail_parts if part.startswith("|"))
-
-    message = f"{base}; {formatted}"
-    if suffix:
-        message = f"{message} {suffix}"
-    return message
+    return reason
 
 
 def _normalize_record_notes(notes: Optional[str]) -> set[str]:
@@ -186,6 +210,16 @@ def _strip_source_suffix(text: Optional[str]) -> str:
     if "source:" in text.lower():
         return ""
     return text
+
+
+def _ensure_hold_if_prefix(text: str) -> str:
+    stripped = text.strip()
+    if not stripped:
+        return "Hold if strict rule documented"
+    lowered = stripped.lower()
+    if lowered.startswith("hold if"):
+        return stripped
+    return f"Hold if {stripped}"
 
 
 def _vitals_note_key(text: str) -> Optional[tuple[str, str]]:

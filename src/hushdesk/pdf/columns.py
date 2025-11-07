@@ -11,7 +11,8 @@ try:  # pragma: no cover - optional dependency when tests run without PyMuPDF
 except ImportError:  # pragma: no cover
     fitz = None  # type: ignore
 
-from hushdesk.pdf.layout import bands_from_day_centers, find_day_header_centers
+from .mar_header import band_for_date
+from .mupdf_canon import build_canon_page
 
 
 @dataclass(slots=True)
@@ -23,6 +24,10 @@ class ColumnBand:
     page_height: float
     frac0: float
     frac1: float
+    canonical_x0: Optional[float] = None
+    canonical_x1: Optional[float] = None
+    page_x0: Optional[float] = None
+    page_x1: Optional[float] = None
 
 
 def select_audit_columns(
@@ -33,43 +38,59 @@ def select_audit_columns(
 ) -> List[ColumnBand]:
     """Return per-page column bands that match ``audit_date``."""
 
-    target_day = audit_date.day
     results: List[ColumnBand] = []
 
     for page_index in range(doc.page_count):
         page = doc.load_page(page_index)
-        centers = find_day_header_centers(page)
-        if not centers:
+        canon_page = build_canon_page(page_index, page)
+        band = band_for_date(canon_page, audit_date)
+        if not band:
             if on_page_without_header is not None:
                 on_page_without_header(page_index)
             continue
 
+        canon_x0, canon_x1 = band
         rect = page.rect
         page_width = float(rect.width)
         page_height = float(rect.height)
-        day_bands = bands_from_day_centers(centers, page_width, page_height)
-        band = day_bands.get(target_day)
-        if not band:
-            continue
+        derotated_rect = rect * page.derotation_matrix
+        canon_width = float(derotated_rect.width)
+        canon_height = float(derotated_rect.height)
 
-        x0, x1, width, height = band
-        if x1 <= x0 or (x1 - x0) < 5.0:
+        if canon_x1 <= canon_x0 or (canon_x1 - canon_x0) < 5.0:
             continue
-        if width <= 0:
+        if canon_width <= 0:
             frac0 = frac1 = 0.0
         else:
-            frac0 = x0 / width
-            frac1 = x1 / width
+            frac0 = canon_x0 / canon_width
+            frac1 = canon_x1 / canon_width
+
+        rotation_matrix = page.rotation_matrix
+        y0_canon = float(derotated_rect.y0)
+        y1_canon = float(derotated_rect.y1)
+        corners = [
+            fitz.Point(canon_x0, y0_canon) * rotation_matrix,
+            fitz.Point(canon_x0, y1_canon) * rotation_matrix,
+            fitz.Point(canon_x1, y0_canon) * rotation_matrix,
+            fitz.Point(canon_x1, y1_canon) * rotation_matrix,
+        ]
+        xs = [corner.x for corner in corners]
+        page_x0 = min(xs)
+        page_x1 = max(xs)
 
         results.append(
             ColumnBand(
                 page_index=page_index,
-                x0=x0,
-                x1=x1,
-                page_width=width,
-                page_height=height,
+                x0=canon_x0,
+                x1=canon_x1,
+                page_width=canon_width,
+                page_height=canon_height,
                 frac0=frac0,
                 frac1=frac1,
+                canonical_x0=canon_x0,
+                canonical_x1=canon_x1,
+                page_x0=page_x0,
+                page_x1=page_x1,
             )
         )
 

@@ -76,14 +76,18 @@ def parse_rule_text(text: str) -> List[RuleSpec]:
         word_value = match.group("word_value")
 
         preceding_fragment = text[cursor : match.start()]
-        if _CONNECTOR_RE.search(preceding_fragment):
-            # connectors maintain context; nothing to do
-            pass
-        elif "hold" not in preceding_fragment.lower():
-            hold_context = False
 
         if prefix:
             hold_context = True
+        elif _CONNECTOR_RE.search(preceding_fragment):
+            # connector tokens keep whichever context was already in effect
+            pass
+        else:
+            normalized = preceding_fragment.strip().lower()
+            if normalized:
+                hold_context = "hold" in normalized
+
+        cursor = match.end()
 
         if not hold_context:
             continue

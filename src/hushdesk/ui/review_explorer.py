@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import partial
 from typing import Dict, Iterable, List, Optional, Set
 
 from PySide6.QtCore import Qt, Signal
@@ -27,10 +26,10 @@ from PySide6.QtWidgets import (
 )
 
 
-_KIND_ORDER: List[str] = ["HOLD-MISS", "HELD-OK", "COMPLIANT", "DC'D"]
+_KIND_ORDER: List[str] = ["HOLD-MISS", "HELD-APPROPRIATE", "COMPLIANT", "DC'D"]
 _COUNT_KEY_MAP: Dict[str, str] = {
     "HOLD-MISS": "hold_miss",
-    "HELD-OK": "held_ok",
+    "HELD-APPROPRIATE": "held_appropriate",
     "COMPLIANT": "compliant",
     "DC'D": "dcd",
 }
@@ -380,7 +379,9 @@ class ReviewExplorer(QWidget):
         button.setIcon(icon)
         button.setToolTip("Open decision preview")
         payload = dict(record)
-        button.clicked.connect(partial(self.preview_requested.emit, payload))
+        button.clicked.connect(
+            lambda checked=False, p=payload: self.preview_requested.emit(p)
+        )
         return button
 
     def _select_first_filtered_record(self) -> None:
