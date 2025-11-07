@@ -11,6 +11,9 @@ PY
 export PYTHONPATH=src
 
 PYTEST_CMD=("python" "-m" "pytest" "-q" \
+"tests/test_room_label.py" \
+"tests/test_strict_gate.py" \
+"tests/test_dedup.py" \
 "tests/test_rules_normalize.py" \
 "tests/test_rules_parse.py" \
 "tests/test_rulespec.py" \

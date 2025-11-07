@@ -42,6 +42,16 @@ def parse_arguments(argv: Optional[List[str]] = None) -> Tuple[argparse.Namespac
         help="Path to emit QA layout PNG (headless mode).",
     )
     parser.add_argument(
+        "--parity-lock",
+        action="store_true",
+        help="Run headless audit, emit GUI parity receipt, then parity-check counts.",
+    )
+    parser.add_argument(
+        "--emit-gui-ok-from-cache",
+        action="store_true",
+        help="Emit GUI parity receipt directly from cached headless counts (no audit).",
+    )
+    parser.add_argument(
         "--log-dir",
         dest="log_dir",
         default="debug",

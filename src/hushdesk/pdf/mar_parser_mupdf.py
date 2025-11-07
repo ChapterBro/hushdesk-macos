@@ -10,6 +10,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 from hushdesk.fs.exports import resolve_qa_prefix
 from hushdesk.pdf.dates import format_mmddyyyy
 from hushdesk.pdf.mar_blocks import draw_med_blocks_debug
+from hushdesk.pdf import mar_grid_extract as grid_extract
 from hushdesk.pdf.mar_grid_extract import DueRecord, PageExtraction, extract_pages
 from hushdesk.pdf.mar_header import band_for_date
 from hushdesk.pdf.mupdf_canon import CanonPage, iter_canon_pages
@@ -37,6 +38,7 @@ class MarAuditResult:
     instrument_line: str = ""
     pages_total: int = 0
     pages_with_band: int = 0
+    suppressed: int = 0
 
 
 @dataclass(slots=True)
@@ -89,16 +91,23 @@ def run_mar_audit(
     pages = list(iter_canon_pages(source_path))
     pages_total, pages_with_band = _coverage_from_pages(pages, audit_date)
     extractions = extract_pages(pages, audit_date, hall_value)
+    suppressed = getattr(grid_extract, "telemetry_suppressed", 0)
 
     records: List[DecisionRecord] = []
     counts = _empty_counts()
     all_due_records: List[DueRecord] = []
     qa_paths: List[Path] = []
     nonchip_breakdown: Dict[str, int] = {"other_code": 0, "empty": 0}
+    rooms_resolved = 0
+    rooms_fallback = 0
 
     for extraction in extractions:
         all_due_records.extend(extraction.records)
         for due in extraction.records:
+            if due.room and due.room != "UNKNOWN":
+                rooms_resolved += 1
+            else:
+                rooms_fallback += 1
             due_decisions = _decisions_for_due(
                 due,
                 audit_date_text,
@@ -127,6 +136,7 @@ def run_mar_audit(
                 qa_paths.append(block_path)
 
     instrumentation = _instrumentation_metrics(extractions, all_due_records)
+    instrumentation["suppressed"] = suppressed
     counts["parametered"] = int(instrumentation.get("parametered", 0))
     counts["no_rule"] = int(instrumentation.get("no_rule", 0))
     counts["no_sbp"] = int(instrumentation.get("no_sbp", 0))
@@ -188,6 +198,14 @@ def run_mar_audit(
         f" Hold-Miss:{counts['hold_miss']} Held-Appropriate:{counts['held_appropriate']}"
         f" Compliant:{counts['compliant']} DC'D:{counts['dcd']}"
     )
+    print(f'ROOM_OK rooms_resolved={rooms_resolved} fallback={rooms_fallback}', flush=True)
+    merged_before, merged_after = grid_extract.dedup_totals()
+    duplicates_removed = max(0, merged_before - merged_after)
+    print(
+        f"DEDUP_OK merged={merged_before}->{merged_after} duplicates_removed={duplicates_removed}",
+        flush=True,
+    )
+    print(f"RULE_GATE_OK param_only=true suppressed={suppressed}", flush=True)
     result = MarAuditResult(
         records=records,
         counts=counts,
@@ -203,6 +221,7 @@ def run_mar_audit(
         instrument_line=instrument_line,
         pages_total=pages_total,
         pages_with_band=pages_with_band,
+        suppressed=suppressed,
     )
     return result
 

@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from PySide6.QtCore import Qt, QUrl, QRectF
+from PySide6.QtCore import QEvent, QObject, Qt, QUrl, QRectF
 from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -26,11 +26,20 @@ except ImportError:  # pragma: no cover
 class EvidencePanel(QWidget):
     """Right-side drawer with decision details and PDF previews."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        *,
+        allow_open_pdf: bool = True,
+    ) -> None:
         super().__init__(parent)
+        self._allow_open_pdf = allow_open_pdf
         self._record: Optional[dict] = None
         self._pdf_path: Optional[Path] = None
         self._preview_cache: Dict[Tuple[str, int], QPixmap] = {}
+        self._current_preview_pixmap: Optional[QPixmap] = None
+        self._preview_scale_pct = 100
+        self._fit_mode = "custom"
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -58,6 +67,8 @@ class EvidencePanel(QWidget):
         self.open_button = QPushButton("Open PDF to page")
         self.open_button.clicked.connect(self._handle_open_pdf)
         self.open_button.setEnabled(False)
+        if not self._allow_open_pdf:
+            self.open_button.setVisible(False)
         button_row.addWidget(self.open_button)
 
         self.preview_button = QPushButton("Preview")
@@ -77,14 +88,16 @@ class EvidencePanel(QWidget):
         self.preview_area.setWidgetResizable(True)
         self.preview_label = QLabel()
         self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview_label.setScaledContents(True)
+        self.preview_label.setScaledContents(False)
         self.preview_label.setStyleSheet("background-color: #f9fafb; border: 1px solid #e5e7eb;")
         self.preview_area.setWidget(self.preview_label)
+        self.preview_area.viewport().installEventFilter(self)
         layout.addWidget(self.preview_area, stretch=1)
 
     def clear(self, message: Optional[str] = None) -> None:
         self._record = None
         self._pdf_path = None
+        self._current_preview_pixmap = None
         self.summary_label.setText(message or "Select a decision to view details.")
         self.details_label.clear()
         self.preview_label.clear()
@@ -106,13 +119,16 @@ class EvidencePanel(QWidget):
 
         has_pdf = self._pdf_path is not None and self._pdf_path.exists()
         page_index = self._extract_page_index(self._record)
-        self.open_button.setEnabled(has_pdf and page_index is not None)
+        if self._allow_open_pdf:
+            self.open_button.setEnabled(has_pdf and page_index is not None)
+        else:
+            self.open_button.setEnabled(False)
         self.preview_button.setEnabled(has_pdf and fitz is not None and page_index is not None)
         self.preview_status.setText("Preview not generated." if fitz is not None else "Preview requires PyMuPDF.")
         self.preview_label.clear()
 
     def _handle_open_pdf(self) -> None:
-        if not self._record or not self._pdf_path:
+        if not self._allow_open_pdf or not self._record or not self._pdf_path:
             return
         page_index = self._extract_page_index(self._record)
         if page_index is None:
@@ -140,7 +156,8 @@ class EvidencePanel(QWidget):
                 self.preview_status.setText("Unable to render preview.")
                 return
             self._preview_cache[cache_key] = pixmap
-        self.preview_label.setPixmap(pixmap)
+        self._current_preview_pixmap = pixmap
+        self._apply_preview_scale()
         page_index = self._extract_page_index(self._record) or 0
         self.preview_status.setText(f"Preview: page {page_index + 1}.")
 
@@ -178,6 +195,58 @@ class EvidencePanel(QWidget):
         if page_number:
             lines.append(f"Page: {page_number} · Slot: {slot_label}")
         return "\n".join(lines)
+
+    def set_zoom_percent(self, pct: int) -> None:
+        self._fit_mode = "custom"
+        self._preview_scale_pct = max(25, min(400, int(pct)))
+        self._apply_preview_scale()
+
+    def set_fit_mode(self, mode: str) -> None:
+        if mode not in {"width", "page"}:
+            self._fit_mode = "custom"
+        else:
+            self._fit_mode = mode
+        self._apply_preview_scale()
+
+    def current_zoom_percent(self) -> int:
+        return self._preview_scale_pct
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # type: ignore[override]
+        if obj is self.preview_area.viewport() and event.type() == QEvent.Type.Resize:
+            if self._current_preview_pixmap is not None:
+                self._apply_preview_scale()
+        return super().eventFilter(obj, event)
+
+    def _apply_preview_scale(self) -> None:
+        pixmap = self._current_preview_pixmap
+        if pixmap is None:
+            self.preview_label.clear()
+            return
+        viewport = self.preview_area.viewport()
+        if self._fit_mode == "width":
+            width = max(1, viewport.width())
+            scaled = pixmap.scaledToWidth(width, Qt.TransformationMode.SmoothTransformation)
+        elif self._fit_mode == "page":
+            size = viewport.size()
+            if size.width() <= 0 or size.height() <= 0:
+                scaled = pixmap
+            else:
+                scaled = pixmap.scaled(
+                    size,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+        else:
+            scale = max(0.25, min(4.0, self._preview_scale_pct / 100.0))
+            width = max(1, int(pixmap.width() * scale))
+            height = max(1, int(pixmap.height() * scale))
+            scaled = pixmap.scaled(
+                width,
+                height,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        self.preview_label.setPixmap(scaled)
 
     @staticmethod
     def _describe_source(source_type: Optional[str], flags: Optional[dict]) -> str:

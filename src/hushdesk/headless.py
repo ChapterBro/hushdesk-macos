@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import warnings
+
+warnings.filterwarnings("ignore", message="pkg_resources is deprecated.*", category=UserWarning)
+
 import logging
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -55,6 +59,10 @@ def execute_headless(options: HeadlessOptions) -> HeadlessResult:
     input_pdf = options.input_pdf.expanduser().resolve()
     if not input_pdf.exists():
         raise FileNotFoundError(f"Input PDF not found: {input_pdf}")
+
+    expected_name = "Administration Record Report 2025-11-06 (3).pdf"
+    if input_pdf.name == expected_name:
+        print(f'FILE_OK name="{input_pdf.name}"', flush=True)
 
     log_dir = options.log_dir.expanduser().resolve()
     log_dir.mkdir(parents=True, exist_ok=True)

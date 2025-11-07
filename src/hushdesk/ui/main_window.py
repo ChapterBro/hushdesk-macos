@@ -6,18 +6,20 @@ import logging
 import json
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from PySide6.QtCore import Qt, Signal, Slot, QUrl
+from PySide6.QtCore import QSettings, QSize, Qt, Signal, Slot, QUrl
 from PySide6.QtGui import (
     QAction,
     QDesktopServices,
     QDragEnterEvent,
     QDropEvent,
     QGuiApplication,
+    QKeySequence,
     QPalette,
     QTextCursor,
 )
@@ -191,6 +193,8 @@ class MainWindow(QMainWindow):
         self._open_exports_widget: Optional[QLabel] = None
         self._open_exports_widget_action: Optional[QWidgetAction] = None
         self._band_coverage_label: Optional[QLabel] = None
+        self.openPdfToPageAction: Optional[QWidget] = None
+        self._decisions_info_label: Optional[QLabel] = None
 
         self._refresh_header_colors()
         palette_changed = getattr(QGuiApplication, "paletteChanged", None)
@@ -199,6 +203,8 @@ class MainWindow(QMainWindow):
         self._load_settings()
         self._build_ui()
         self._create_actions()
+        self._preview_receipt_emitted = False
+        self._init_ui_state()
 
     # --- UI assembly -----------------------------------------------------------------
 
@@ -334,13 +340,33 @@ class MainWindow(QMainWindow):
         self.review_explorer.anomaly_selected.connect(self._on_anomaly_selected)
         self.review_explorer.preview_requested.connect(self._on_preview_requested)
 
-        self.evidence_panel = EvidencePanel()
+        self._decisions_info_label = QLabel("No parameter-bound meds in this block.")
+        self._decisions_info_label.setObjectName("DecisionsInfoLabel")
+        self._decisions_info_label.setStyleSheet(
+            "color: #4B5563; font-size: 12px; font-weight: 500; padding: 2px 4px;"
+        )
+        self._decisions_info_label.hide()
+
+        review_container = QWidget()
+        review_layout = QVBoxLayout(review_container)
+        review_layout.setContentsMargins(0, 0, 0, 0)
+        review_layout.setSpacing(6)
+        review_layout.addWidget(self._decisions_info_label)
+        review_layout.addWidget(self.review_explorer, stretch=1)
+
+        self.evidence_panel = EvidencePanel(allow_open_pdf=False)
+        self.openPdfToPageAction = getattr(self.evidence_panel, "open_button", None)
+        if self.openPdfToPageAction is not None:
+            self.openPdfToPageAction.setVisible(False)
+            self.openPdfToPageAction.setEnabled(False)
 
         top_splitter = QSplitter(Qt.Orientation.Horizontal)
-        top_splitter.addWidget(self.review_explorer)
+        top_splitter.addWidget(review_container)
         top_splitter.addWidget(self.evidence_panel)
         top_splitter.setStretchFactor(0, 1)
         top_splitter.setStretchFactor(1, 2)
+        self.review_splitter = top_splitter
+        self.mainSplitter = top_splitter
 
         self.log_panel = QPlainTextEdit()
         self.log_panel.setObjectName("LogPanel")
@@ -352,6 +378,7 @@ class MainWindow(QMainWindow):
         content_splitter.addWidget(self.log_panel)
         content_splitter.setStretchFactor(0, 3)
         content_splitter.setStretchFactor(1, 1)
+        self.content_splitter = content_splitter
 
         central_layout.addWidget(header_frame)
         central_layout.addWidget(self.status_banner)
@@ -365,6 +392,7 @@ class MainWindow(QMainWindow):
     def _create_actions(self) -> None:
         toolbar = self.addToolBar("Actions")
         toolbar.setMovable(False)
+        self.actions_toolbar = toolbar
 
         self.copy_action = QAction("Copy Checklist", self)
         self.copy_action.setEnabled(False)
@@ -377,6 +405,150 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.copy_action)
         toolbar.addAction(self.save_action)
         self._add_export_toolbar_link(toolbar)
+        self._add_preview_actions(toolbar)
+
+    def _add_preview_actions(self, toolbar: Optional[QWidget]) -> None:
+        if toolbar is None:
+            return
+        zoom_in_seq = QKeySequence("Ctrl+=")
+        zoom_out_seq = QKeySequence("Ctrl+-")
+        if sys.platform == "darwin":
+            zoom_in_seq = QKeySequence("Meta+=")
+            zoom_out_seq = QKeySequence("Meta+-")
+
+        self.actZoomIn = QAction("Zoom In", self)
+        self.actZoomIn.setShortcut(zoom_in_seq)
+        self.actZoomIn.triggered.connect(self._zoom_in)
+
+        self.actZoomOut = QAction("Zoom Out", self)
+        self.actZoomOut.setShortcut(zoom_out_seq)
+        self.actZoomOut.triggered.connect(self._zoom_out)
+
+        self.actFitWidth = QAction("Fit Width", self)
+        self.actFitWidth.triggered.connect(self._fit_width)
+
+        self.actFitPage = QAction("Fit Page", self)
+        self.actFitPage.triggered.connect(self._fit_page)
+
+        toolbar.addSeparator()
+        toolbar.addAction(self.actZoomOut)
+        toolbar.addAction(self.actZoomIn)
+        toolbar.addAction(self.actFitWidth)
+        toolbar.addAction(self.actFitPage)
+
+    def _init_ui_state(self) -> None:
+        self._ui_settings = QSettings("HushDesk", "HushDeskApp")
+        first_run = not bool(self._ui_settings.value("ui/has_run_before", False, type=bool))
+
+        geometry = self._ui_settings.value("ui/geometry")
+        if geometry:
+            self.restoreGeometry(geometry)
+        state = self._ui_settings.value("ui/window_state")
+        if state:
+            self.restoreState(state)
+
+        splitter = getattr(self, "mainSplitter", None) or getattr(self, "review_splitter", None)
+        if splitter is not None and first_run:
+            sizes = splitter.sizes()
+            if len(sizes) >= 2:
+                total = max(sum(sizes), 1000)
+                preview_idx = 1
+                explorer_idx = 0
+                new_sizes = list(sizes)
+                new_sizes[preview_idx] = int(total * 0.65)
+                new_sizes[explorer_idx] = total - new_sizes[preview_idx]
+                splitter.setSizes(new_sizes)
+
+        if self._ui_settings.value("preview/zoom_pct", None) is None:
+            self._ui_settings.setValue("preview/zoom_pct", 110)
+        if self._ui_settings.value("preview/fit_mode", None) is None:
+            self._ui_settings.setValue("preview/fit_mode", "custom")
+        self._ui_settings.setValue("ui/has_run_before", True)
+        self._apply_preview_preferences()
+
+    def _get_preview_panel(self) -> Optional[EvidencePanel]:
+        return getattr(self, "evidence_panel", None)
+
+    def _get_preview_zoom(self) -> int:
+        if not hasattr(self, "_ui_settings"):
+            return 110
+        value = self._ui_settings.value("preview/zoom_pct", 110)
+        try:
+            pct = int(value)
+        except (TypeError, ValueError):
+            pct = 110
+        return max(25, min(400, pct))
+
+    def _set_preview_zoom(self, pct: int) -> None:
+        clamped = max(25, min(400, int(pct)))
+        if hasattr(self, "_ui_settings"):
+            self._ui_settings.setValue("preview/zoom_pct", clamped)
+            self._ui_settings.setValue("preview/fit_mode", "custom")
+        preview = self._get_preview_panel()
+        if preview is not None:
+            preview.set_zoom_percent(clamped)
+
+    def _apply_preview_preferences(self) -> None:
+        preview = self._get_preview_panel()
+        if preview is None or not hasattr(self, "_ui_settings"):
+            return
+        fit_mode = str(self._ui_settings.value("preview/fit_mode", "custom") or "custom")
+        if fit_mode == "width":
+            preview.set_fit_mode("width")
+        elif fit_mode == "page":
+            preview.set_fit_mode("page")
+        else:
+            preview.set_zoom_percent(self._get_preview_zoom())
+
+    def _zoom_in(self) -> None:
+        self._set_preview_zoom(self._get_preview_zoom() + 10)
+
+    def _zoom_out(self) -> None:
+        self._set_preview_zoom(self._get_preview_zoom() - 10)
+
+    def _fit_width(self) -> None:
+        self._apply_fit_mode("width")
+
+    def _fit_page(self) -> None:
+        self._apply_fit_mode("page")
+
+    def _apply_fit_mode(self, mode: str) -> None:
+        if not hasattr(self, "_ui_settings"):
+            return
+        mode_value = mode if mode in {"width", "page"} else "custom"
+        self._ui_settings.setValue("preview/fit_mode", mode_value)
+        preview = self._get_preview_panel()
+        if preview is None:
+            return
+        if mode_value == "width":
+            preview.set_fit_mode("width")
+        elif mode_value == "page":
+            preview.set_fit_mode("page")
+        else:
+            preview.set_zoom_percent(self._get_preview_zoom())
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._apply_preview_preferences()
+        if not getattr(self, "_preview_receipt_emitted", False):
+            self._preview_receipt_emitted = True
+            size: QSize = self.size()
+            persisted = (
+                hasattr(self, "_ui_settings")
+                and self._ui_settings.contains("ui/geometry")
+                and bool(self._ui_settings.value("ui/geometry"))
+            )
+            print(
+                f"PREVIEW_OK size={size.width()}x{size.height()} "
+                f"zoom={self._get_preview_zoom()} persisted={str(bool(persisted)).lower()}",
+                flush=True,
+            )
+
+    def closeEvent(self, event) -> None:
+        if hasattr(self, "_ui_settings"):
+            self._ui_settings.setValue("ui/geometry", self.saveGeometry())
+            self._ui_settings.setValue("ui/window_state", self.saveState())
+        super().closeEvent(event)
 
         self.qa_action = QAction("QA Mode", self)
         self.qa_action.setCheckable(True)
@@ -512,6 +684,16 @@ class MainWindow(QMainWindow):
         self.status_banner.setText(message)
         self.status_banner.show()
 
+    def _show_info_banner(self, message: Optional[str]) -> None:
+        label = getattr(self, "_decisions_info_label", None)
+        if label is None:
+            return
+        if message:
+            label.setText(message)
+            label.show()
+        else:
+            label.hide()
+
     def _suggest_export_filename(self) -> str:
         stem = self._selected_pdf.stem if self._selected_pdf else "HushDesk"
         date_token = self._latest_audit_mmddyyyy.replace("/", "-") if self._latest_audit_mmddyyyy else "pending"
@@ -553,25 +735,25 @@ class MainWindow(QMainWindow):
     # --- Settings -------------------------------------------------------------------
 
     def _load_settings(self) -> None:
-        self._settings: dict[str, str] = {}
+        self._settings_store: dict[str, str] = {}
         if not self._settings_path.exists():
             return
         try:
-            self._settings = json.loads(self._settings_path.read_text())
+            self._settings_store = json.loads(self._settings_path.read_text())
         except json.JSONDecodeError:
             # Corrupted settings should be ignored but not fatal
-            self._settings = {}
+            self._settings_store = {}
 
     def _save_settings(self) -> None:
         try:
-            self._settings_path.write_text(json.dumps(self._settings, indent=2))
+            self._settings_path.write_text(json.dumps(self._settings_store, indent=2))
         except OSError as exc:
             QMessageBox.warning(self, "Settings Error", f"Unable to persist settings: {exc}")
 
     # --- Actions --------------------------------------------------------------------
 
     def _browse_for_pdf(self) -> None:
-        start_dir = self._settings.get("last_open_dir", str(Path.home()))
+        start_dir = self._settings_store.get("last_open_dir", str(Path.home()))
         filename, _ = QFileDialog.getOpenFileName(
             self,
             "Select MAR PDF",
@@ -595,7 +777,7 @@ class MainWindow(QMainWindow):
         self.save_action.setEnabled(False)
         self.log_panel.setPlainText("Ready to audit placeholder MAR.")
         self._reset_progress()
-        self._settings["last_open_dir"] = str(absolute_path.parent)
+        self._settings_store["last_open_dir"] = str(absolute_path.parent)
         self._save_settings()
 
     def _set_band_progress_label(self, current: Optional[int], total: Optional[int]) -> None:
@@ -984,6 +1166,15 @@ class MainWindow(QMainWindow):
                 self.evidence_panel.clear("Select a decision to view details.")
             else:
                 self.evidence_panel.clear("No decisions available.")
+        instrumentation_obj = payload.get("instrumentation") if isinstance(payload, dict) else {}
+        try:
+            suppressed = int(instrumentation_obj.get("suppressed", 0)) if isinstance(instrumentation_obj, dict) else 0
+        except (TypeError, ValueError):
+            suppressed = 0
+        if not self._records_payload and suppressed:
+            self._show_info_banner("No parameter-bound meds in this block.")
+        else:
+            self._show_info_banner(None)
 
     @Slot(dict)
     def _on_review_record_selected(self, payload: dict) -> None:
@@ -1102,7 +1293,7 @@ class MainWindow(QMainWindow):
             self._append_log_line("No data for selected date.")
         else:
             self._append_log_line("Audit complete.")
-        self._settings["last_output_directory"] = str(output_path.parent)
+        self._settings_store["last_output_directory"] = str(output_path.parent)
         self._save_settings()
         self._worker = None
 
@@ -1125,7 +1316,7 @@ class MainWindow(QMainWindow):
             return
 
         suggested_name = self._suggest_export_filename()
-        default_dir = self._settings.get("last_manual_save_dir") or str(self._export_target_path)
+        default_dir = self._settings_store.get("last_manual_save_dir") or str(self._export_target_path)
         try:
             default_base = Path(default_dir).expanduser()
         except OSError:
@@ -1153,7 +1344,7 @@ class MainWindow(QMainWindow):
             )
             saved_message = f"TXT saved to {final_path} — {summary_parts}"
             self._append_log_line(saved_message)
-            self._settings["last_output_directory"] = str(final_path.parent)
+            self._settings_store["last_output_directory"] = str(final_path.parent)
             self._save_settings()
             self._last_saved_log = saved_message
             return
@@ -1161,8 +1352,8 @@ class MainWindow(QMainWindow):
         target_path = Path(filename).expanduser()
         sanitized_name = sanitize_filename(target_path.name or suggested_name)
         target_path = target_path.with_name(sanitized_name)
-        self._settings["last_manual_save_dir"] = str(target_path.parent)
-        self._settings["last_output_directory"] = str(target_path.parent)
+        self._settings_store["last_manual_save_dir"] = str(target_path.parent)
+        self._settings_store["last_output_directory"] = str(target_path.parent)
         self._save_settings()
 
         final_path = safe_write_text(target_path, report_text)
