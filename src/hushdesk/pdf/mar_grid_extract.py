@@ -9,8 +9,8 @@ from datetime import date
 from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
 from hushdesk.pdf.dates import format_mmddyyyy
-from .mar_blocks import MedBlock, extract_med_blocks
-from .mar_header import band_for_date
+from .mar_blocks import MedBlock, block_zot, extract_med_blocks
+from .mar_header import band_for_date, column_zot
 from .mar_tracks import TrackSpec, find_time_rows
 from .mar_tokens import bp_values, cell_state, pulse_value
 from .mupdf_canon import CanonPage, CanonWord
@@ -26,6 +26,8 @@ ALLOWED_CODES = {4, 6, 11, 12, 15}
 telemetry_suppressed = 0
 _dedup_before_total = 0
 _dedup_after_total = 0
+_clip_tokens_before = 0
+_clip_tokens_after = 0
 
 _TIME_TOKEN_RE = re.compile(r"\b(?:[0-1]?\d|2[0-3]):?[0-5]\d\b")
 _CHECKMARK_RE = re.compile(r"[\u221A\u2713\u2714]")
@@ -63,12 +65,104 @@ class _DueContext:
     due_bbox: Rect
     rule_text: str
     rules: RuleSet
+    page_pixels: Tuple[int, int]
+    roi_pixels: Optional[Tuple[float, float, float, float]]
+
+
+def _preview_roi_for_bounds(
+    page: CanonPage,
+    bounds: Rect,
+    margin: float = 12.0,
+) -> Tuple[Optional[Tuple[float, float, float, float]], Tuple[int, int]]:
+    pixmap = getattr(page, "pixmap", None)
+    pix_width = int(getattr(pixmap, "width", int(round(page.width)) or 0))
+    pix_height = int(getattr(pixmap, "height", int(round(page.height)) or 0))
+    if pix_width <= 0:
+        pix_width = int(max(1.0, round(page.width))) or 1
+    if pix_height <= 0:
+        pix_height = int(max(1.0, round(page.height))) or 1
+    base_width = float(page.width) if page.width else float(pix_width)
+    base_height = float(page.height) if page.height else float(pix_height)
+    if base_width <= 0.0:
+        base_width = float(pix_width)
+    if base_height <= 0.0:
+        base_height = float(pix_height)
+    sx = pix_width / base_width if base_width else 1.0
+    sy = pix_height / base_height if base_height else 1.0
+    x0, y0, x1, y1 = bounds
+    left = min(x0, x1)
+    top = min(y0, y1)
+    width = max(0.0, abs(x1 - x0))
+    height = max(0.0, abs(y1 - y0))
+    roi: Optional[Tuple[float, float, float, float]]
+    if width <= 0.0 or height <= 0.0:
+        roi = None
+    else:
+        px = left * sx
+        py = top * sy
+        pw = width * sx
+        ph = height * sy
+        px -= margin
+        py -= margin
+        pw += margin * 2.0
+        ph += margin * 2.0
+        if px < 0.0:
+            pw += px
+            px = 0.0
+        if py < 0.0:
+            ph += py
+            py = 0.0
+        if px + pw > pix_width:
+            pw = max(1.0, pix_width - px)
+        if py + ph > pix_height:
+            ph = max(1.0, pix_height - py)
+        pw = max(1.0, pw)
+        ph = max(1.0, ph)
+        roi = (px, py, pw, ph)
+    return roi, (pix_width, pix_height)
 
 
 def _reset_dedup_stats() -> None:
     global _dedup_before_total, _dedup_after_total
     _dedup_before_total = 0
     _dedup_after_total = 0
+
+
+def _reset_clip_stats() -> None:
+    global _clip_tokens_before, _clip_tokens_after
+    _clip_tokens_before = 0
+    _clip_tokens_after = 0
+
+
+def clip_tokens(
+    words: Iterable[CanonWord],
+    x0: float,
+    x1: float,
+    y0: float,
+    y1: float,
+) -> List[CanonWord]:
+    """
+    Return words whose bounding boxes intersect the clip rectangle (x0, y0, x1, y1).
+    """
+
+    global _clip_tokens_before, _clip_tokens_after
+    left = min(x0, x1)
+    right = max(x0, x1)
+    top = min(y0, y1)
+    bottom = max(y0, y1)
+    if right <= left or bottom <= top:
+        return []
+    clipped: List[CanonWord] = []
+    for word in words:
+        _clip_tokens_before += 1
+        wx0, wy0, wx1, wy1 = word.bbox
+        if wx1 < left or wx0 > right:
+            continue
+        if wy1 < top or wy0 > bottom:
+            continue
+        clipped.append(word)
+        _clip_tokens_after += 1
+    return clipped
 
 
 def dedup_totals() -> Tuple[int, int]:
@@ -105,6 +199,8 @@ class DueRecord:
     due_bbox: Rect
     audit_band: Rect
     track_band: Tuple[float, float]
+    page_pixels: Tuple[int, int]
+    roi_pixels: Optional[Tuple[float, float, float, float]]
     mark_category: str = field(default="empty")
 
     def has_vitals(self) -> bool:
@@ -133,12 +229,19 @@ def extract_pages(
     global telemetry_suppressed
     telemetry_suppressed = 0
     _reset_dedup_stats()
+    _reset_clip_stats()
 
     results: List[PageExtraction] = []
+    pages_seen = 0
     for page in pages:
+        pages_seen += 1
         extraction = _extract_single_page(page, audit_date, hall)
         if extraction:
             results.append(extraction)
+    try:
+        print(f"SCOPE_OK tokens={_clip_tokens_before}->{_clip_tokens_after} page_hits={pages_seen}")
+    except Exception:
+        pass
     return results
 
 
@@ -151,7 +254,7 @@ def _extract_single_page(
     if not column_band:
         return None
 
-    x0, x1 = column_band
+    x0, x1 = column_zot(page, *column_band)
     audit_band: Rect = (x0, 0.0, x1, page.height)
     tracks = find_time_rows(page)
     if not tracks:
@@ -174,7 +277,18 @@ def _extract_single_page(
         for spec in tracks
     ]
 
-    column_words = [word for word in page.words if x0 <= word.center[0] <= x1]
+    column_words = clip_tokens(page.words, x0, x1, 0.0, page.height)
+    block_scope_cache: Dict[int, Tuple[Tuple[float, float], List[CanonWord]]] = {}
+
+    def _block_scope(block_obj: MedBlock) -> Tuple[Tuple[float, float], List[CanonWord]]:
+        cache_key = id(block_obj)
+        cached = block_scope_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        band = block_zot(block_obj, page.height)
+        scoped_words = clip_tokens(column_words, x0, x1, band[0], band[1])
+        block_scope_cache[cache_key] = (band, scoped_words)
+        return block_scope_cache[cache_key]
     agg: Dict[DueKey, Evidence] = {}
     contexts: Dict[DueKey, _DueContext] = {}
     duplicate_keys: List[DueKey] = []
@@ -187,11 +301,16 @@ def _extract_single_page(
 
     for spec, block in zip(tracks, matched_blocks):
         block_id = block_ids.get(id(block)) if block is not None else None
+        if block is not None:
+            block_band, scoped_words = _block_scope(block)
+        else:
+            block_band, scoped_words = (None, ())
         _collect_due_evidence_if_strict(
             spec,
             block,
             page=page,
-            column_words=column_words,
+            block_words=scoped_words,
+            block_band=block_band,
             x0=x0,
             x1=x1,
             audit_band=audit_band,
@@ -346,7 +465,8 @@ def _collect_due_evidence_if_strict(
     block: Optional[MedBlock],
     *,
     page: CanonPage,
-    column_words: Sequence[CanonWord],
+    block_words: Sequence[CanonWord],
+    block_band: Optional[Tuple[float, float]],
     x0: float,
     x1: float,
     audit_band: Rect,
@@ -361,13 +481,20 @@ def _collect_due_evidence_if_strict(
 ) -> None:
     global telemetry_suppressed
     rules = block.rules if block else RuleSet()
-    if block is None or not getattr(rules, "strict", False) or not block_id:
+    if block is None or not getattr(rules, "strict", False) or not block_id or block_band is None:
         telemetry_suppressed += 1
         return
 
-    bp_words = list(_words_in_band(column_words, x0, x1, track.bp_y0, track.bp_y1))
-    due_words = list(_words_in_band(column_words, x0, x1, track.track_y0, track.track_y1))
-    pulse_words = list(_words_in_band(column_words, x0, x1, track.pulse_y0, track.pulse_y1))
+    block_y0, block_y1 = block_band
+    cell_y0 = max(block_y0, track.track_y0)
+    cell_y1 = min(block_y1, track.track_y1)
+    if cell_y1 <= cell_y0:
+        telemetry_suppressed += 1
+        return
+
+    bp_words = list(_words_in_band(block_words, x0, x1, track.bp_y0, track.bp_y1))
+    due_words = list(_words_in_band(block_words, x0, x1, track.track_y0, track.track_y1))
+    pulse_words = list(_words_in_band(block_words, x0, x1, track.pulse_y0, track.pulse_y1))
 
     sbp = bp_values(bp_words)
     if sbp is None:
@@ -375,7 +502,8 @@ def _collect_due_evidence_if_strict(
 
     hr = pulse_value(pulse_words)
 
-    cell_bounds = (x0, track.track_y0, x1, track.track_y1)
+    cell_bounds = (x0, cell_y0, x1, cell_y1)
+    roi_pixels, page_pixels = _preview_roi_for_bounds(page, cell_bounds)
     has_cross = _has_drawn_cross(page, cell_bounds)
     due_bbox = _words_bbox(due_words, default=cell_bounds)
     bp_bbox = _words_bbox(bp_words)
@@ -403,7 +531,7 @@ def _collect_due_evidence_if_strict(
             time_slot=time_slot,
             normalized_slot=track.normalized_label,
             audit_band=audit_band,
-            track_band=(track.track_y0, track.track_y1),
+            track_band=(cell_y0, cell_y1),
             bp_text=bp_text,
             hr_text=hr_text,
             due_text=due_text,
@@ -412,6 +540,8 @@ def _collect_due_evidence_if_strict(
             due_bbox=due_bbox if due_bbox is not None else cell_bounds,
             rule_text=block.text,
             rules=rules,
+            page_pixels=page_pixels,
+            roi_pixels=roi_pixels,
         )
 
     if sbp is not None:
@@ -491,6 +621,8 @@ def _build_due_record_from_ev(
         due_bbox=context.due_bbox,
         audit_band=context.audit_band,
         track_band=context.track_band,
+        page_pixels=context.page_pixels,
+        roi_pixels=context.roi_pixels,
         mark_category=mark_category,
     )
 
@@ -542,4 +674,4 @@ def _block_identifier(page_index: int, block_index: int, block: MedBlock) -> str
     return f"p{page_index + 1}-b{block_index + 1}-{slug}"
 
 
-__all__ = ["DueRecord", "PageExtraction", "extract_pages", "telemetry_suppressed", "dedup_totals"]
+__all__ = ["DueRecord", "PageExtraction", "clip_tokens", "extract_pages", "telemetry_suppressed", "dedup_totals"]

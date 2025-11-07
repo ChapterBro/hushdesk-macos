@@ -6,9 +6,14 @@ import io
 import statistics
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Sequence
+from typing import List, Sequence, Tuple
 
-from PIL import Image, ImageDraw, ImageFont
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:  # pragma: no cover - optional dependency in automation
+    Image = None  # type: ignore[assignment]
+    ImageDraw = None  # type: ignore[assignment]
+    ImageFont = None  # type: ignore[assignment]
 
 from .mar_header import detect_header
 from .mupdf_canon import CanonPage, CanonWord
@@ -52,6 +57,25 @@ class MedBlock:
     title: str
     text: str
     rules: RuleSet = field(default_factory=RuleSet)
+
+
+def block_zot(block: MedBlock, page_height: float) -> Tuple[float, float]:
+    """
+    Return a conservatively padded (y0, y1) clip band for ``block`` within page bounds.
+    """
+
+    if page_height <= 0.0:
+        page_height = float("inf")
+    y0 = max(0.0, min(block.y0, page_height))
+    y1 = max(0.0, min(block.y1, page_height))
+    if y1 < y0:
+        y0, y1 = y1, y0
+    span = max(0.0, y1 - y0)
+    pad = span * 0.01 if span > 0.0 else 0.0
+    return (
+        max(0.0, y0 - pad),
+        min(page_height, y1 + pad),
+    )
 
 
 @dataclass(slots=True)
@@ -119,6 +143,10 @@ def draw_med_blocks_debug(
 
     target_dir = Path(out_dir) if out_dir is not None else qa_dir()
     target_dir = target_dir.parent if target_dir.suffix.lower() == ".png" else target_dir
+
+    if Image is None or ImageDraw is None or ImageFont is None:
+        print("QA_OVERLAY_SKIP reason=PILUnavailable")
+        return None
 
     try:
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -288,4 +316,4 @@ def _build_block(lines: Sequence[_LineSpan], bounds: tuple[float, float]) -> Med
     )
 
 
-__all__ = ["MedBlock", "extract_med_blocks", "draw_med_blocks_debug"]
+__all__ = ["MedBlock", "block_zot", "extract_med_blocks", "draw_med_blocks_debug"]

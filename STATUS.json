@@ -1,16 +1,4 @@
 {
-  "phase": "v0.1.1-parity-ok",
-  "pdf": "Administration Record Report 2025-11-06 (3).pdf",
-  "counts": {
-    "reviewed": 28,
-    "parametered": 30,
-    "no_rule": 0,
-    "no_sbp": 22,
-    "no_hr": 3,
-    "hold_miss": 0,
-    "held_appropriate": 0,
-    "compliant": 24,
-    "dcd": 4
-  },
-  "parity": "PARITY_OK"
+  "phase": "v0.1.3-zot-ok",
+  "scope": "zot-applied"
 }

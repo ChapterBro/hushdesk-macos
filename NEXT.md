@@ -1,7 +1,6 @@
-phase: v0.1.1-parity-ok
-pdf: "Administration Record Report 2025-11-06 (3).pdf"
-summary: "Reviewed:28 Hold-Miss:0 Held-Appropriate:0 Compliant:24 DC'D:4"
+phase: v0.1.3-zot-ok
 receipts:
-  - PARITY_OK
+  - SCOPE_OK
+  - ACCEPTANCE_OK
 notes:
-  - CLI parity automation (--parity-lock / --emit-gui-ok-from-cache)
+  - All evidence clipped to (audit date column) ∩ (med block); off-block tokens dropped
