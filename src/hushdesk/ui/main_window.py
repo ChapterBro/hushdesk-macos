@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from PySide6.QtCore import QSettings, QSize, Qt, Signal, Slot, QUrl
+from PySide6.QtCore import QThread, QSize, Qt, Signal, Slot, QUrl
 from PySide6.QtGui import (
     QAction,
     QDesktopServices,
@@ -21,6 +21,7 @@ from PySide6.QtGui import (
     QGuiApplication,
     QKeySequence,
     QPalette,
+    QShortcut,
     QTextCursor,
 )
 from PySide6.QtWidgets import (
@@ -51,6 +52,7 @@ from hushdesk.workers.audit_worker import AuditWorker
 from .evidence_panel import EvidencePanel
 from .preview_dialog import PreviewDialog
 from .review_explorer import ReviewExplorer
+from .ui_prefs import UIPrefs
 
 
 class _Chip(QFrame):
@@ -195,6 +197,7 @@ class MainWindow(QMainWindow):
         self._band_coverage_label: Optional[QLabel] = None
         self.openPdfToPageAction: Optional[QWidget] = None
         self._decisions_info_label: Optional[QLabel] = None
+        self._preview_shortcuts: list[QShortcut] = []
 
         self._refresh_header_colors()
         palette_changed = getattr(QGuiApplication, "paletteChanged", None)
@@ -359,12 +362,13 @@ class MainWindow(QMainWindow):
         if self.openPdfToPageAction is not None:
             self.openPdfToPageAction.setVisible(False)
             self.openPdfToPageAction.setEnabled(False)
+        self.evidenceSplitter = getattr(self.evidence_panel, "splitter", None)
 
         top_splitter = QSplitter(Qt.Orientation.Horizontal)
         top_splitter.addWidget(review_container)
         top_splitter.addWidget(self.evidence_panel)
         top_splitter.setStretchFactor(0, 1)
-        top_splitter.setStretchFactor(1, 2)
+        top_splitter.setStretchFactor(1, 3)
         self.review_splitter = top_splitter
         self.mainSplitter = top_splitter
 
@@ -415,29 +419,81 @@ class MainWindow(QMainWindow):
         if sys.platform == "darwin":
             zoom_in_seq = QKeySequence("Meta+=")
             zoom_out_seq = QKeySequence("Meta+-")
+            modifier = "Meta"
+        else:
+            modifier = "Ctrl"
+        fit_width_seq = QKeySequence(f"{modifier}+9")
+        fit_height_seq = QKeySequence(f"{modifier}+8")
+        fit_page_seq = QKeySequence(f"{modifier}+7")
+        actual_seq = QKeySequence(f"{modifier}+0")
+        region_seq = QKeySequence(f"{modifier}+R")
 
         self.actZoomIn = QAction("Zoom In", self)
-        self.actZoomIn.setShortcut(zoom_in_seq)
+        self._set_toolbar_shortcut(self.actZoomIn, zoom_in_seq)
         self.actZoomIn.triggered.connect(self._zoom_in)
 
         self.actZoomOut = QAction("Zoom Out", self)
-        self.actZoomOut.setShortcut(zoom_out_seq)
+        self._set_toolbar_shortcut(self.actZoomOut, zoom_out_seq)
         self.actZoomOut.triggered.connect(self._zoom_out)
 
         self.actFitWidth = QAction("Fit Width", self)
+        self._set_toolbar_shortcut(self.actFitWidth, fit_width_seq)
         self.actFitWidth.triggered.connect(self._fit_width)
 
         self.actFitPage = QAction("Fit Page", self)
+        self._set_toolbar_shortcut(self.actFitPage, fit_page_seq)
         self.actFitPage.triggered.connect(self._fit_page)
+
+        self.actFitHeight = QAction("Fit Height", self)
+        self._set_toolbar_shortcut(self.actFitHeight, fit_height_seq)
+        self.actFitHeight.triggered.connect(self._fit_height)
+
+        self.actZoomActual = QAction("Actual Size", self)
+        self._set_toolbar_shortcut(self.actZoomActual, actual_seq)
+        self.actZoomActual.triggered.connect(self._reset_zoom_actual)
+
+        self.actRegionFit = QAction("Region", self)
+        self.actRegionFit.setCheckable(True)
+        self.actRegionFit.setEnabled(False)
+        self._set_toolbar_shortcut(self.actRegionFit, region_seq)
+        self.actRegionFit.triggered.connect(self._toggle_region_fit)
 
         toolbar.addSeparator()
         toolbar.addAction(self.actZoomOut)
         toolbar.addAction(self.actZoomIn)
+        toolbar.addAction(self.actZoomActual)
         toolbar.addAction(self.actFitWidth)
+        toolbar.addAction(self.actFitHeight)
         toolbar.addAction(self.actFitPage)
+        toolbar.addAction(self.actRegionFit)
+        self.actResetLayout = QAction("Reset Layout", self)
+        self.actResetLayout.setToolTip("Restore default preview sizes and zoom")
+        self.actResetLayout.triggered.connect(self._reset_layout_preferences)
+        toolbar.addAction(self.actResetLayout)
+        self._install_preview_shortcuts(
+            [
+                (zoom_in_seq, self._zoom_in),
+                (zoom_out_seq, self._zoom_out),
+                (fit_width_seq, self._fit_width),
+                (fit_height_seq, self._fit_height),
+                (actual_seq, self._reset_zoom_actual),
+            ]
+        )
+
+    def _set_toolbar_shortcut(self, action: QAction, sequence: QKeySequence) -> None:
+        action.setShortcut(sequence)
+        action.setShortcutContext(Qt.ShortcutContext.WidgetShortcut)
+
+    def _install_preview_shortcuts(self, bindings) -> None:
+        self._preview_shortcuts = []
+        for sequence, handler in bindings:
+            shortcut = QShortcut(sequence, self)
+            shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+            shortcut.activated.connect(handler)
+            self._preview_shortcuts.append(shortcut)
 
     def _init_ui_state(self) -> None:
-        self._ui_settings = QSettings("HushDesk", "HushDeskApp")
+        self._ui_settings = UIPrefs("HushDesk", "HushDeskApp")
         first_run = not bool(self._ui_settings.value("ui/has_run_before", False, type=bool))
 
         geometry = self._ui_settings.value("ui/geometry")
@@ -447,17 +503,43 @@ class MainWindow(QMainWindow):
         if state:
             self.restoreState(state)
 
-        splitter = getattr(self, "mainSplitter", None) or getattr(self, "review_splitter", None)
-        if splitter is not None and first_run:
-            sizes = splitter.sizes()
-            if len(sizes) >= 2:
-                total = max(sum(sizes), 1000)
-                preview_idx = 1
-                explorer_idx = 0
-                new_sizes = list(sizes)
-                new_sizes[preview_idx] = int(total * 0.65)
-                new_sizes[explorer_idx] = total - new_sizes[preview_idx]
-                splitter.setSizes(new_sizes)
+        main_splitter = getattr(self, "mainSplitter", None)
+        content_splitter = getattr(self, "content_splitter", None)
+
+        saved_main_sizes = self._read_splitter_sizes("ui/main_splitter")
+        if not saved_main_sizes:
+            saved_main_sizes = self._read_splitter_sizes("ui/review_splitter_sizes")
+        if main_splitter is not None:
+            if saved_main_sizes:
+                main_splitter.setSizes(saved_main_sizes)
+            elif first_run:
+                total = max(self.size().width(), 960)
+                explorer = int(total * 0.30)
+                preview_width = max(total - explorer, 200)
+                main_splitter.setSizes([explorer, preview_width])
+
+        saved_content_sizes = self._read_splitter_sizes("ui/content_splitter_sizes")
+        if content_splitter is not None:
+            if saved_content_sizes:
+                content_splitter.setSizes(saved_content_sizes)
+            elif first_run:
+                sizes = content_splitter.sizes()
+                if len(sizes) >= 2:
+                    total = sum(sizes)
+                    if total <= 0:
+                        content_splitter.setSizes([820, 220])
+                    else:
+                        top = int(total * 0.8)
+                        bottom = max(total - top, 120)
+                        content_splitter.setSizes([top, bottom])
+
+        evidence_splitter = getattr(self, "evidenceSplitter", None)
+        saved_evidence_sizes = self._read_splitter_sizes("evidence/splitter")
+        if evidence_splitter is not None:
+            if saved_evidence_sizes:
+                evidence_splitter.setSizes(saved_evidence_sizes)
+            elif first_run:
+                evidence_splitter.setSizes([220, 520])
 
         if self._ui_settings.value("preview/zoom_pct", None) is None:
             self._ui_settings.setValue("preview/zoom_pct", 110)
@@ -465,6 +547,24 @@ class MainWindow(QMainWindow):
             self._ui_settings.setValue("preview/fit_mode", "custom")
         self._ui_settings.setValue("ui/has_run_before", True)
         self._apply_preview_preferences()
+
+    def _reset_layout_preferences(self) -> None:
+        if not hasattr(self, "_ui_settings"):
+            return
+        for key in (
+            "ui/geometry",
+            "ui/window_state",
+            "ui/main_splitter",
+            "ui/review_splitter_sizes",
+            "ui/content_splitter_sizes",
+            "evidence/splitter",
+            "preview/zoom_pct",
+            "preview/fit_mode",
+            "ui/has_run_before",
+        ):
+            self._ui_settings.remove(key)
+        self._preview_receipt_emitted = False
+        self._init_ui_state()
 
     def _get_preview_panel(self) -> Optional[EvidencePanel]:
         return getattr(self, "evidence_panel", None)
@@ -487,18 +587,29 @@ class MainWindow(QMainWindow):
         preview = self._get_preview_panel()
         if preview is not None:
             preview.set_zoom_percent(clamped)
+        self._sync_preview_action_states("custom")
+        status_bar = getattr(self, "_status_bar_widget", None)
+        if status_bar is None:
+            try:
+                status_bar = self.statusBar()
+                self._status_bar_widget = status_bar
+            except Exception:
+                status_bar = None
+        if status_bar is not None:
+            status_bar.showMessage(f"Zoom {clamped}%", 2000)
 
     def _apply_preview_preferences(self) -> None:
         preview = self._get_preview_panel()
         if preview is None or not hasattr(self, "_ui_settings"):
             return
         fit_mode = str(self._ui_settings.value("preview/fit_mode", "custom") or "custom")
-        if fit_mode == "width":
-            preview.set_fit_mode("width")
-        elif fit_mode == "page":
-            preview.set_fit_mode("page")
+        valid_modes = {"width", "height", "page", "region", "actual"}
+        if fit_mode in valid_modes:
+            applied_mode = preview.set_fit_mode(fit_mode)
         else:
             preview.set_zoom_percent(self._get_preview_zoom())
+            applied_mode = "custom"
+        self._sync_preview_action_states(applied_mode)
 
     def _zoom_in(self) -> None:
         self._set_preview_zoom(self._get_preview_zoom() + 10)
@@ -509,23 +620,73 @@ class MainWindow(QMainWindow):
     def _fit_width(self) -> None:
         self._apply_fit_mode("width")
 
+    def _fit_height(self) -> None:
+        self._apply_fit_mode("height")
+
     def _fit_page(self) -> None:
         self._apply_fit_mode("page")
 
-    def _apply_fit_mode(self, mode: str) -> None:
-        if not hasattr(self, "_ui_settings"):
-            return
-        mode_value = mode if mode in {"width", "page"} else "custom"
-        self._ui_settings.setValue("preview/fit_mode", mode_value)
+    def _reset_zoom_actual(self) -> None:
+        self._apply_fit_mode("actual")
+
+    def _toggle_region_fit(self, checked: bool) -> None:
         preview = self._get_preview_panel()
-        if preview is None:
+        if not checked or preview is None or not preview.has_region_roi():
+            self._apply_fit_mode("width")
             return
-        if mode_value == "width":
-            preview.set_fit_mode("width")
-        elif mode_value == "page":
-            preview.set_fit_mode("page")
-        else:
+        self._apply_fit_mode("region")
+
+    def _apply_fit_mode(self, mode: str) -> None:
+        preview = self._get_preview_panel()
+        if preview is None or not hasattr(self, "_ui_settings"):
+            return
+        valid_modes = {"width", "height", "page", "region", "actual"}
+        mode_value = mode if mode in valid_modes else "custom"
+        if mode_value == "custom":
             preview.set_zoom_percent(self._get_preview_zoom())
+            applied_mode = "custom"
+        else:
+            applied_mode = preview.set_fit_mode(mode_value)
+        self._ui_settings.setValue("preview/fit_mode", applied_mode)
+        self._sync_preview_action_states(applied_mode)
+
+    def _sync_preview_action_states(self, mode: str) -> None:
+        action = getattr(self, "actRegionFit", None)
+        if action is None:
+            return
+        action.blockSignals(True)
+        action.setChecked(mode == "region")
+        action.blockSignals(False)
+
+    def _update_region_action_state(self, enabled: bool) -> None:
+        action = getattr(self, "actRegionFit", None)
+        if action is None:
+            return
+        action.setEnabled(enabled)
+        if not enabled:
+            action.blockSignals(True)
+            action.setChecked(False)
+            action.blockSignals(False)
+
+    def _read_splitter_sizes(self, key: str) -> Optional[list[int]]:
+        if not hasattr(self, "_ui_settings"):
+            return None
+        raw_value = self._ui_settings.value(key)
+        if raw_value in (None, "", False):
+            return None
+        if isinstance(raw_value, list):
+            parts = raw_value
+        elif isinstance(raw_value, str):
+            parts = [segment.strip() for segment in raw_value.split(",") if segment.strip()]
+        else:
+            parts = [raw_value]
+        sizes: list[int] = []
+        try:
+            for part in parts:
+                sizes.append(int(part))
+        except (TypeError, ValueError):
+            return None
+        return sizes or None
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -539,7 +700,7 @@ class MainWindow(QMainWindow):
                 and bool(self._ui_settings.value("ui/geometry"))
             )
             print(
-                f"PREVIEW_OK size={size.width()}x{size.height()} "
+                f"PREVIEW_RESIZE_OK size={size.width()}x{size.height()} "
                 f"zoom={self._get_preview_zoom()} persisted={str(bool(persisted)).lower()}",
                 flush=True,
             )
@@ -548,6 +709,11 @@ class MainWindow(QMainWindow):
         if hasattr(self, "_ui_settings"):
             self._ui_settings.setValue("ui/geometry", self.saveGeometry())
             self._ui_settings.setValue("ui/window_state", self.saveState())
+            main_splitter = getattr(self, "mainSplitter", None)
+            self._persist_splitter_sizes(main_splitter, "ui/main_splitter")
+            self._persist_splitter_sizes(main_splitter, "ui/review_splitter_sizes")
+            self._persist_splitter_sizes(getattr(self, "content_splitter", None), "ui/content_splitter_sizes")
+            self._persist_splitter_sizes(getattr(self, "evidenceSplitter", None), "evidence/splitter")
         super().closeEvent(event)
 
         self.qa_action = QAction("QA Mode", self)
@@ -556,6 +722,13 @@ class MainWindow(QMainWindow):
         self.qa_action.toggled.connect(self._on_qa_action_toggled)
         toolbar.addSeparator()
         toolbar.addAction(self.qa_action)
+
+    def _persist_splitter_sizes(self, splitter: Optional[QSplitter], key: str) -> None:
+        if splitter is None or not hasattr(self, "_ui_settings"):
+            return
+        sizes = splitter.sizes()
+        if sizes:
+            self._ui_settings.setValue(key, sizes)
 
     # --- Appearance helpers --------------------------------------------------
 
@@ -1179,8 +1352,26 @@ class MainWindow(QMainWindow):
     @Slot(dict)
     def _on_review_record_selected(self, payload: dict) -> None:
         self._selected_record = dict(payload)
+        preview_meta = (
+            self._selected_record.get("preview") if isinstance(self._selected_record, dict) else None
+        )
+        recommended = (
+            str(preview_meta.get("recommended_fit")).lower()
+            if isinstance(preview_meta, dict) and preview_meta.get("recommended_fit")
+            else ""
+        )
+        has_roi_hint = bool(
+            isinstance(preview_meta, dict)
+            and isinstance(preview_meta.get("roi"), (list, tuple))
+        )
         if hasattr(self, "evidence_panel"):
             self.evidence_panel.set_record(self._selected_record, self._current_pdf_path)
+            has_roi = self.evidence_panel.has_region_roi()
+        else:
+            has_roi = has_roi_hint
+        self._update_region_action_state(has_roi)
+        target_mode = "region" if has_roi and recommended == "region" else "width"
+        self._apply_fit_mode(target_mode)
 
     @Slot(dict)
     def _on_preview_requested(self, payload: dict) -> None:

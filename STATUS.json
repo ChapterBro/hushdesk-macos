@@ -1,5 +1,8 @@
 {
-  "phase": "v0.1.5-dc-ok",
-  "dedup": "single-emission",
-  "dc": "merged"
+  "phase": "v0.1.6-preview-ok",
+  "preview": {
+    "default_zoom": "110%",
+    "persist": true,
+    "open_pdf_button": "hidden"
+  }
 }

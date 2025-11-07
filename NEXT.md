@@ -1,7 +1,7 @@
-phase: v0.1.5-dc-ok
+phase: v0.1.6-preview-ok
 receipts:
-  - DEDUP_OK
-  - DC_OK
+  - BUILD_OK
   - ACCEPTANCE_OK
 notes:
-  - One decision per due cell with precedence; column-X & cell-X collapsed to single DC’D
+  - Preview larger by default; zoom (⌘+/⌘−) & persisted via QSettings.
+  - 'Open PDF to page' hidden/disabled; validate manually once convenient (expect PREVIEW_OK print).
