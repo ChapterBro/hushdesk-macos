@@ -21,9 +21,12 @@ except ImportError:  # pragma: no cover
 
 from hushdesk.engine.decide import decide_for_dose, rule_triggers
 from hushdesk.engine.rules import RuleSpec, parse_rule_text
+from hushdesk.fs.exports import exports_dir, sanitize_filename
 from hushdesk.id.rooms import load_building_master, resolve_room_from_block
 from hushdesk.pdf.columns import ColumnBand, select_audit_columns
 from hushdesk.pdf.dates import dev_override_date, format_mmddyyyy, resolve_audit_date
+from hushdesk.pdf.mar_header import audit_date_from_filename
+from hushdesk.pdf.mar_parser_mupdf import run_mar_audit
 from hushdesk.pdf.duecell import DueMark, detect_due_mark
 from hushdesk.pdf.geometry import normalize_rect
 from hushdesk.pdf.rows import find_row_bands_for_block
@@ -63,6 +66,9 @@ class AuditWorker(QObject):
         *,
         page_filter: Optional[Iterable[int]] = None,
         trace: bool = False,
+        export_dir: Optional[Path] = None,
+        hall_override: Optional[str] = None,
+        qa_prefix: Optional[Path | str | bool] = None,
     ) -> None:
         super().__init__()
         self._input_pdf = input_pdf
@@ -74,11 +80,24 @@ class AuditWorker(QObject):
         self._page_filter = {int(index) for index in page_filter} if page_filter else None
         self._trace = bool(trace)
         self._page_render_cache: Dict[int, Tuple[float, int, int]] = {}
+        self._export_dir = Path(export_dir).expanduser().resolve() if export_dir else None
+        self._hall_override = hall_override.upper() if hall_override else None
+        self._qa_prefix = qa_prefix
 
     @Slot()
     def run(self) -> None:
         self.started.emit(str(self._input_pdf))
+        try:
+            self._run_canonical()
+        except Exception:  # pragma: no cover - defensive guard
+            logger.exception("Canonical MAR audit failed")
+            self.warning.emit("MAR parser failed; see logs for details")
+            self.finished.emit(self._input_pdf)
+        return
 
+        # Legacy pipeline retained for reference below this point.
+
+    def _run_canonical(self) -> None:
         override_date = dev_override_date()
         if override_date:
             audit_date = override_date
@@ -88,11 +107,84 @@ class AuditWorker(QObject):
             logger.info(message)
             self.log.emit(message)
         else:
-            audit_date = resolve_audit_date(self._input_pdf)
-            audit_date_text = format_mmddyyyy(audit_date)
+            try:
+                audit_dt, audit_date_text = audit_date_from_filename(self._input_pdf)
+                audit_date = audit_dt.date()
+            except ValueError:
+                audit_date = resolve_audit_date(self._input_pdf)
+                audit_date_text = format_mmddyyyy(audit_date)
             label_value = f"{audit_date_text} — Central"
+
         self._audit_date = audit_date
         self.audit_date_text.emit(label_value)
+
+        hall_value = self._hall_override or "UNKNOWN"
+        result = run_mar_audit(
+            self._input_pdf,
+            hall_value,
+            audit_date,
+            qa_prefix=self._qa_prefix,
+        )
+
+        if result.instrument_line:
+            self.log.emit(result.instrument_line)
+
+        if not result.records:
+            self.no_data_for_date.emit()
+
+        counts = dict(result.counts)
+        self.summary_counts.emit(counts)
+
+        payload_records = [
+            self._record_payload(index, record)
+            for index, record in enumerate(result.records)
+        ]
+        payload = {
+            "counts": counts,
+            "records": payload_records,
+            "anomalies": [],
+            "source_pdf": str(self._input_pdf),
+            "hall": result.hall,
+            "audit_date_text": result.audit_date_mmddyyyy,
+            "qa_paths": [str(path) for path in result.qa_paths],
+            "summary_line": result.summary_line,
+            "blocks": result.blocks,
+            "tracks": result.tracks,
+            "instrumentation": dict(result.instrumentation),
+            "instrument_line": result.instrument_line,
+        }
+        self.summary_payload.emit(payload)
+
+        total_blocks = max(result.blocks, 1)
+        for index in range(1, total_blocks + 1):
+            self.progress.emit(index, total_blocks)
+
+        export_dir = self._export_dir or exports_dir()
+        export_dir.mkdir(parents=True, exist_ok=True)
+        base_name = Path(result.source_basename).stem
+        report_name = sanitize_filename(
+            f"{result.audit_date_mmddyyyy}_{result.hall}_{base_name}.txt"
+        )
+        report_path = export_dir / report_name
+        report_path = write_report(
+            records=result.records,
+            counts=result.counts,
+            audit_date_mmddyyyy=result.audit_date_mmddyyyy,
+            hall=result.hall,
+            source_basename=result.source_basename,
+            out_path=report_path,
+        )
+
+        self.log.emit(result.summary_line)
+        if result.qa_paths:
+            self.log.emit(
+                f"QA overlays saved ({len(result.qa_paths)}) to {result.qa_paths[0].parent}"
+            )
+        self.log.emit(f"Report saved: {report_path}")
+        self.saved.emit(str(report_path))
+        self.finished.emit(report_path)
+        return
+
         scout_enabled = os.getenv("HUSHDESK_SCOUT") == "1"
 
         column_bands: List[ColumnBand] = []
@@ -182,26 +274,33 @@ class AuditWorker(QObject):
             no_data_emitted = True
             self._add_note(run_notes, notes_seen, "No data for selected date")
 
-        summary_counts_copy = dict(counters)
-        self.summary_counts.emit(summary_counts_copy)
-        self.summary_payload.emit(
-            {
-                "counts": summary_counts_copy,
-                "records": [deepcopy(payload) for payload in record_payloads],
-                "notes": list(run_notes),
-                "anomalies": [deepcopy(entry) for entry in anomalies],
-                "source_pdf": str(self._input_pdf),
-            }
-        )
-        hall = self._resolve_report_hall(hall_counts)
+        detected_hall = self._resolve_report_hall(hall_counts)
+        hall = self._hall_override or detected_hall
+        if self._hall_override and detected_hall and detected_hall != self._hall_override:
+            message = f"Hall override applied: requested {self._hall_override} (detected {detected_hall})"
+            logger.info(message)
+            self.log.emit(message)
         if hall == "UNKNOWN":
             self._add_note(run_notes, notes_seen, "Hall could not be resolved from room-bed tokens")
         elif hall == "MIXED":
             self._add_note(run_notes, notes_seen, "Rooms span multiple halls (mixed)")
 
+        summary_counts_copy = dict(counters)
+        payload_snapshot = {
+            "counts": summary_counts_copy,
+            "records": [deepcopy(payload) for payload in record_payloads],
+            "notes": list(run_notes),
+            "anomalies": [deepcopy(entry) for entry in anomalies],
+            "source_pdf": str(self._input_pdf),
+            "hall": hall,
+            "audit_date_text": audit_date_text,
+        }
+        self.summary_counts.emit(summary_counts_copy)
+        self.summary_payload.emit(payload_snapshot)
+
         output_path = self._build_output_path(audit_date, hall)
         try:
-            write_report(
+            final_path = write_report(
                 records,
                 counters,
                 audit_date_text,
@@ -210,6 +309,11 @@ class AuditWorker(QObject):
                 output_path,
                 run_notes,
             )
+            if final_path != output_path:
+                self.log.emit(
+                    f"Permission denied writing to {output_path}; fallback to {final_path}"
+                )
+            output_path = final_path
             self.saved.emit(str(output_path))
         except OSError as exc:
             message = f"Unable to save TXT to {output_path}: {exc}"
@@ -602,7 +706,7 @@ class AuditWorker(QObject):
                     decision = decide_for_dose(rule.kind, rule.threshold, vital_value, mark)
                     skip_message = False
                     if decision == "HELD_OK":
-                        counts["held_ok"] += 1
+                        counts["held_appropriate"] += 1
                     elif decision == "HOLD_MISS":
                         counts["hold_miss"] += 1
                     elif decision == "COMPLIANT":
@@ -709,7 +813,7 @@ class AuditWorker(QObject):
                         "rule_threshold": rule.threshold,
                         "triggered": triggered,
                         "decision_raw": decision,
-                        "exception": record_kind in {"HOLD-MISS", "HELD-OK"},
+                        "exception": record_kind in {"HOLD-MISS", "HELD-APPROPRIATE"},
                         "page_index": band.page_index,
                         "page_number": band.page_index + 1,
                         "page_width": float(band.page_width),
@@ -1289,13 +1393,12 @@ class AuditWorker(QObject):
 
         if mark_detail:
             detail_parts.append(mark_detail)
-
-        message = base
-        if detail_parts:
-            message = f"{base}; {'; '.join(detail_parts)}"
         if code_detail:
-            message = f"{message} | {code_detail}"
-        return message
+            detail_parts.append(code_detail)
+
+        if detail_parts:
+            return f"{base}; {'; '.join(detail_parts)}"
+        return base
 
     @staticmethod
     def _decision_label(decision: str) -> str:
@@ -1303,6 +1406,8 @@ class AuditWorker(QObject):
             return "INFO"
         if decision == "DCD":
             return "DC'D"
+        if decision == "HELD_OK":
+            return "HELD-APPROPRIATE"
         return decision.replace("_", "-")
 
     @staticmethod
@@ -1368,7 +1473,7 @@ class AuditWorker(QObject):
     def _empty_summary() -> Dict[str, int]:
         return {
             "reviewed": 0,
-            "held_ok": 0,
+            "held_appropriate": 0,
             "hold_miss": 0,
             "compliant": 0,
             "dcd": 0,
@@ -1376,9 +1481,12 @@ class AuditWorker(QObject):
 
     def _build_output_path(self, audit_date: date, hall: str) -> Path:
         stamp = format_mmddyyyy(audit_date).replace("/", "-")
-        hall_upper = hall.upper()
+        hall_upper = (hall or "UNKNOWN").upper()
         filename = f"{self._input_pdf.stem}__{stamp}__{hall_upper}.txt"
-        return self._input_pdf.with_name(filename)
+        sanitized = sanitize_filename(filename)
+        export_root = self._export_dir or exports_dir()
+        export_root.mkdir(parents=True, exist_ok=True)
+        return export_root / sanitized
 
     @staticmethod
     def _resolve_report_hall(hall_counts: Counter[str]) -> str:

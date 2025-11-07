@@ -1,15 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_submodules
+
+_HUSH_DESK_SUBMODULES = collect_submodules('hushdesk')
+
 
 a = Analysis(
     ['src/hushdesk/app.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[],
-    datas=[('hushdesk/config', 'config')],
-    hiddenimports=[],
+    datas=[
+        ('hushdesk/config', 'config'),
+        ('src/hushdesk', 'hushdesk'),
+        ('src/sitecustomize.py', '.'),
+    ],
+    hiddenimports=_HUSH_DESK_SUBMODULES,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=['pyinstaller_runtime_hook.py'],
     excludes=[],
     noarchive=False,
     optimize=0,

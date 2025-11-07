@@ -2,14 +2,27 @@
 
 from __future__ import annotations
 
+import logging
 import json
+import os
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from PySide6.QtCore import Qt, QThread, Signal, Slot
-from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent, QGuiApplication, QPalette, QTextCursor
+from PySide6.QtCore import QSettings, QSize, Qt, Signal, Slot, QUrl
+from PySide6.QtGui import (
+    QAction,
+    QDesktopServices,
+    QDragEnterEvent,
+    QDropEvent,
+    QGuiApplication,
+    QKeySequence,
+    QPalette,
+    QTextCursor,
+)
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -24,10 +37,16 @@ from PySide6.QtWidgets import (
     QSplitter,
     QVBoxLayout,
     QWidget,
+    QWidgetAction,
 )
 
+from hushdesk.fs.exports import exports_dir, qa_dir, sanitize_filename, safe_write_text
+from hushdesk.logs.rotating import get_logger, log_path
 from hushdesk.placeholders import build_placeholder_output
+from hushdesk.pdf.mar_header import audit_date_from_filename
+from hushdesk.pdf.mar_parser_mupdf import MarAuditResult, run_mar_audit
 from hushdesk.preview.overlay import render_band_preview
+from hushdesk.report.txt_writer import write_report
 from hushdesk.workers.audit_worker import AuditWorker
 from .evidence_panel import EvidencePanel
 from .preview_dialog import PreviewDialog
@@ -130,7 +149,7 @@ class MainWindow(QMainWindow):
     COUNT_KEYS = [
         ("Reviewed", "reviewed"),
         ("Hold-Miss", "hold_miss"),
-        ("Held-OK", "held_ok"),
+        ("Held-Appropriate", "held_appropriate"),
         ("Compliant", "compliant"),
         ("DC'D", "dcd"),
     ]
@@ -161,6 +180,21 @@ class MainWindow(QMainWindow):
         self._records_payload: list[dict] = []
         self._anomalies_payload: list[dict] = []
         self._selected_record: Optional[dict] = None
+        get_logger()
+        self._logs_path = log_path()
+        self._gui_logger = logging.getLogger("hushdesk.gui")
+
+        self._exports_dir = exports_dir()
+        self._export_target_path = self._exports_dir
+        self._latest_hall = "UNKNOWN"
+        self._latest_audit_label = ""
+        self._latest_audit_mmddyyyy = ""
+        self._last_report_path: Optional[Path] = None
+        self._open_exports_widget: Optional[QLabel] = None
+        self._open_exports_widget_action: Optional[QWidgetAction] = None
+        self._band_coverage_label: Optional[QLabel] = None
+        self.openPdfToPageAction: Optional[QWidget] = None
+        self._decisions_info_label: Optional[QLabel] = None
 
         self._refresh_header_colors()
         palette_changed = getattr(QGuiApplication, "paletteChanged", None)
@@ -169,6 +203,8 @@ class MainWindow(QMainWindow):
         self._load_settings()
         self._build_ui()
         self._create_actions()
+        self._preview_receipt_emitted = False
+        self._init_ui_state()
 
     # --- UI assembly -----------------------------------------------------------------
 
@@ -226,12 +262,28 @@ class MainWindow(QMainWindow):
         header_layout.addWidget(self.run_button, 0, 2, 1, 1)
         header_layout.addWidget(self.audit_date_label, 1, 0, 1, 3)
         header_layout.addWidget(self.drop_area, 2, 0, 1, 2)
-        header_layout.addWidget(self.browse_button, 2, 2, 1, 1)
 
-        self.status_banner = QLabel("No data for selected date")
+        export_controls = QVBoxLayout()
+        export_controls.setContentsMargins(0, 0, 0, 0)
+        export_controls.setSpacing(6)
+        export_controls.addWidget(self.browse_button)
+
+        self.export_target_label = QLabel()
+        self.export_target_label.setObjectName("ExportTargetLabel")
+        self.export_target_label.setStyleSheet("color: #6B7280; font-size: 12px;")
+        self.export_target_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        export_controls.addWidget(self.export_target_label)
+        export_controls.addStretch(1)
+
+        header_layout.addLayout(export_controls, 2, 2, 1, 1)
+        self._set_export_target(self._export_target_path)
+
+        self.status_banner = QLabel()
         self.status_banner.setObjectName("StatusBanner")
         self.status_banner.setWordWrap(True)
         self.status_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.status_banner.setTextFormat(Qt.TextFormat.RichText)
+        self.status_banner.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
         self.status_banner.setStyleSheet(
             """
             QLabel#StatusBanner {
@@ -242,8 +294,13 @@ class MainWindow(QMainWindow):
                 color: #5c4400;
                 font-weight: 500;
             }
+            QLabel#StatusBanner a {
+                color: #1d4ed8;
+                text-decoration: underline;
+            }
             """
         )
+        self.status_banner.linkActivated.connect(self._on_status_link_activated)
         self.status_banner.hide()
 
         progress_frame = QFrame()
@@ -251,7 +308,7 @@ class MainWindow(QMainWindow):
         progress_layout.setContentsMargins(12, 12, 12, 12)
         progress_layout.setSpacing(8)
 
-        self.progress_label = QLabel("Band 0 of 0")
+        self.progress_label = QLabel("Band —")
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
@@ -273,19 +330,43 @@ class MainWindow(QMainWindow):
             self._chips_by_key[key] = chip
 
         chips_layout.addStretch(1)
+        self._band_coverage_label = QLabel("Bands: —")
+        self._band_coverage_label.setObjectName("BandCoverageLabel")
+        self._band_coverage_label.setStyleSheet("color: #6B7280; font-size: 12px;")
+        chips_layout.addWidget(self._band_coverage_label)
 
         self.review_explorer = ReviewExplorer()
         self.review_explorer.record_selected.connect(self._on_review_record_selected)
         self.review_explorer.anomaly_selected.connect(self._on_anomaly_selected)
         self.review_explorer.preview_requested.connect(self._on_preview_requested)
 
-        self.evidence_panel = EvidencePanel()
+        self._decisions_info_label = QLabel("No parameter-bound meds in this block.")
+        self._decisions_info_label.setObjectName("DecisionsInfoLabel")
+        self._decisions_info_label.setStyleSheet(
+            "color: #4B5563; font-size: 12px; font-weight: 500; padding: 2px 4px;"
+        )
+        self._decisions_info_label.hide()
+
+        review_container = QWidget()
+        review_layout = QVBoxLayout(review_container)
+        review_layout.setContentsMargins(0, 0, 0, 0)
+        review_layout.setSpacing(6)
+        review_layout.addWidget(self._decisions_info_label)
+        review_layout.addWidget(self.review_explorer, stretch=1)
+
+        self.evidence_panel = EvidencePanel(allow_open_pdf=False)
+        self.openPdfToPageAction = getattr(self.evidence_panel, "open_button", None)
+        if self.openPdfToPageAction is not None:
+            self.openPdfToPageAction.setVisible(False)
+            self.openPdfToPageAction.setEnabled(False)
 
         top_splitter = QSplitter(Qt.Orientation.Horizontal)
-        top_splitter.addWidget(self.review_explorer)
+        top_splitter.addWidget(review_container)
         top_splitter.addWidget(self.evidence_panel)
         top_splitter.setStretchFactor(0, 1)
         top_splitter.setStretchFactor(1, 2)
+        self.review_splitter = top_splitter
+        self.mainSplitter = top_splitter
 
         self.log_panel = QPlainTextEdit()
         self.log_panel.setObjectName("LogPanel")
@@ -297,6 +378,7 @@ class MainWindow(QMainWindow):
         content_splitter.addWidget(self.log_panel)
         content_splitter.setStretchFactor(0, 3)
         content_splitter.setStretchFactor(1, 1)
+        self.content_splitter = content_splitter
 
         central_layout.addWidget(header_frame)
         central_layout.addWidget(self.status_banner)
@@ -310,6 +392,7 @@ class MainWindow(QMainWindow):
     def _create_actions(self) -> None:
         toolbar = self.addToolBar("Actions")
         toolbar.setMovable(False)
+        self.actions_toolbar = toolbar
 
         self.copy_action = QAction("Copy Checklist", self)
         self.copy_action.setEnabled(False)
@@ -317,10 +400,155 @@ class MainWindow(QMainWindow):
 
         self.save_action = QAction("Save TXT", self)
         self.save_action.setEnabled(False)
-        self.save_action.triggered.connect(self._save_placeholder_txt)
+        self.save_action.triggered.connect(self._save_audit_txt)
 
         toolbar.addAction(self.copy_action)
         toolbar.addAction(self.save_action)
+        self._add_export_toolbar_link(toolbar)
+        self._add_preview_actions(toolbar)
+
+    def _add_preview_actions(self, toolbar: Optional[QWidget]) -> None:
+        if toolbar is None:
+            return
+        zoom_in_seq = QKeySequence("Ctrl+=")
+        zoom_out_seq = QKeySequence("Ctrl+-")
+        if sys.platform == "darwin":
+            zoom_in_seq = QKeySequence("Meta+=")
+            zoom_out_seq = QKeySequence("Meta+-")
+
+        self.actZoomIn = QAction("Zoom In", self)
+        self.actZoomIn.setShortcut(zoom_in_seq)
+        self.actZoomIn.triggered.connect(self._zoom_in)
+
+        self.actZoomOut = QAction("Zoom Out", self)
+        self.actZoomOut.setShortcut(zoom_out_seq)
+        self.actZoomOut.triggered.connect(self._zoom_out)
+
+        self.actFitWidth = QAction("Fit Width", self)
+        self.actFitWidth.triggered.connect(self._fit_width)
+
+        self.actFitPage = QAction("Fit Page", self)
+        self.actFitPage.triggered.connect(self._fit_page)
+
+        toolbar.addSeparator()
+        toolbar.addAction(self.actZoomOut)
+        toolbar.addAction(self.actZoomIn)
+        toolbar.addAction(self.actFitWidth)
+        toolbar.addAction(self.actFitPage)
+
+    def _init_ui_state(self) -> None:
+        self._ui_settings = QSettings("HushDesk", "HushDeskApp")
+        first_run = not bool(self._ui_settings.value("ui/has_run_before", False, type=bool))
+
+        geometry = self._ui_settings.value("ui/geometry")
+        if geometry:
+            self.restoreGeometry(geometry)
+        state = self._ui_settings.value("ui/window_state")
+        if state:
+            self.restoreState(state)
+
+        splitter = getattr(self, "mainSplitter", None) or getattr(self, "review_splitter", None)
+        if splitter is not None and first_run:
+            sizes = splitter.sizes()
+            if len(sizes) >= 2:
+                total = max(sum(sizes), 1000)
+                preview_idx = 1
+                explorer_idx = 0
+                new_sizes = list(sizes)
+                new_sizes[preview_idx] = int(total * 0.65)
+                new_sizes[explorer_idx] = total - new_sizes[preview_idx]
+                splitter.setSizes(new_sizes)
+
+        if self._ui_settings.value("preview/zoom_pct", None) is None:
+            self._ui_settings.setValue("preview/zoom_pct", 110)
+        if self._ui_settings.value("preview/fit_mode", None) is None:
+            self._ui_settings.setValue("preview/fit_mode", "custom")
+        self._ui_settings.setValue("ui/has_run_before", True)
+        self._apply_preview_preferences()
+
+    def _get_preview_panel(self) -> Optional[EvidencePanel]:
+        return getattr(self, "evidence_panel", None)
+
+    def _get_preview_zoom(self) -> int:
+        if not hasattr(self, "_ui_settings"):
+            return 110
+        value = self._ui_settings.value("preview/zoom_pct", 110)
+        try:
+            pct = int(value)
+        except (TypeError, ValueError):
+            pct = 110
+        return max(25, min(400, pct))
+
+    def _set_preview_zoom(self, pct: int) -> None:
+        clamped = max(25, min(400, int(pct)))
+        if hasattr(self, "_ui_settings"):
+            self._ui_settings.setValue("preview/zoom_pct", clamped)
+            self._ui_settings.setValue("preview/fit_mode", "custom")
+        preview = self._get_preview_panel()
+        if preview is not None:
+            preview.set_zoom_percent(clamped)
+
+    def _apply_preview_preferences(self) -> None:
+        preview = self._get_preview_panel()
+        if preview is None or not hasattr(self, "_ui_settings"):
+            return
+        fit_mode = str(self._ui_settings.value("preview/fit_mode", "custom") or "custom")
+        if fit_mode == "width":
+            preview.set_fit_mode("width")
+        elif fit_mode == "page":
+            preview.set_fit_mode("page")
+        else:
+            preview.set_zoom_percent(self._get_preview_zoom())
+
+    def _zoom_in(self) -> None:
+        self._set_preview_zoom(self._get_preview_zoom() + 10)
+
+    def _zoom_out(self) -> None:
+        self._set_preview_zoom(self._get_preview_zoom() - 10)
+
+    def _fit_width(self) -> None:
+        self._apply_fit_mode("width")
+
+    def _fit_page(self) -> None:
+        self._apply_fit_mode("page")
+
+    def _apply_fit_mode(self, mode: str) -> None:
+        if not hasattr(self, "_ui_settings"):
+            return
+        mode_value = mode if mode in {"width", "page"} else "custom"
+        self._ui_settings.setValue("preview/fit_mode", mode_value)
+        preview = self._get_preview_panel()
+        if preview is None:
+            return
+        if mode_value == "width":
+            preview.set_fit_mode("width")
+        elif mode_value == "page":
+            preview.set_fit_mode("page")
+        else:
+            preview.set_zoom_percent(self._get_preview_zoom())
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._apply_preview_preferences()
+        if not getattr(self, "_preview_receipt_emitted", False):
+            self._preview_receipt_emitted = True
+            size: QSize = self.size()
+            persisted = (
+                hasattr(self, "_ui_settings")
+                and self._ui_settings.contains("ui/geometry")
+                and bool(self._ui_settings.value("ui/geometry"))
+            )
+            print(
+                f"PREVIEW_OK size={size.width()}x{size.height()} "
+                f"zoom={self._get_preview_zoom()} persisted={str(bool(persisted)).lower()}",
+                flush=True,
+            )
+
+    def closeEvent(self, event) -> None:
+        if hasattr(self, "_ui_settings"):
+            self._ui_settings.setValue("ui/geometry", self.saveGeometry())
+            self._ui_settings.setValue("ui/window_state", self.saveState())
+        super().closeEvent(event)
 
         self.qa_action = QAction("QA Mode", self)
         self.qa_action.setCheckable(True)
@@ -330,6 +558,158 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.qa_action)
 
     # --- Appearance helpers --------------------------------------------------
+
+    def _add_export_toolbar_link(self, toolbar) -> None:
+        container = QWidget(self)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        export_label = QLabel("<a href='#exports'>Open Export Folder</a>")
+        export_label.setObjectName("OpenExportsLink")
+        export_label.setTextFormat(Qt.TextFormat.RichText)
+        export_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        export_label.linkActivated.connect(self._on_status_link_activated)
+        export_label.setStyleSheet("font-size: 12px; margin-left: 8px;")
+        layout.addWidget(export_label)
+
+        qa_label = QLabel("<a href='#qa'>Open QA Folder</a>")
+        qa_label.setObjectName("OpenQaLink")
+        qa_label.setTextFormat(Qt.TextFormat.RichText)
+        qa_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        qa_label.linkActivated.connect(self._on_qa_link_activated)
+        qa_label.setStyleSheet("font-size: 12px;")
+        layout.addWidget(qa_label)
+
+        logs_label = QLabel("<a href='#logs'>Open Logs</a>")
+        logs_label.setObjectName("OpenLogsLink")
+        logs_label.setTextFormat(Qt.TextFormat.RichText)
+        logs_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        logs_label.linkActivated.connect(self._on_logs_link_activated)
+        logs_label.setStyleSheet("font-size: 12px;")
+        layout.addWidget(logs_label)
+
+        action = QWidgetAction(self)
+        action.setDefaultWidget(container)
+        toolbar.addAction(action)
+
+        self._open_exports_widget = export_label
+        self._open_exports_widget_action = action
+
+    def _set_export_target(self, path: Path) -> None:
+        resolved = Path(path)
+        try:
+            resolved = resolved.expanduser()
+        except OSError:
+            resolved = resolved
+        self._export_target_path = resolved
+        self._update_export_target_label(resolved)
+
+    def _update_export_target_label(self, path: Path) -> None:
+        if not hasattr(self, "export_target_label"):
+            return
+        display = self._format_path_for_display(path)
+        if path == self._exports_dir:
+            text = f"Export target: Exports ({display})"
+        else:
+            text = f"Export target: {display}"
+        self.export_target_label.setText(text)
+        self.export_target_label.setToolTip(str(path))
+
+    @staticmethod
+    def _format_path_for_display(path: Path) -> str:
+        try:
+            path_str = str(path)
+        except OSError:
+            return str(path)
+        home = str(Path.home())
+        if path_str.startswith(home):
+            suffix = path_str[len(home) :].lstrip("/")
+            return f"~/{suffix}" if suffix else "~"
+        return path_str
+
+    @staticmethod
+    def _norm_pdf(path: str | Path) -> Path:
+        return Path(path).expanduser().resolve(strict=True)
+
+    def _open_export_folder(self) -> None:
+        target = self._export_target_path if self._export_target_path else self._exports_dir
+        try:
+            target.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            target = self._exports_dir
+            target.mkdir(parents=True, exist_ok=True)
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
+
+    def _open_qa(self) -> None:
+        target = qa_dir()
+        try:
+            target.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+        try:
+            subprocess.run(["open", str(target)], check=False)
+        except Exception:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
+
+    def _open_logs(self) -> None:
+        target = self._logs_path
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.touch(exist_ok=True)
+        except OSError:
+            return
+        try:
+            subprocess.run(["open", "-R", str(target)], check=False)
+        except Exception:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
+
+    def _on_qa_link_activated(self, _link: str) -> None:
+        self._open_qa()
+
+    def _on_logs_link_activated(self, _link: str) -> None:
+        self._open_logs()
+
+    def _on_status_link_activated(self, link: str) -> None:
+        if link == "#open-logs":
+            self._open_logs()
+            return
+        if link == "#qa":
+            self._open_qa()
+            return
+        self._open_export_folder()
+
+    def _show_export_fallback_banner(self) -> None:
+        message = "Saved to Exports (TCC) – <a href='#exports'>[Open Exports]</a>"
+        self.status_banner.setText(message)
+        self.status_banner.show()
+
+    def _show_info_banner(self, message: Optional[str]) -> None:
+        label = getattr(self, "_decisions_info_label", None)
+        if label is None:
+            return
+        if message:
+            label.setText(message)
+            label.show()
+        else:
+            label.hide()
+
+    def _suggest_export_filename(self) -> str:
+        stem = self._selected_pdf.stem if self._selected_pdf else "HushDesk"
+        date_token = self._latest_audit_mmddyyyy.replace("/", "-") if self._latest_audit_mmddyyyy else "pending"
+        hall_token = (self._latest_hall or "UNKNOWN").upper()
+        base = f"{stem}__{date_token}__{hall_token}.txt"
+        return sanitize_filename(base)
+
+    def _current_report_text(self) -> Optional[str]:
+        if self._last_report_path and self._last_report_path.exists():
+            try:
+                return self._last_report_path.read_text(encoding="utf-8")
+            except OSError:
+                pass
+        if self._selected_pdf:
+            return build_placeholder_output(self._selected_pdf)
+        return None
 
     def _refresh_header_colors(self, palette: Optional[QPalette] = None) -> None:
         palette_obj = palette or QGuiApplication.palette()
@@ -355,25 +735,25 @@ class MainWindow(QMainWindow):
     # --- Settings -------------------------------------------------------------------
 
     def _load_settings(self) -> None:
-        self._settings: dict[str, str] = {}
+        self._settings_store: dict[str, str] = {}
         if not self._settings_path.exists():
             return
         try:
-            self._settings = json.loads(self._settings_path.read_text())
+            self._settings_store = json.loads(self._settings_path.read_text())
         except json.JSONDecodeError:
             # Corrupted settings should be ignored but not fatal
-            self._settings = {}
+            self._settings_store = {}
 
     def _save_settings(self) -> None:
         try:
-            self._settings_path.write_text(json.dumps(self._settings, indent=2))
+            self._settings_path.write_text(json.dumps(self._settings_store, indent=2))
         except OSError as exc:
             QMessageBox.warning(self, "Settings Error", f"Unable to persist settings: {exc}")
 
     # --- Actions --------------------------------------------------------------------
 
     def _browse_for_pdf(self) -> None:
-        start_dir = self._settings.get("last_open_dir", str(Path.home()))
+        start_dir = self._settings_store.get("last_open_dir", str(Path.home()))
         filename, _ = QFileDialog.getOpenFileName(
             self,
             "Select MAR PDF",
@@ -397,17 +777,79 @@ class MainWindow(QMainWindow):
         self.save_action.setEnabled(False)
         self.log_panel.setPlainText("Ready to audit placeholder MAR.")
         self._reset_progress()
-        self._settings["last_open_dir"] = str(absolute_path.parent)
+        self._settings_store["last_open_dir"] = str(absolute_path.parent)
         self._save_settings()
 
+    def _set_band_progress_label(self, current: Optional[int], total: Optional[int]) -> None:
+        if isinstance(total, int) and total > 0 and isinstance(current, int):
+            clamped_current = max(0, min(current, total))
+            self.progress_label.setText(f"Band {clamped_current} of {total}")
+            self._total_bands = total
+        else:
+            self.progress_label.setText("Band —")
+            self._total_bands = 0
+
+    def _set_band_coverage_label(
+        self, pages_with_band: Optional[int], pages_total: Optional[int]
+    ) -> None:
+        label = self._band_coverage_label
+        if label is None:
+            return
+        if isinstance(pages_with_band, int) and isinstance(pages_total, int):
+            total = max(0, pages_total)
+            if total > 0:
+                current = max(0, min(pages_with_band, total))
+            else:
+                current = max(0, pages_with_band)
+            label.setText(f"Bands: {current}/{total}")
+        else:
+            label.setText("Bands: —")
+
+    def _update_band_progress_from_stats(
+        self, stats: MarAuditResult
+    ) -> tuple[Optional[int], Optional[int]]:
+        def _to_int(value: object) -> Optional[int]:
+            try:
+                return int(value)  # type: ignore[arg-type]
+            except (TypeError, ValueError):
+                return None
+
+        pages_total = _to_int(getattr(stats, "pages_total", None))
+        pages_with_band = _to_int(getattr(stats, "pages_with_band", None))
+
+        instrumentation = stats.instrumentation if isinstance(stats.instrumentation, dict) else {}
+        if pages_total is None and isinstance(instrumentation, dict):
+            pages_total = _to_int(instrumentation.get("pages"))
+
+        if pages_with_band is None:
+            page_indices: set[int] = set()
+            for record in getattr(stats, "due_records", []):
+                page_index = getattr(record, "page_index", None)
+                if isinstance(page_index, int):
+                    page_indices.add(page_index)
+            pages_with_band = len(page_indices) if page_indices else None
+
+        if pages_total is None and pages_with_band is not None:
+            pages_total = pages_with_band
+        if pages_with_band is None and isinstance(pages_total, int) and pages_total >= 0:
+            pages_with_band = pages_total
+
+        self._set_band_progress_label(pages_with_band, pages_total)
+        self._set_band_coverage_label(pages_with_band, pages_total)
+        return pages_with_band, pages_total
+
     def _reset_progress(self) -> None:
-        self._total_bands = 0
-        self.progress_label.setText("Band 0 of 0")
+        self._set_band_progress_label(None, None)
+        self._set_band_coverage_label(None, None)
         self.progress_bar.setRange(0, 1)
         self.progress_bar.setValue(0)
         self._set_audit_date_pending_label()
         self.status_banner.hide()
         self._no_data_for_date = False
+        self._last_report_path = None
+        self._set_export_target(self._exports_dir)
+        self._latest_audit_mmddyyyy = ""
+        self._latest_hall = "UNKNOWN"
         for key in self._latest_counts:
             self._latest_counts[key] = 0
         for chip in self._chips.values():
@@ -429,31 +871,231 @@ class MainWindow(QMainWindow):
         if not self._selected_pdf:
             return
 
+        try:
+            pdf_path = self._norm_pdf(self._selected_pdf)
+        except Exception as exc:
+            self._handle_audit_error(exc)
+            return
+
+        try:
+            import fitz  # type: ignore
+        except ImportError as exc:
+            self._handle_audit_error(exc)
+            return
+
+        try:
+            with fitz.open(pdf_path) as _doc:  # type: ignore[attr-defined]
+                pass
+        except Exception as exc:
+            self._handle_audit_error(exc)
+            return
+
+        self._selected_pdf = pdf_path
+        self._worker = None
+        self._thread = None
+        self._last_saved_log = None
+        self._audit_completed = False
+        self._no_data_for_date = False
+        self.status_banner.hide()
         self.run_button.setEnabled(False)
-        self.log_panel.setPlainText("Preparing audit…")
+        self.copy_action.setEnabled(False)
+        self.save_action.setEnabled(False)
 
-        self._thread = QThread()
-        worker = AuditWorker(input_pdf=self._selected_pdf, delay=0.25)
-        worker.moveToThread(self._thread)
-        self._worker = worker
+        self._reset_progress()
+        self.log_panel.setPlainText("Running MAR audit…")
+        self._append_log_line(f"Started audit: {pdf_path}")
+        self._write_gui_log_entry(f"Started audit: {pdf_path}")
 
-        worker.started.connect(self._on_run_started)
-        worker.progress.connect(self._on_progress_changed)
-        worker.log.connect(self._on_worker_log)
-        worker.saved.connect(self._on_worker_saved)
-        worker.warning.connect(self._on_worker_warning)
-        worker.audit_date_text.connect(self._on_audit_date_text)
-        worker.summary_counts.connect(self._on_summary_counts)
-        worker.summary_payload.connect(self._on_summary_payload)
-        worker.no_data_for_date.connect(self._on_no_data_for_date)
-        worker.finished.connect(self._on_audit_finished)
-        worker.finished.connect(self._thread.quit)
-        worker.finished.connect(worker.deleteLater)
+        hall = self._latest_hall or "UNKNOWN"
 
-        self._thread.started.connect(worker.run)
-        self._thread.finished.connect(self._thread.deleteLater)
+        qa_enabled = bool(self._qa_mode_enabled)
+        qa_prefix = None if qa_enabled else False
 
-        self._thread.start()
+        QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            audit_dt, audit_disp = audit_date_from_filename(str(pdf_path))
+            stats = run_mar_audit(str(pdf_path), hall, audit_dt, qa_prefix=qa_prefix)
+        except Exception as exc:
+            self._handle_audit_error(exc)
+            return
+        finally:
+            QGuiApplication.restoreOverrideCursor()
+
+        self._handle_audit_success(pdf_path, audit_disp, stats)
+
+    def _handle_audit_success(self, pdf_path: Path, audit_display: str, stats: MarAuditResult) -> None:
+        counts = {str(key): int(value) for key, value in stats.counts.items()}
+        hold_miss = counts.get("hold_miss", 0)
+        held_app = counts.get("held_appropriate", 0)
+        compliant = counts.get("compliant", 0)
+        dcd = counts.get("dcd", 0)
+        counts["reviewed"] = hold_miss + held_app + compliant + dcd
+        self._on_summary_counts(counts)
+        date_token = audit_display.split("—", 1)[0].strip() if audit_display else ""
+        if not date_token or date_token.lower().startswith("audit"):
+            date_token = stats.audit_date_mmddyyyy or "unknown"
+        summary_line = (
+            f"Blocks:{stats.blocks} Tracks:{stats.tracks} Date:{date_token} "
+            f"Reviewed:{counts.get('reviewed', 0)} Hold-Miss:{hold_miss} "
+            f"Held-Appropriate:{held_app} Compliant:{compliant} DC'D:{dcd}"
+        )
+        self._append_log_line(summary_line)
+        print(summary_line, flush=True)
+        self._write_gui_log_entry(summary_line)
+
+        records_payload = [
+            AuditWorker._record_payload(index, record)
+            for index, record in enumerate(stats.records)
+        ]
+        payload = {
+            "counts": counts,
+            "records": records_payload,
+            "anomalies": [],
+            "source_pdf": str(pdf_path),
+            "hall": stats.hall,
+            "audit_date_text": stats.audit_date_mmddyyyy,
+            "qa_paths": [str(path) for path in stats.qa_paths],
+            "summary_line": stats.summary_line,
+            "blocks": stats.blocks,
+            "tracks": stats.tracks,
+            "instrumentation": dict(stats.instrumentation),
+            "instrument_line": stats.instrument_line,
+        }
+        self._on_summary_payload(payload)
+
+        label_value = f"{audit_display} — Central"
+        self._on_audit_date_text(label_value)
+
+        if not stats.records:
+            self._on_no_data_for_date()
+
+        export_dir = self._exports_dir
+        export_dir.mkdir(parents=True, exist_ok=True)
+        base_name = Path(stats.source_basename).stem
+        report_name = sanitize_filename(
+            f"{stats.audit_date_mmddyyyy}_{stats.hall}_{base_name}.txt"
+        )
+        report_path = export_dir / report_name
+        report_path = write_report(
+            records=stats.records,
+            counts=counts,
+            audit_date_mmddyyyy=stats.audit_date_mmddyyyy,
+            hall=stats.hall,
+            source_basename=stats.source_basename,
+            out_path=report_path,
+        )
+
+        if stats.instrument_line:
+            self._on_worker_log(stats.instrument_line)
+            self._write_gui_log_entry(stats.instrument_line)
+        if stats.summary_line:
+            self._on_worker_log(stats.summary_line)
+            self._write_gui_log_entry(stats.summary_line)
+
+        if stats.qa_paths:
+            qa_line = (
+                f"QA overlays saved ({len(stats.qa_paths)}) to "
+                f"{stats.qa_paths[0].parent}"
+            )
+            self._on_worker_log(qa_line)
+            self._write_gui_log_entry(qa_line)
+
+        saved_line = f"Report saved: {report_path}"
+        self._on_worker_log(saved_line)
+        self._write_gui_log_entry(saved_line)
+
+        self._on_worker_saved(str(report_path))
+        self._on_audit_finished(report_path)
+
+        pages_with_band, pages_total = self._update_band_progress_from_stats(stats)
+        self.progress_bar.setRange(0, 1)
+        self.progress_bar.setValue(0)
+        self.status_banner.hide()
+
+        if isinstance(pages_with_band, int) and isinstance(pages_total, int):
+            coverage_line = f"COVERAGE page_bands={pages_with_band}/{pages_total}"
+        else:
+            coverage_line = "COVERAGE page_bands=—"
+        self._append_log_line(coverage_line)
+        print(coverage_line, flush=True)
+        self._write_gui_log_entry(coverage_line)
+
+        ok_line = (
+            f'GUI_AUDIT_OK source="{pdf_path}" '
+            f"reviewed={counts.get('reviewed', 0)} "
+            f"hm={hold_miss} ha={held_app} comp={compliant} dcd={dcd}"
+        )
+        self._append_log_line(ok_line)
+        print(ok_line, flush=True)
+        self._write_gui_log_entry(ok_line)
+        self._automation_compare_headless(counts)
+
+    def _automation_compare_headless(self, counts: dict[str, int]) -> None:
+        if os.environ.get("HUSHDESK_AUTOMATION") != "1":
+            return
+        cache_path = self._logs_path.parent / "last_headless.json"
+        try:
+            raw = cache_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return
+        except OSError:
+            return
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            return
+
+        counts_obj = payload.get("counts") if isinstance(payload, dict) else None
+        if counts_obj is None and isinstance(payload, dict):
+            counts_obj = payload
+        if not isinstance(counts_obj, dict):
+            return
+
+        keys = ("reviewed", "hold_miss", "held_appropriate", "compliant", "dcd")
+        try:
+            expected = {key: int(counts_obj[key]) for key in keys}
+        except (KeyError, TypeError, ValueError):
+            return
+        gui_counts = {key: int(counts.get(key, 0)) for key in keys}
+        if all(gui_counts[key] == expected[key] for key in keys):
+            message = "GUI_HEADLESS_COMPARE ok"
+        else:
+            message = f"GUI_HEADLESS_COMPARE mismatch gui={gui_counts} expected={expected}"
+        print(message, flush=True)
+        self._write_gui_log_entry(message)
+
+    def _handle_audit_error(self, exc: Exception) -> None:
+        error_name = exc.__class__.__name__
+        message_text = " ".join(str(exc).split())
+        detail = f"{error_name}: {message_text}" if message_text else error_name
+        safe_detail = detail.replace('"', "'")
+        banner_text = f"MAR parser error: {safe_detail}"
+        truncated = banner_text if len(banner_text) <= 120 else f"{banner_text[:117]}…"
+        banner_line = f"{truncated} — <a href='#open-logs'>Open Logs</a>"
+        self.status_banner.setText(banner_line)
+        self.status_banner.show()
+
+        fail_line = f'GUI_AUDIT_FAIL error="{safe_detail}"'
+        self._append_log_line(fail_line)
+        print(fail_line, flush=True)
+        self._write_gui_log_entry(fail_line, exc=exc)
+
+        self.run_button.setEnabled(True)
+        self.copy_action.setEnabled(False)
+        self.save_action.setEnabled(False)
+        self._set_band_progress_label(None, None)
+        self._set_band_coverage_label(None, None)
+        self.progress_bar.setRange(0, 1)
+        self.progress_bar.setValue(0)
+        self._audit_completed = False
+
+    def _write_gui_log_entry(self, line: str, exc: Optional[BaseException] = None) -> None:
+        logger = getattr(self, "_gui_logger", None) or logging.getLogger("hushdesk.gui")
+        if exc is not None:
+            exc_info = (type(exc), exc, exc.__traceback__)
+            logger.error(line, exc_info=exc_info)
+            return
+        logger.info(line)
 
     @Slot(str)
     def _on_run_started(self, input_path: str) -> None:
@@ -464,8 +1106,7 @@ class MainWindow(QMainWindow):
 
     @Slot(int, int)
     def _on_progress_changed(self, current: int, total: int) -> None:
-        self._total_bands = total
-        self.progress_label.setText(f"Band {current} of {total}")
+        self._set_band_progress_label(current, total)
         self.progress_bar.setRange(0, total)
         self.progress_bar.setValue(current)
 
@@ -484,6 +1125,12 @@ class MainWindow(QMainWindow):
         records_obj = payload.get("records") if isinstance(payload, dict) else []
         anomalies_obj = payload.get("anomalies") if isinstance(payload, dict) else []
         source_pdf = payload.get("source_pdf") if isinstance(payload, dict) else None
+        hall_value = payload.get("hall") if isinstance(payload, dict) else None
+        audit_text = payload.get("audit_date_text") if isinstance(payload, dict) else None
+        if isinstance(hall_value, str):
+            self._latest_hall = (hall_value or "UNKNOWN").upper()
+        if isinstance(audit_text, str):
+            self._latest_audit_mmddyyyy = audit_text.strip()
         if isinstance(source_pdf, str):
             try:
                 self._current_pdf_path = Path(source_pdf).resolve()
@@ -519,6 +1166,15 @@ class MainWindow(QMainWindow):
                 self.evidence_panel.clear("Select a decision to view details.")
             else:
                 self.evidence_panel.clear("No decisions available.")
+        instrumentation_obj = payload.get("instrumentation") if isinstance(payload, dict) else {}
+        try:
+            suppressed = int(instrumentation_obj.get("suppressed", 0)) if isinstance(instrumentation_obj, dict) else 0
+        except (TypeError, ValueError):
+            suppressed = 0
+        if not self._records_payload and suppressed:
+            self._show_info_banner("No parameter-bound meds in this block.")
+        else:
+            self._show_info_banner(None)
 
     @Slot(dict)
     def _on_review_record_selected(self, payload: dict) -> None:
@@ -597,18 +1253,29 @@ class MainWindow(QMainWindow):
     @Slot(str)
     def _on_worker_log(self, message: str) -> None:
         self._append_log_line(message)
+        if "Permission denied writing to" in message:
+            self._show_export_fallback_banner()
 
     @Slot(str)
     def _on_worker_saved(self, path: str) -> None:
+        try:
+            final_path = Path(path).expanduser()
+        except (OSError, TypeError):
+            final_path = Path(path)
+        self._last_report_path = final_path
+        self._set_export_target(final_path.parent)
         self._dismiss_toasts_with_title("Saved")
-        self._show_toast("Saved", f"Saved: {path}")
+        short_path = self._format_path_for_display(final_path)
+        self._show_toast("Saved", f"Saved to {short_path}")
         summary_parts = " · ".join(
             f"{title}: {self._latest_counts[key]}" for title, key in self.COUNT_KEYS
         )
-        saved_message = f"TXT saved to {path} — {summary_parts}"
+        saved_message = f"TXT saved to {final_path} — {summary_parts}"
         if saved_message != self._last_saved_log:
             self._append_log_line(saved_message)
             self._last_saved_log = saved_message
+        if self.status_banner.isVisible():
+            self.status_banner.hide()
 
     @Slot(str)
     def _on_worker_warning(self, message: str) -> None:
@@ -626,7 +1293,7 @@ class MainWindow(QMainWindow):
             self._append_log_line("No data for selected date.")
         else:
             self._append_log_line("Audit complete.")
-        self._settings["last_output_directory"] = str(output_path.parent)
+        self._settings_store["last_output_directory"] = str(output_path.parent)
         self._save_settings()
         self._worker = None
 
@@ -635,28 +1302,90 @@ class MainWindow(QMainWindow):
         clipboard.setText("HushDesk BP audit checklist placeholder.")
         QMessageBox.information(self, "Copy Checklist", "Placeholder checklist copied to clipboard.")
 
-    def _save_placeholder_txt(self) -> None:
+    def _save_audit_txt(self) -> None:
         if not self._selected_pdf:
             QMessageBox.warning(self, "No PDF", "Select a MAR PDF before saving output.")
             return
-        if not self._audit_completed:
+        if not self._audit_completed and not self._last_report_path:
             QMessageBox.warning(self, "Audit Incomplete", "Run the audit before saving output.")
             return
-        output_path = self._selected_pdf.with_suffix(".txt")
-        try:
-            output_path.write_text(build_placeholder_output(self._selected_pdf))
-        except OSError as exc:
-            QMessageBox.critical(self, "Save Error", f"Unable to save placeholder TXT: {exc}")
+
+        report_text = self._current_report_text()
+        if report_text is None:
+            QMessageBox.warning(self, "Nothing to Save", "No audit results are available to save.")
             return
-        self._append_log_line(f"Placeholder TXT saved to {output_path}")
-        self._settings["last_output_directory"] = str(output_path.parent)
+
+        suggested_name = self._suggest_export_filename()
+        default_dir = self._settings_store.get("last_manual_save_dir") or str(self._export_target_path)
+        try:
+            default_base = Path(default_dir).expanduser()
+        except OSError:
+            default_base = self._exports_dir
+        default_base.mkdir(parents=True, exist_ok=True)
+        default_path = default_base / suggested_name
+
+        filename, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Audit TXT",
+            str(default_path),
+            "Text Files (*.txt)",
+        )
+
+        if not filename:
+            fallback_path = self._exports_dir / suggested_name
+            final_path = safe_write_text(fallback_path, report_text)
+            self._last_report_path = final_path
+            self._set_export_target(final_path.parent)
+            self._dismiss_toasts_with_title("Saved")
+            self._show_toast("Saved", "Saved to Exports (TCC fallback)")
+            self._show_export_fallback_banner()
+            summary_parts = " · ".join(
+                f"{title}: {self._latest_counts[key]}" for title, key in self.COUNT_KEYS
+            )
+            saved_message = f"TXT saved to {final_path} — {summary_parts}"
+            self._append_log_line(saved_message)
+            self._settings_store["last_output_directory"] = str(final_path.parent)
+            self._save_settings()
+            self._last_saved_log = saved_message
+            return
+
+        target_path = Path(filename).expanduser()
+        sanitized_name = sanitize_filename(target_path.name or suggested_name)
+        target_path = target_path.with_name(sanitized_name)
+        self._settings_store["last_manual_save_dir"] = str(target_path.parent)
+        self._settings_store["last_output_directory"] = str(target_path.parent)
         self._save_settings()
-        QMessageBox.information(self, "Save TXT", f"Placeholder TXT saved to:\n{output_path}")
+
+        final_path = safe_write_text(target_path, report_text)
+        self._last_report_path = final_path
+        self._set_export_target(final_path.parent)
+        self._dismiss_toasts_with_title("Saved")
+        if final_path != target_path:
+            self._show_toast("Saved", "Saved to Exports (TCC fallback)")
+            self._show_export_fallback_banner()
+        else:
+            short_final = self._format_path_for_display(final_path)
+            self._show_toast("Saved", f"Saved to {short_final}")
+            if self.status_banner.isVisible():
+                self.status_banner.hide()
+        summary_parts = " · ".join(
+            f"{title}: {self._latest_counts[key]}" for title, key in self.COUNT_KEYS
+        )
+        saved_message = f"TXT saved to {final_path} — {summary_parts}"
+        if saved_message != self._last_saved_log:
+            self._append_log_line(saved_message)
+            self._last_saved_log = saved_message
 
     @Slot(str)
     def _on_audit_date_text(self, label_value: str) -> None:
         self._audit_date_pending = False
         self.audit_date_label.setText(f"Audit Date: {label_value}")
+        self._latest_audit_label = label_value
+        dash_split = label_value.split("—", 1)
+        if dash_split:
+            candidate = dash_split[0].strip()
+            if candidate:
+                self._latest_audit_mmddyyyy = candidate
         self._apply_header_styles()
 
     @Slot()
