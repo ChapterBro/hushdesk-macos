@@ -77,6 +77,13 @@ def render_page_surface(
         force_landscape=force_landscape,
     )
     pix = page_obj.get_pixmap(matrix=matrix, alpha=False)
+    if force_landscape and pix.height > pix.width:
+        try:
+            matrix = matrix.prerotate(90)
+            pix = page_obj.get_pixmap(matrix=matrix, alpha=False)
+        except Exception:
+            if _DEBUG:
+                logger.exception("Fail-safe prerotate render attempt failed for page %s", getattr(page_obj, "number", None))
     return pix, matrix
 
 

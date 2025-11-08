@@ -22,7 +22,6 @@ from hushdesk.ui.preview_renderer import (
     render_page_pixmap,
 )
 from hushdesk.ui.preview_view import PreviewView
-from hushdesk.ui.preview_renderer import render_page_pixmap, qpixmap_from_fitz
 
 
 try:  # pragma: no cover - optional dependency

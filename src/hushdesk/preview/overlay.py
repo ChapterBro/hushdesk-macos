@@ -13,8 +13,6 @@ except ImportError:  # pragma: no cover
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QColor, QPainter, QPen
 from hushdesk.ui.preview_renderer import (
-from hushdesk.ui.preview_renderer import render_page_surface, qpixmap_from_fitz
-
     qpixmap_from_fitz,
     rect_pixels_to_points,
     rect_points_to_pixels,
