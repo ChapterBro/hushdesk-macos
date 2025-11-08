@@ -99,3 +99,12 @@ PYI
 
 * Replace `PYTHONPATH=src` with proper packaging (`pyproject.toml`) and `pip install -e .`.
 <!-- DEV_SETUP:END -->
+
+<!-- PREVIEW_ORIENTATION:BEGIN -->
+
+### Preview Orientation & Overlay Consistency
+
+* Orientation is normalized **at render time** using a single `fitz.Matrix`; the view transform remains identity.
+* Overlays are projected with the **same matrix** for pixel-perfect alignment.
+* Optional debugging: set `HUSHDESK_RENDER_DEBUG=1` (also accepts `true/yes/on`) to log rotation decisions during development.
+<!-- PREVIEW_ORIENTATION:END -->
