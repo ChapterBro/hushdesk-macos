@@ -33,7 +33,20 @@ from hushdesk.pdf.rows import find_row_bands_for_block
 from hushdesk.pdf.vitals import attach_clusters_to_slots, extract_vitals_in_band
 from hushdesk.report.model import DecisionRecord
 from hushdesk.report.txt_writer import write_report
-from hushdesk.scout.scan import scan_candidates
+try:
+    from hushdesk.scout.scan import scan_candidates as _scan_candidates_impl
+    _SCOUT_AVAILABLE = True
+except Exception as _scout_exc:
+    _SCOUT_AVAILABLE = False
+    _scout_import_error = _scout_exc
+
+    def scan_candidates(*_args, **_kwargs):
+        # Fallback: no scout hints; preserve baseline behavior
+        return []
+else:
+    _scout_import_error = None
+    scan_candidates = _scan_candidates_impl
+
 
 
 logger = logging.getLogger(__name__)
