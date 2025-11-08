@@ -16,6 +16,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from hushdesk.ui.preview_renderer import (
+    project_rect_list,
+    qpixmap_from_fitz,
+    rect_points_to_pixels,
+    render_page_pixmap,
+)
 
 try:  # pragma: no cover - optional dependency
     import fitz  # type: ignore
@@ -306,37 +312,30 @@ class EvidencePanel(QWidget):
             with fitz.open(pdf_path) as doc:  # type: ignore[attr-defined]
                 if page_index < 0 or page_index >= len(doc):
                     return None
-                page = doc.load_page(page_index)
-                pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
+                pixmap_obj, matrix = render_page_pixmap(doc, page_index)
         except Exception:  # pragma: no cover - defensive
             return None
 
-        pixmap = QPixmap()
-        pixmap.loadFromData(pix.tobytes("png"))
+        if isinstance(pixmap_obj, QPixmap):
+            pixmap = pixmap_obj
+        else:
+            pixmap = qpixmap_from_fitz(pixmap_obj)  # type: ignore[arg-type]
         if pixmap.isNull():
             return None
-
-        page_width = float(extras.get("page_width") or pix.width)
-        page_height = float(extras.get("page_height") or pix.height)
-        scale_x = pixmap.width() / page_width if page_width else 1.0
-        scale_y = pixmap.height() / page_height if page_height else 1.0
 
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
-        band_rect = extras.get("band_rect")
-        slot_rect = extras.get("slot_rect")
-        due_rect = extras.get("due_rect")
         token_boxes = extras.get("token_boxes") if isinstance(extras.get("token_boxes"), dict) else {}
 
-        self._draw_rect(painter, band_rect, scale_x, scale_y, QColor(37, 99, 235), 2, 30)
-        self._draw_rect(painter, slot_rect, scale_x, scale_y, QColor(16, 185, 129), 3, 50)
-        self._draw_rect(painter, due_rect, scale_x, scale_y, QColor(249, 115, 22), 3, 0)
+        self._draw_rect(painter, rect_points_to_pixels(extras.get("band_rect"), matrix), QColor(37, 99, 235), 2, 30)
+        self._draw_rect(painter, rect_points_to_pixels(extras.get("slot_rect"), matrix), QColor(16, 185, 129), 3, 50)
+        self._draw_rect(painter, rect_points_to_pixels(extras.get("due_rect"), matrix), QColor(249, 115, 22), 3, 0)
 
-        for rect in token_boxes.get("bp", []) if isinstance(token_boxes, dict) else []:
-            self._draw_rect(painter, rect, scale_x, scale_y, QColor(139, 92, 246), 2, 60)
-        for rect in token_boxes.get("hr", []) if isinstance(token_boxes, dict) else []:
-            self._draw_rect(painter, rect, scale_x, scale_y, QColor(14, 165, 233), 2, 60)
+        for rect in project_rect_list(token_boxes.get("bp", []), matrix):
+            self._draw_rect(painter, rect, QColor(139, 92, 246), 2, 60)
+        for rect in project_rect_list(token_boxes.get("hr", []), matrix):
+            self._draw_rect(painter, rect, QColor(14, 165, 233), 2, 60)
 
         painter.end()
         return pixmap
@@ -345,20 +344,16 @@ class EvidencePanel(QWidget):
     def _draw_rect(
         painter: QPainter,
         rect: Optional[Tuple[float, float, float, float]],
-        scale_x: float,
-        scale_y: float,
         color: QColor,
         pen_width: int,
         fill_alpha: int,
     ) -> None:
         if rect is None:
             return
-        x0, y0, x1, y1 = rect
-        width = max(0.0, x1 - x0)
-        height = max(0.0, y1 - y0)
+        x, y, width, height = rect
         if width <= 0.0 or height <= 0.0:
             return
-        q_rect = QRectF(x0 * scale_x, y0 * scale_y, width * scale_x, height * scale_y)
+        q_rect = QRectF(x, y, width, height)
         fill_color = QColor(color)
         fill_color.setAlpha(max(0, min(255, fill_alpha)))
         painter.fillRect(q_rect, fill_color)
