@@ -5,6 +5,11 @@ from __future__ import annotations
 from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 import fitz  # PyMuPDF
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+_DEBUG = os.getenv("HUSHDESK_RENDER_DEBUG", "").lower() in ("1", "true", "yes", "on")
 
 try:  # pragma: no cover - optional dependency during CLI / tests
     from PySide6.QtGui import QImage, QPixmap  # type: ignore
@@ -23,15 +28,36 @@ def make_render_matrix(
     target_dpi: int = 110,
     force_landscape: bool = True,
 ) -> fitz.Matrix:
-    """Return a matrix that normalizes rotation and scales once."""
+    """
+    Build a deterministic render matrix that neutralizes PDF rotates before scaling.
+
+    The resulting matrix lets us normalize every page once and optionally force a
+    landscape preview regardless of the PDF's /Rotate metadata.
+    """
     rotation = (page.rotation or 0) % 360
     neutralize = (360 - rotation) % 360
     scale = target_dpi / 72.0
     matrix = fitz.Matrix(scale, scale).prerotate(neutralize)
-    if force_landscape:
+    rect_after = fitz.Rect(page.rect).transform(matrix)
+    if force_landscape and rect_after.height > rect_after.width:
+        matrix = matrix.prerotate(90)
         rect_after = fitz.Rect(page.rect).transform(matrix)
-        if rect_after.height > rect_after.width:
-            matrix = matrix.prerotate(90)
+    if _DEBUG:
+        try:
+            logger.debug(
+                "render_matrix page=%s rot=%s neutral=%s force_landscape=%s dpi=%s scale=%.3f out=%dx%d",
+                getattr(page, "number", None),
+                rotation,
+                neutralize,
+                force_landscape,
+                target_dpi,
+                scale,
+                int(rect_after.width),
+                int(rect_after.height),
+            )
+        except Exception:
+            # Debug logging should never break rendering; swallow PyMuPDF errors here.
+            pass
     return matrix
 
 
