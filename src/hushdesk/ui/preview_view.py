@@ -1,6 +1,7 @@
 from __future__ import annotations
+import os
 
-from PySide6.QtCore import Qt, QRectF
+from PySide6.QtCore import Qt, QRectF, QTimer
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QSizePolicy
 
@@ -22,6 +23,11 @@ class PreviewView(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self._refit_timer.timeout.connect(self._apply_fit)
+        self._refit_timer.setInterval(0)
+        self._refit_timer.setSingleShot(True)
+        self._refit_timer = QTimer(self)
+        self.setAlignment(Qt.AlignCenter)
         self._pix: QGraphicsPixmapItem | None = None
         self._fit_mode: str = "page"  # {"actual","page","width","height","region","custom"}
         self._custom_zoom: float = 1.0
@@ -86,45 +92,15 @@ class PreviewView(QGraphicsView):
     # --- events ---
     def resizeEvent(self, ev):
         super().resizeEvent(ev)
-        self._apply_fit()
-
-    # --- helpers ---
-    def _apply_fit(self) -> None:
-        if not self._pix:
-            return
-        rect = self._pix.sceneBoundingRect()
-        if rect.isNull():
-            return
-
-        target = rect
-        if self._fit_mode == "region" and self._region_rect is not None and not self._region_rect.isNull():
-            target = self._region_rect
-
-        self.resetTransform()
-        if self._fit_mode == "actual":
-            return
-        if self._fit_mode == "custom":
-            self.scale(self._custom_zoom, self._custom_zoom)
-            return
-        if self._fit_mode in {"page", "region"}:
-            # Keep entire target visible without rotation
-            self.fitInView(target, Qt.KeepAspectRatio)
-            return
-
-        viewport = self.viewport()
-        if viewport is None:
-            return
-        width = target.width()
-        height = target.height()
-        if width <= 0.0 or height <= 0.0:
-            return
-
-        view_w = max(1, viewport.width())
-        view_h = max(1, viewport.height())
-        if self._fit_mode == "width":
-            scale = view_w / width
-        elif self._fit_mode == "height":
-            scale = view_h / height
-        else:  # fallback to full fit
-            scale = min(view_w / width, view_h / height)
+        # debounce refit to avoid jitter on Retina/fullscreen
+        if hasattr(self, '_refit_timer'):
+            self._refit_timer.start()
         self.scale(scale, scale)
+
+    def _scrollbars_for_mode(self):
+        if getattr(self, "_fit_mode", "fit-page") in ("fit-page", "fit-width", "fit-height"):
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        else:
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
