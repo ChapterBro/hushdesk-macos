@@ -45,3 +45,57 @@ Double-clicking the `.command` opens the app without signing.
 
 ## Release
 - Publish the notarized DMG: `VERSION=0.1.0 ./scripts/release`
+<!-- DEV_SETUP:BEGIN -->
+## Development Setup (macOS, Python 3.11)
+
+**Requirements**
+- Python **3.11** (Homebrew: `brew install python@3.11`)
+- `pip`, `venv`
+- Dev dependencies pinned in `requirements-dev.txt`:
+  - `pymupdf==1.24.10`
+  - `Pillow==10.4.0`
+  - `pytest==8.3.4`
+
+**Quickstart (Clean Room)**
+```bash
+# Create and activate a clean venv (Apple Silicon path shown; adjust if Intel)
+/opt/homebrew/bin/python3.11 -m venv .venv311  # or $(brew --prefix)/bin/python3.11
+source .venv311/bin/activate
+export PYTHONNOUSERSITE=1
+pip install -U pip wheel setuptools
+pip install -r requirements-dev.txt
+
+# Make the src tree importable (until packaging is added)
+export PYTHONPATH="$PWD/src"
+
+# Optional: force the audit date during development (MM/DD/YYYY)
+export HUSHDESK_AUDIT_DATE_MMDDYYYY=11/06/2025
+```
+
+**Smoke Test**
+
+```bash
+python -m pytest tests/test_smoke_import.py -v
+```
+
+**Manual Import Check**
+
+```bash
+python - <<'PYI'
+import importlib
+for m in ["hushdesk.pdf.dates", "hushdesk.scout.scan", "hushdesk.workers.audit_worker", "fitz"]:
+    mod = importlib.import_module(m)
+    print(f"[OK] {m} -> {getattr(mod, '__file__', '<builtin>')}")
+PYI
+```
+
+**Troubleshooting**
+
+* `TypeError` referencing `dataclass(slots=True)`: not using Python 3.11.
+* `ModuleNotFoundError: fitz`: install dev requirements to pull in PyMuPDF.
+* `ImportError` for `hushdesk.*`: ensure `export PYTHONPATH=src`.
+
+**Next (optional)**
+
+* Replace `PYTHONPATH=src` with proper packaging (`pyproject.toml`) and `pip install -e .`.
+<!-- DEV_SETUP:END -->
