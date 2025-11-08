@@ -21,6 +21,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 from hushdesk.ui.preview_view import PreviewView
+from hushdesk.ui.preview_renderer import render_page_pixmap, qpixmap_from_fitz
+
 
 class _PreviewGraphicsView(PreviewView):
     """Graphics view with ctrl/cmd + wheel zoom support."""
