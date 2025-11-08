@@ -9,6 +9,7 @@ from typing import Dict, Iterable, Optional
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPen, QPixmap
 from PySide6.QtWidgets import (
+from hushdesk.ui.preview_view import PreviewView
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -20,9 +21,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-from hushdesk.ui.preview_view import PreviewView
-
-
 class _PreviewGraphicsView(PreviewView):
     """Graphics view with ctrl/cmd + wheel zoom support."""
 
