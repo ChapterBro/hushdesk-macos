@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFileDialog,
-    QGraphicsPixmapItem,
     QGraphicsRectItem,
     QGraphicsScene,
     QGraphicsSimpleTextItem,
@@ -21,9 +20,10 @@ from PySide6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+from hushdesk.ui.preview_view import PreviewView
 
 
-class _PreviewGraphicsView(QGraphicsView):
+class _PreviewGraphicsView(PreviewView):
     """Graphics view with ctrl/cmd + wheel zoom support."""
 
     def wheelEvent(self, event):  # noqa: N802
@@ -31,7 +31,7 @@ class _PreviewGraphicsView(QGraphicsView):
         if modifiers & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.MetaModifier):
             angle = event.angleDelta().y()
             factor = 1.2 if angle > 0 else 1 / 1.2
-            self.scale(factor, factor)
+            self.set_custom_zoom(self.zoom_factor() * factor)
             event.accept()
             return
         super().wheelEvent(event)
@@ -56,17 +56,15 @@ class PreviewDialog(QDialog):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(12)
 
-        scene = QGraphicsScene(self)
         pixmap = QPixmap(str(self._image_path))
-        self._pixmap_item = QGraphicsPixmapItem(pixmap)
-        scene.addItem(self._pixmap_item)
-
-        self._view = _PreviewGraphicsView(scene, self)
+        self._view = _PreviewGraphicsView(self)
         self._view.setRenderHint(QGraphicsView.RenderHint.Antialiasing, True)
         self._view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self._view.set_pixmap(pixmap)
         layout.addWidget(self._view, stretch=1)
 
-        self._add_overlay_items(scene, pixmap)
+        self._add_overlay_items(self._view.scene())
+        self._view.set_fit_mode("page")
 
         buttons = QDialogButtonBox(Qt.Orientation.Horizontal)
         snapshot_button = QPushButton("Save Snapshot")
@@ -79,7 +77,7 @@ class PreviewDialog(QDialog):
 
     # ------------------------------------------------------------------ helpers
 
-    def _add_overlay_items(self, scene: QGraphicsScene, pixmap: QPixmap) -> None:
+    def _add_overlay_items(self, scene: QGraphicsScene) -> None:
         audit_rect = _rect_from_overlay(self._overlays.get("audit_band"))
         if audit_rect:
             scene.addItem(_build_rect_item(audit_rect, QColor("#3A7BFF"), 60, 3))
@@ -125,8 +123,6 @@ class PreviewDialog(QDialog):
                 text_item.setZValue(6)
                 scene.addItem(background)
                 scene.addItem(text_item)
-
-        self._view.fitInView(self._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
 
     def _save_snapshot(self) -> None:
         default_path = Path.home() / "Desktop" / f"HushDeskPreview-{_dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.png"

@@ -6,13 +6,12 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from PySide6.QtCore import QEvent, QObject, Qt, QUrl, QRectF
+from PySide6.QtCore import Qt, QUrl, QRectF
 from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -22,6 +21,7 @@ from hushdesk.ui.preview_renderer import (
     rect_points_to_pixels,
     render_page_pixmap,
 )
+from hushdesk.ui.preview_view import PreviewView
 
 try:  # pragma: no cover - optional dependency
     import fitz  # type: ignore
@@ -42,10 +42,11 @@ class EvidencePanel(QWidget):
         self._allow_open_pdf = allow_open_pdf
         self._record: Optional[dict] = None
         self._pdf_path: Optional[Path] = None
-        self._preview_cache: Dict[Tuple[str, int], QPixmap] = {}
+        self._preview_cache: Dict[Tuple[str, int], tuple[QPixmap, Optional[QRectF]]] = {}
         self._current_preview_pixmap: Optional[QPixmap] = None
         self._preview_scale_pct = 100
         self._fit_mode = "custom"
+        self._region_rect: Optional[QRectF] = None
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -90,23 +91,18 @@ class EvidencePanel(QWidget):
         self.preview_status.setStyleSheet("color: #6b7280; font-size: 12px;")
         layout.addWidget(self.preview_status)
 
-        self.preview_area = QScrollArea()
-        self.preview_area.setWidgetResizable(True)
-        self.preview_label = QLabel()
-        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview_label.setScaledContents(False)
-        self.preview_label.setStyleSheet("background-color: #f9fafb; border: 1px solid #e5e7eb;")
-        self.preview_area.setWidget(self.preview_label)
-        self.preview_area.viewport().installEventFilter(self)
-        layout.addWidget(self.preview_area, stretch=1)
+        self.preview_view = PreviewView(self)
+        self.preview_view.setStyleSheet("background-color: #f9fafb; border: 1px solid #e5e7eb;")
+        layout.addWidget(self.preview_view, stretch=1)
 
     def clear(self, message: Optional[str] = None) -> None:
         self._record = None
         self._pdf_path = None
         self._current_preview_pixmap = None
+        self._region_rect = None
         self.summary_label.setText(message or "Select a decision to view details.")
         self.details_label.clear()
-        self.preview_label.clear()
+        self.preview_view.clear()
         self.preview_status.setText("Preview not generated.")
         self.open_button.setEnabled(False)
         self.preview_button.setEnabled(False)
@@ -131,7 +127,8 @@ class EvidencePanel(QWidget):
             self.open_button.setEnabled(False)
         self.preview_button.setEnabled(has_pdf and fitz is not None and page_index is not None)
         self.preview_status.setText("Preview not generated." if fitz is not None else "Preview requires PyMuPDF.")
-        self.preview_label.clear()
+        self.preview_view.clear()
+        self._region_rect = None
 
     def _handle_open_pdf(self) -> None:
         if not self._allow_open_pdf or not self._record or not self._pdf_path:
@@ -155,14 +152,19 @@ class EvidencePanel(QWidget):
         if not self._record or not self._pdf_path or fitz is None:
             return
         cache_key = (str(self._pdf_path), int(self._record.get("id", -1)))
-        pixmap = self._preview_cache.get(cache_key)
-        if pixmap is None:
-            pixmap = self._render_preview(self._record, self._pdf_path)
-            if pixmap is None:
+        cached = self._preview_cache.get(cache_key)
+        if cached is None:
+            rendered = self._render_preview(self._record, self._pdf_path)
+            if rendered is None:
                 self.preview_status.setText("Unable to render preview.")
                 return
-            self._preview_cache[cache_key] = pixmap
+            pixmap, region_rect = rendered
+            self._preview_cache[cache_key] = (pixmap, region_rect)
+        else:
+            pixmap, region_rect = cached
         self._current_preview_pixmap = pixmap
+        self._region_rect = region_rect
+        self.preview_view.set_pixmap(pixmap)
         self._apply_preview_scale()
         page_index = self._extract_page_index(self._record) or 0
         self.preview_status.setText(f"Preview: page {page_index + 1}.")
@@ -207,52 +209,34 @@ class EvidencePanel(QWidget):
         self._preview_scale_pct = max(25, min(400, int(pct)))
         self._apply_preview_scale()
 
-    def set_fit_mode(self, mode: str) -> None:
-        if mode not in {"width", "page"}:
-            self._fit_mode = "custom"
-        else:
-            self._fit_mode = mode
+    def set_fit_mode(self, mode: str) -> str:
+        valid = {"width", "height", "page", "region", "actual"}
+        resolved = mode if mode in valid else "custom"
+        if resolved == "region" and not self.has_region_roi():
+            resolved = "page"
+        self._fit_mode = resolved
         self._apply_preview_scale()
+        return self._fit_mode
 
     def current_zoom_percent(self) -> int:
         return self._preview_scale_pct
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # type: ignore[override]
-        if obj is self.preview_area.viewport() and event.type() == QEvent.Type.Resize:
-            if self._current_preview_pixmap is not None:
-                self._apply_preview_scale()
-        return super().eventFilter(obj, event)
+    def has_region_roi(self) -> bool:
+        return self._region_rect is not None and not self._region_rect.isNull()
 
     def _apply_preview_scale(self) -> None:
         pixmap = self._current_preview_pixmap
         if pixmap is None:
-            self.preview_label.clear()
+            self.preview_view.clear()
             return
-        viewport = self.preview_area.viewport()
-        if self._fit_mode == "width":
-            width = max(1, viewport.width())
-            scaled = pixmap.scaledToWidth(width, Qt.TransformationMode.SmoothTransformation)
-        elif self._fit_mode == "page":
-            size = viewport.size()
-            if size.width() <= 0 or size.height() <= 0:
-                scaled = pixmap
-            else:
-                scaled = pixmap.scaled(
-                    size,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-        else:
+        if self.preview_view.pixmap_item() is None:
+            self.preview_view.set_pixmap(pixmap)
+        self.preview_view.set_region_rect(self._region_rect)
+        if self._fit_mode == "custom":
             scale = max(0.25, min(4.0, self._preview_scale_pct / 100.0))
-            width = max(1, int(pixmap.width() * scale))
-            height = max(1, int(pixmap.height() * scale))
-            scaled = pixmap.scaled(
-                width,
-                height,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-        self.preview_label.setPixmap(scaled)
+            self.preview_view.set_custom_zoom(scale)
+            return
+        self.preview_view.set_fit_mode(self._fit_mode)
 
     @staticmethod
     def _describe_source(source_type: Optional[str], flags: Optional[dict]) -> str:
@@ -301,7 +285,7 @@ class EvidencePanel(QWidget):
             args.extend(["-e", line])
         subprocess.run(args, check=False)
 
-    def _render_preview(self, record: dict, pdf_path: Path) -> Optional[QPixmap]:
+    def _render_preview(self, record: dict, pdf_path: Path) -> Optional[tuple[QPixmap, Optional[QRectF]]]:
         if fitz is None:
             return None
         page_index = self._extract_page_index(record)
@@ -327,10 +311,13 @@ class EvidencePanel(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
         token_boxes = extras.get("token_boxes") if isinstance(extras.get("token_boxes"), dict) else {}
+        band_rect = rect_points_to_pixels(extras.get("band_rect"), matrix)
+        slot_rect = rect_points_to_pixels(extras.get("slot_rect"), matrix)
+        due_rect = rect_points_to_pixels(extras.get("due_rect"), matrix)
 
-        self._draw_rect(painter, rect_points_to_pixels(extras.get("band_rect"), matrix), QColor(37, 99, 235), 2, 30)
-        self._draw_rect(painter, rect_points_to_pixels(extras.get("slot_rect"), matrix), QColor(16, 185, 129), 3, 50)
-        self._draw_rect(painter, rect_points_to_pixels(extras.get("due_rect"), matrix), QColor(249, 115, 22), 3, 0)
+        self._draw_rect(painter, band_rect, QColor(37, 99, 235), 2, 30)
+        self._draw_rect(painter, slot_rect, QColor(16, 185, 129), 3, 50)
+        self._draw_rect(painter, due_rect, QColor(249, 115, 22), 3, 0)
 
         for rect in project_rect_list(token_boxes.get("bp", []), matrix):
             self._draw_rect(painter, rect, QColor(139, 92, 246), 2, 60)
@@ -338,7 +325,9 @@ class EvidencePanel(QWidget):
             self._draw_rect(painter, rect, QColor(14, 165, 233), 2, 60)
 
         painter.end()
-        return pixmap
+        region_tuple = slot_rect or band_rect
+        region_rect = QRectF(*region_tuple) if region_tuple else None
+        return pixmap, region_rect
 
     @staticmethod
     def _draw_rect(
