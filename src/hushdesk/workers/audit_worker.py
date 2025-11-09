@@ -24,7 +24,7 @@ from hushdesk.engine.rules import RuleSpec, parse_rule_text
 from hushdesk.fs.exports import exports_dir, sanitize_filename
 from hushdesk.id.rooms import load_building_master, resolve_room_from_block
 from hushdesk.pdf.columns import ColumnBand, select_audit_columns
-from hushdesk.pdf.dates import dev_override_date, format_mmddyyyy, resolve_audit_date
+from hushdesk.pdf.dates import format_mmddyyyy, resolve_audit_date
 from hushdesk.pdf.mar_header import audit_date_from_filename
 from hushdesk.pdf.mar_parser_mupdf import run_mar_audit
 from hushdesk.pdf.duecell import DueMark, detect_due_mark
@@ -34,6 +34,14 @@ from hushdesk.pdf.vitals import attach_clusters_to_slots, extract_vitals_in_band
 from hushdesk.report.model import DecisionRecord
 from hushdesk.report.txt_writer import write_report
 from hushdesk.scout.scan import scan_candidates
+
+try:
+    from hushdesk.pdf.dates import dev_override_date as _dev_override_date
+except Exception:  # pragma: no cover - defensive fallback
+    def _dev_override_date() -> date | None:
+        return None
+
+dev_override_date = _dev_override_date
 
 
 logger = logging.getLogger(__name__)
