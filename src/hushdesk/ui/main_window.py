@@ -54,7 +54,6 @@ from .preview_dialog import PreviewDialog
 from .review_explorer import ReviewExplorer
 from .ui_prefs import UIPrefs
 
-
 class _Chip(QFrame):
     """Simple chip-style widget displaying a label and a value."""
 
@@ -1404,7 +1403,7 @@ class MainWindow(QMainWindow):
         temp_dir = Path(tempfile.gettempdir())
         preview_path = temp_dir / f"hushdesk-preview-{uuid4().hex}.png"
         try:
-            render_band_preview(
+            preview_path, projected_overlays = render_band_preview(
                 str(self._current_pdf_path),
                 int(page_index),
                 overlays,
@@ -1414,7 +1413,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Preview Error", f"Unable to render preview: {exc}")
             return
 
-        dialog = PreviewDialog(preview_path, overlays, self)
+        dialog = PreviewDialog(preview_path, projected_overlays, self)
         dialog.exec()
 
     @Slot(dict)
