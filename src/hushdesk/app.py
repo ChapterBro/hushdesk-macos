@@ -18,6 +18,8 @@ from hushdesk.cli import parse_arguments, run_headless_from_args
 from hushdesk.fs.exports import exports_dir
 from hushdesk.headless import HeadlessResult
 from hushdesk.logs.rotating import get_logger
+from hushdesk.ui.hidpi import apply as _hdpi_apply
+_hdpi_apply()
 
 
 def _ensure_application_support_dir() -> Path:

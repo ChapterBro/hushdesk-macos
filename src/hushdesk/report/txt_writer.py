@@ -23,8 +23,8 @@ def write_report(
     source_basename: str,
     out_path: Path,
     notes: Optional[Iterable[str]] = None,
-) -> None:
-    """Write the binder-ready TXT report to ``out_path``."""
+) -> Path:
+    """Write the binder-ready TXT report to ``out_path`` and return the path."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     split_used = any("split" in _normalize_record_notes(record.notes) for record in records)
@@ -98,6 +98,7 @@ def write_report(
     lines.append(f"Generated: {generated_stamp} (Central)")
 
     out_path.write_text("\n".join(lines), encoding="utf-8")
+    return out_path
 
 
 def _iter_sorted(records: Iterable[DecisionRecord]) -> Iterable[DecisionRecord]:
