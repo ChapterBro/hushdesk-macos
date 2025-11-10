@@ -40,3 +40,6 @@
 
 10. 2025-11-10T22:30:59Z — commit + push
    - commit b44f78c pushed to origin/fix/phase1-foundation; includes docs/BATON.md, tools/audit_tracer.py, audit worker guard
+
+11. 2025-11-10T22:31:51Z — baton log follow-up
+   - commit f563313 (phase1: baton push log) pushed to origin/fix/phase1-foundation; ensures entry #10 lives in repo
