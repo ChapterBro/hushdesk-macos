@@ -59,3 +59,6 @@
 15. 2025-11-10T23:00:52Z — audit tracer
    - worker_sha=2bfa1dd0f245 renderer_sha=6911e9c2b4fe
    - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 92, 'vitals': 160, 'rules': 160, 'decisions': 432}
+16. 2025-11-10T23:02:06Z — push fix/phase2-vitals-to-decisions
+   - commit e40840c pushed to origin/fix/phase2-vitals-to-decisions (canonical vitals/rules/decisions bring-up)
+   - remote confirmed branch creation per GitHub instructions
