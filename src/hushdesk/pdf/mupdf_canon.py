@@ -55,6 +55,7 @@ class CanonPage:
     words: List[CanonWord]
     vlines: List[CanonLine]
     hlines: List[CanonLine]
+    draw_segments: List[Tuple[Point, Point]]
     matrix: "fitz.Matrix"
     pixmap: "fitz.Pixmap"
     raw_page: Optional["fitz.Page"] = None
@@ -108,7 +109,7 @@ def build_canon_page(page_index: int, page: "fitz.Page", *, scale: float = 2.0) 
     width = float(pixmap.width)
     height = float(pixmap.height)
     words = _extract_words(page, matrix, width, height)
-    vlines, hlines = _extract_lines(page, matrix, width, height)
+    vlines, hlines, segments = _extract_lines(page, matrix, width, height)
     return CanonPage(
         page_index=page_index,
         width=width,
@@ -116,6 +117,7 @@ def build_canon_page(page_index: int, page: "fitz.Page", *, scale: float = 2.0) 
         words=words,
         vlines=vlines,
         hlines=hlines,
+        draw_segments=segments,
         matrix=matrix,
         pixmap=pixmap,
         raw_page=page,
@@ -129,7 +131,7 @@ def _extract_words(
     page_height: float,
 ) -> List[CanonWord]:
     try:
-        raw_words = page.get_text("words", clip=page.rect)
+        raw_words = page.get_text("words")
     except RuntimeError:
         return []
 
@@ -165,7 +167,7 @@ def _extract_lines(
     matrix: "fitz.Matrix",
     page_width: float,
     page_height: float,
-) -> Tuple[List[CanonLine], List[CanonLine]]:
+) -> Tuple[List[CanonLine], List[CanonLine], List[Tuple[Point, Point]]]:
     drawings: Sequence[dict]
     try:
         drawings = page.get_drawings()
@@ -174,6 +176,7 @@ def _extract_lines(
 
     vlines: List[CanonLine] = []
     hlines: List[CanonLine] = []
+    segments: List[Tuple[Point, Point]] = []
 
     for drawing in drawings:
         for item in drawing.get("items", ()):
@@ -184,12 +187,13 @@ def _extract_lines(
             p0_raw, p1_raw = item[1:3]
             p0 = _transform_point(p0_raw, matrix, page_width, page_height)
             p1 = _transform_point(p1_raw, matrix, page_width, page_height)
+            segments.append((p0, p1))
             if _is_horizontal(p0, p1):
                 hlines.append(CanonLine("h", p0, p1))
             elif _is_vertical(p0, p1):
                 vlines.append(CanonLine("v", p0, p1))
 
-    return vlines, hlines
+    return vlines, hlines, segments
 
 
 def _transform_point(

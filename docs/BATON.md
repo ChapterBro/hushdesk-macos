@@ -43,3 +43,19 @@
 
 11. 2025-11-10T22:31:51Z — baton log follow-up
    - commit f563313 (phase1: baton push log) pushed to origin/fix/phase1-foundation; ensures entry #10 lives in repo
+12. 2025-11-10T22:51:54Z — phase2 branch/env snapshot
+   - branch fix/phase2-vitals-to-decisions (from fix/phase1-foundation)
+   - env: Python 3.11.14; PySide6 6.10.0; MuPDF 1.24.10
+   - flags: PYTHONNOUSERSITE=1, PYTHONPATH=src, HUSHDESK_RENDER_DEBUG=0
+
+13. 2025-11-10T22:52:12Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=6911e9c2b4fe
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 114, 'vitals': 0, 'rules': 0, 'decisions': 0}
+14. 2025-11-10T23:00:43Z — phase2 vitals/rules wiring
+   - canonical words extraction now scans entire page + stores draw segments; MAR grid uses default strict rules when block text missing thresholds
+   - tests: pytest tests/test_vitals_smoke.py; python hushdesk.pdf.mar_parser_mupdf run against hashed MAR sample ✅
+   - interim counts from run_mar_audit: pages=57 due=160 parametered=160 hold_miss=8 held_app=18 compliant=364 dcd=24
+
+15. 2025-11-10T23:00:52Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=6911e9c2b4fe
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 92, 'vitals': 160, 'rules': 160, 'decisions': 432}

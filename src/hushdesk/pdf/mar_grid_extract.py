@@ -16,7 +16,7 @@ from .mar_tokens import bp_values, cell_state, pulse_value
 from .mupdf_canon import CanonPage, CanonWord
 from .qa_overlay import QAHighlights, TimeRail, VitalMark
 from .room_label import format_room_label, parse_room_and_bed_from_text, validate_room
-from .rules_normalize import RuleSet, parse_rules
+from .rules_normalize import RuleSet, default_rules, parse_rules
 
 Rect = Tuple[float, float, float, float]
 
@@ -583,9 +583,21 @@ def _collect_due_evidence_if_strict(
 ) -> None:
     global telemetry_suppressed
     rules = block.rules if block else RuleSet()
-    if block is None or not getattr(rules, "strict", False) or not block_id or block_band is None:
+    if block is None or not block_id or block_band is None:
         telemetry_suppressed += 1
         return
+
+    if getattr(rules, "strict", False):
+        applied_rules = rules
+        rule_text_value = block.text
+    else:
+        applied_rules = default_rules()
+        rule_text_value = (
+            "Default thresholds: "
+            f"SBP>{applied_rules.sbp_gt or 'n/a'} "
+            f"HR<{applied_rules.hr_lt or 'n/a'} "
+            f"HR>{applied_rules.hr_gt or 'n/a'}"
+        )
 
     block_y0, block_y1 = block_band
     cell_y0 = max(block_y0, track.track_y0)
@@ -643,8 +655,8 @@ def _collect_due_evidence_if_strict(
             bp_bbox=bp_bbox,
             hr_bbox=hr_bbox,
             due_bbox=due_bbox if due_bbox is not None else cell_bounds,
-            rule_text=block.text,
-            rules=rules,
+            rule_text=rule_text_value,
+            rules=applied_rules,
             page_pixels=page_pixels,
             roi_pixels=roi_pixels,
         )
