@@ -37,3 +37,6 @@
 
 9. 2025-11-10T22:30:11Z — branch switch
    - created/switch to fix/phase1-foundation (from fix/preview-orientation-fit) for headless baseline work
+
+10. 2025-11-10T22:30:59Z — commit + push
+   - commit b44f78c pushed to origin/fix/phase1-foundation; includes docs/BATON.md, tools/audit_tracer.py, audit worker guard
