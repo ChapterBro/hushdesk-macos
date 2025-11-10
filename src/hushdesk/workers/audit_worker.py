@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import logging
 import os
 import re
@@ -24,7 +26,7 @@ from hushdesk.engine.rules import RuleSpec, parse_rule_text
 from hushdesk.fs.exports import exports_dir, sanitize_filename
 from hushdesk.id.rooms import load_building_master, resolve_room_from_block
 from hushdesk.pdf.columns import ColumnBand, select_audit_columns
-from hushdesk.pdf.dates import dev_override_date, format_mmddyyyy, resolve_audit_date
+from hushdesk.pdf.dates import format_mmddyyyy, resolve_audit_date
 from hushdesk.pdf.mar_header import audit_date_from_filename
 from hushdesk.pdf.mar_parser_mupdf import run_mar_audit
 from hushdesk.pdf.duecell import DueMark, detect_due_mark
@@ -34,6 +36,16 @@ from hushdesk.pdf.vitals import attach_clusters_to_slots, extract_vitals_in_band
 from hushdesk.report.model import DecisionRecord
 from hushdesk.report.txt_writer import write_report
 from hushdesk.scout.scan import scan_candidates
+
+try:  # pragma: no cover - defensive import guard for optional override helper
+    from hushdesk.pdf.dates import dev_override_date as _dev_override_date
+except Exception:  # pragma: no cover - keep worker importable when helper missing
+
+    def dev_override_date() -> date | None:
+        return None
+
+else:
+    dev_override_date = _dev_override_date
 
 
 logger = logging.getLogger(__name__)
@@ -117,6 +129,10 @@ class AuditWorker(QObject):
 
         self._audit_date = audit_date
         self.audit_date_text.emit(label_value)
+        if not self._input_pdf.exists():
+            self.warning.emit("Input MAR PDF not found; emitting no-data signal.")
+            self.no_data_for_date.emit()
+            return
 
         hall_value = self._hall_override or "UNKNOWN"
         result = run_mar_audit(
@@ -1582,6 +1598,8 @@ class AuditWorker(QObject):
         overlay_pixels = extras_copy.get("overlay_pixels")
         if not isinstance(overlay_pixels, dict):
             overlay_pixels = {}
+        preview_meta = getattr(record, "preview", None)
+        preview_payload = dict(preview_meta) if isinstance(preview_meta, dict) else None
         source_meta = extras_copy.get("source_meta")
         if not isinstance(source_meta, dict):
             source_meta = {}
@@ -1603,7 +1621,7 @@ class AuditWorker(QObject):
             source_type,
         ]
         search_blob = " ".join(part for part in search_parts if part).lower()
-        return {
+        payload = {
             "id": record_id,
             "kind": record.kind,
             "room_bed": record.room_bed,
@@ -1630,6 +1648,9 @@ class AuditWorker(QObject):
             "source_meta": dict(source_meta),
             "search_blob": search_blob,
         }
+        if preview_payload:
+            payload["preview"] = preview_payload
+        return payload
 
     @staticmethod
     def _band_rect_tuple(band: ColumnBand) -> Tuple[float, float, float, float]:
@@ -1868,3 +1889,67 @@ class AuditWorker(QObject):
     def _merge_counts(target: Dict[str, int], delta: Dict[str, int]) -> None:
         for key in target:
             target[key] += int(delta.get(key, 0))
+
+
+def _resolve_audit_date_for_cli(pdf_path: Path) -> Tuple[date, str]:
+    try:
+        audit_dt, audit_text = audit_date_from_filename(pdf_path)
+        return audit_dt.date(), audit_text
+    except ValueError:
+        audit_date = resolve_audit_date(pdf_path)
+        return audit_date, format_mmddyyyy(audit_date)
+
+
+def _cli_run(pdf_path: Path, hall: str, export_dir: Optional[Path]) -> int:
+    audit_date, audit_date_text = _resolve_audit_date_for_cli(pdf_path)
+    result = run_mar_audit(pdf_path, hall.upper(), audit_date)
+    counts = dict(result.counts)
+
+    target_dir = Path(export_dir).expanduser().resolve() if export_dir else exports_dir()
+    target_dir.mkdir(parents=True, exist_ok=True)
+    base_name = Path(result.source_basename).stem
+    report_name = sanitize_filename(f"{result.audit_date_mmddyyyy}_{result.hall}_{base_name}.txt")
+    report_path = target_dir / report_name
+    write_report(
+        records=result.records,
+        counts=result.counts,
+        audit_date_mmddyyyy=result.audit_date_mmddyyyy,
+        hall=result.hall,
+        source_basename=result.source_basename,
+        out_path=report_path,
+    )
+
+    path_hash = hashlib.sha256(str(pdf_path).encode("utf-8")).hexdigest()
+    print(
+        "AUDIT_OK sha={sha} hall={hall} reviewed={reviewed} hold_miss={hm} held_appropriate={ha} "
+        "compliant={comp} dcd={dcd} txt={txt}".format(
+            sha=path_hash,
+            hall=result.hall,
+            reviewed=int(counts.get("reviewed", 0)),
+            hm=int(counts.get("hold_miss", 0)),
+            ha=int(counts.get("held_appropriate", 0)),
+            comp=int(counts.get("compliant", 0)),
+            dcd=int(counts.get("dcd", 0)),
+            txt=report_path.name,
+        )
+    )
+    if result.qa_paths:
+        print(f"QA_IMAGES count={len(result.qa_paths)}", flush=True)
+    return 0
+
+
+def main(argv: Optional[Iterable[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Headless AuditWorker runner")
+    parser.add_argument("pdf", type=Path, help="Path to the MAR PDF to audit")
+    parser.add_argument("--hall", default="UNKNOWN", help="Hall identifier (default: UNKNOWN)")
+    parser.add_argument("--export-dir", type=Path, help="Optional export directory override")
+    args = parser.parse_args(list(argv) if argv is not None else None)
+
+    pdf_path = args.pdf.expanduser().resolve()
+    if not pdf_path.exists():
+        parser.error(f"{pdf_path} not found")
+    return _cli_run(pdf_path, str(args.hall).upper(), args.export_dir)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
