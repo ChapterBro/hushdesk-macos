@@ -62,3 +62,35 @@
 16. 2025-11-10T23:02:06Z — push fix/phase2-vitals-to-decisions
    - commit e40840c pushed to origin/fix/phase2-vitals-to-decisions (canonical vitals/rules/decisions bring-up)
    - remote confirmed branch creation per GitHub instructions
+17. 2025-11-11T00:01:07Z — vitals bounds instrumentation
+   - branch fix/phase2-vitals-to-decisions @ fc684f5; added hard SBP/HR gates with counters + default rule metadata source/version tags.
+   - grid extractor now drops out-of-band readings, tallies gated_sbp/hr, and emits per-rule confidence + instrumentation (rules_sources, band_stage_counts).
+   - audit tracer includes gated/rule-source/band-stage JSON fields for future log scrapes.
+   - tests: python3 -m compileall -q src; .venv311/bin/python -m pytest -q tests/test_vitals_bounds.py
+
+18. 2025-11-11T00:49:36Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=6911e9c2b4fe
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 620}
+19. 2025-11-11T00:50:21Z — phase2 band cascade + tokenizer normalization
+   - branch fix/phase2-vitals-to-decisions; added SpatialWordIndex y-bucket joins plus label normalization for BP/HR vitals, and introduced band_resolver header→page→borrow cascade with per-stage counters feeding instrumentation/tracer (decision stage breakdowns preserved).
+   - tests: python3 -m compileall -q src; PYTHONPATH=src PYTHONNOUSERSITE=1 .venv311/bin/python -m pytest -q tests/test_vitals_bounds.py.
+   - tracer: path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 stage_counts={'header': 92, 'page': 25, 'borrow': 0, 'miss': 0}; counts pages=117 bands=117 vitals=236 rules=236 decisions=620.
+20. 2025-11-11T01:02:37Z — phase2 closeout instrumentation
+   - branch fix/phase2-vitals-to-decisions; wired decision de-duplication keys (slot label/row/rule) before tally, emitted rule-source breakdown + confidence histogram, and exposed the metrics through tracer JSON + BATON.
+   - tests: PYTHONPATH=src PYTHONNOUSERSITE=1 python -m compileall -q src; pytest -q tests/test_vitals_bounds.py tests/test_decision_metrics.py.
+   - tracer fields now include gated vitals, band stage counts, rule source breakdown, confidence histogram, and deduped decision totals for downstream scrapes.
+### 2025-11-11T01:09:09Z — Phase 2 Confirm + Phase 3 Kickoff (renderer cache + prefetch + timing)
+- head: fc684f5
+- py: Python 3.11.14; PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- Phase 2 tracer metrics already emit gated/band_stage_counts/rules_source_breakdown/conf_hist/decisions_unique; no patch required.
+- branch: fix/phase3-perf-cache
+- Added src/hushdesk/ui/renderer_cache.py + preview_renderer cache plumbing (doc path SHA, region quantization, ~180MB cap) to satisfy Phase 3 LRU requirement.
+- Introduced src/hushdesk/ui/preview_prefetcher.py executor helpers and tools/perf_probe.py for background warming + timing instrumentation.
+
+21. 2025-11-11T01:14:57Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 620}
+- compile/tests: PYTHONNOUSERSITE=1 PYTHONPATH=src .venv311/bin/python -m compileall -q src ✅; .venv311/bin/pytest -q tests/test_vitals_bounds.py ✅
+- tracer(after-perf): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 620}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 0, "default": 188}, "band_stage_counts": {"header": 92, "page": 25, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 188, "0.25-0.5": 0, "0.5-0.75": 0, "0.75-1.0": 0}, "decisions_unique": 188, "error": null}
+- perf_probe: {"pdf_sha": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "dpi": 144, "pages": 117, "samples": 12, "per_page_ms": [32.81745902495459, 21.77033299813047, 29.501750017516315, 28.84787501534447, 31.000332994153723, 18.567582999821752, 24.71079200040549, 32.20233297906816, 31.720165978185833, 31.633625010726973, 28.59124998212792, 23.039040999719873], "mean_ms": 27.866878333346296, "median_ms": 29.174812516430393, "total_s": 0.33441362497978844}
+- note: path hashed only; renderer cache + perf probe now available for downstream prefetch tuning.
