@@ -94,3 +94,52 @@
 - tracer(after-perf): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 620}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 0, "default": 188}, "band_stage_counts": {"header": 92, "page": 25, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 188, "0.25-0.5": 0, "0.5-0.75": 0, "0.75-1.0": 0}, "decisions_unique": 188, "error": null}
 - perf_probe: {"pdf_sha": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "dpi": 144, "pages": 117, "samples": 12, "per_page_ms": [32.81745902495459, 21.77033299813047, 29.501750017516315, 28.84787501534447, 31.000332994153723, 18.567582999821752, 24.71079200040549, 32.20233297906816, 31.720165978185833, 31.633625010726973, 28.59124998212792, 23.039040999719873], "mean_ms": 27.866878333346296, "median_ms": 29.174812516430393, "total_s": 0.33441362497978844}
 - note: path hashed only; renderer cache + perf probe now available for downstream prefetch tuning.
+- push: origin fix/phase3-perf-cache @ 6cae714 (phase3 cache/prefetch/perf probe)
+### 2025-11-11T01:33:30Z — Phase 2 Confirm & Phase 3 Wire-up (prefetch hooks, cache stats, tracer floors)
+- head: 6cae714
+- py: Python 3.11.14; PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- branch: fix/phase3-wireup-ci
+- prefetch_hooks: headless neighbor renderer warmup via preview_prefetcher (k±pages w/ hashed doc hint)
+- preview_renderer: expose cache_stats() for baton diagnostics
+
+22. 2025-11-11T01:35:21Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=97bbd88bbecb00d7ed9a1579447f555b1024033248cb09cf1fdf7d43c5d3e957 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+23. 2025-11-11T01:35:37Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 620}
+
+24. 2025-11-11T01:35:51Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 620}
+- tracer_assert: new headless guard rails for MAR counts; compileall + pytest (bounds/decision metrics) pass
+- tracer_run a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 -> audit OK + assert OK (bands>=112, gated_ratio<=0.15)
+- cache_stats snapshot: {"items": 0, "bytes": 0, "cap": 188743680}
+### 2025-11-11T01:51:08Z — Phase 3 UI prefetch wiring
+- head: 6cae714; branch fix/phase3-wireup-ci
+- ui: EvidencePanel + MainWindow now call hushdesk.ui.prefetch_hooks.prefetch_neighbors on selection once page indices resolve
+- hooks: prefetch_hooks accepts Path/str fallbacks and delegates to preview_prefetcher so headless runs can warm caches without live fitz docs
+### 2025-11-11T01:51:24Z — Minimal CI workflow added
+- head: 6cae714; branch fix/phase3-wireup-ci
+- ci: .github/workflows/ci.yml runs macos-latest Py3.11, compileall src, then pytest smoke (vitals_bounds + decision_metrics) with optional tracer block commented for MAR secrets
+### 2025-11-11T01:52:00Z — Phase 3 smoke compile/tests
+- head: 6cae714; python .venv311/bin/python 3.11 w/ PYTHONNOUSERSITE=1, PYTHONPATH=src
+- compile: python -m compileall -q src ✅
+- tests: pytest -q tests/test_vitals_bounds.py tests/test_decision_metrics.py ✅
+- tracer_assert: skipped (no MAR in workspace; CI block remains commented)
+### 2025-11-11T02:07:10Z — Phase 2: Rules Master (strict) + Per-Med Parse + Row-Scoping tests
+- head: 6cae714
+- py: bash: python: command not found; PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- branch: fix/phase2-rules-master
+- rules-master bring-up: Rule/RuleSet now emit concrete Rule objects + evaluate_vitals(); mar_grid_extract falls back to parse_strict_rules before default thresholds kick in.
+- tests: python3 -m compileall -q src ✅ · .venv311/bin/python -m pytest -q tests/test_rules_master_strict.py tests/test_row_scoping.py ✅
+
+25. 2025-11-11T02:19:28Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 620}
+
+26. 2025-11-11T02:19:42Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 620}
+- tracer(after rules-master): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 620}, "gated": {"sbp": 0, "hr": 19}}

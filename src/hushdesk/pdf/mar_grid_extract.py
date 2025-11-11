@@ -6,17 +6,21 @@ import math
 import re
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
 from hushdesk.pdf.dates import format_mmddyyyy
+from .band_resolver import BandResolver
 from .mar_blocks import MedBlock, block_zot, extract_med_blocks
-from .mar_header import band_for_date, column_zot
+from .mar_header import column_zot
 from .mar_tracks import TrackSpec, find_time_rows
 from .mar_tokens import bp_values, cell_state, pulse_value
 from .mupdf_canon import CanonPage, CanonWord
 from .qa_overlay import QAHighlights, TimeRail, VitalMark
 from .room_label import format_room_label, parse_room_and_bed_from_text, validate_room
+from .rules_master import parse_strict_rules
 from .rules_normalize import RuleSet, default_rules, parse_rules
+from .spatial_index import SpatialWordIndex
+from .vitals_bounds import GateStats, gate_hr, gate_sbp
 
 Rect = Tuple[float, float, float, float]
 
@@ -32,6 +36,8 @@ _slot_raw_labels: set[str] = set()
 _slot_ids_seen: set[str] = set()
 _slot_fallback_hits = 0
 _dc_column_hits = 0
+_gate_stats = GateStats()
+_band_stage_counts: Dict[str, int] = {"header": 0, "page": 0, "borrow": 0, "miss": 0}
 
 _TIME_TOKEN_RE = re.compile(r"\b(?:[0-1]?\d|2[0-3]):?[0-5]\d\b")
 _CHECKMARK_RE = re.compile(r"[\u221A\u2713\u2714]")
@@ -151,6 +157,48 @@ def _reset_dc_stats() -> None:
     _dc_column_hits = 0
 
 
+def _reset_gate_stats() -> None:
+    global _gate_stats
+    _gate_stats = GateStats()
+
+
+def _reset_band_stage_counts() -> None:
+    global _band_stage_counts
+    _band_stage_counts = {"header": 0, "page": 0, "borrow": 0, "miss": 0}
+
+
+def _record_gate(kind: str) -> None:
+    global _gate_stats
+    if kind == "sbp":
+        _gate_stats.sbp_gated += 1
+    elif kind == "hr":
+        _gate_stats.hr_gated += 1
+
+
+def _apply_sbp_gate(value: Optional[int]) -> Optional[int]:
+    if value is None:
+        return None
+    gated_value, gated = gate_sbp(value)
+    if gated and gated_value is None:
+        _record_gate("sbp")
+    return gated_value
+
+
+def _apply_hr_gate(value: Optional[int]) -> Optional[int]:
+    if value is None:
+        return None
+    gated_value, gated = gate_hr(value)
+    if gated and gated_value is None:
+        _record_gate("hr")
+    return gated_value
+
+
+def gate_totals() -> GateStats:
+    """Return the number of vitals rejected by hard gating in the last run."""
+
+    return GateStats(sbp_gated=_gate_stats.sbp_gated, hr_gated=_gate_stats.hr_gated)
+
+
 def _record_slot(label: str, slot_id: str, fallback_used: bool) -> None:
     global _slot_raw_labels, _slot_ids_seen, _slot_fallback_hits
     text = (label or "").strip()
@@ -226,6 +274,20 @@ def _record_dc_column_hit() -> None:
     _dc_column_hits += 1
 
 
+def _record_band_stage(stage: str) -> None:
+    global _band_stage_counts
+    key = (stage or "miss").lower()
+    if key not in _band_stage_counts:
+        _band_stage_counts[key] = 0
+    _band_stage_counts[key] += 1
+
+
+def band_stage_totals() -> Dict[str, int]:
+    """Return counts of pages resolved per band stage."""
+
+    return dict(_band_stage_counts)
+
+
 def _due_key(page_idx: int, block_id: str, date_disp: str, slot_id: str) -> DueKey:
     return (page_idx, block_id, date_disp, slot_id)
 
@@ -271,6 +333,7 @@ class PageExtraction:
     blocks: List[MedBlock] = field(default_factory=list)
     records: List[DueRecord] = field(default_factory=list)
     highlights: Optional[QAHighlights] = None
+    band_stage: str = "header"
 
 
 def extract_pages(
@@ -288,12 +351,25 @@ def extract_pages(
     _reset_clip_stats()
     _reset_slot_stats()
     _reset_dc_stats()
+    _reset_gate_stats()
+    _reset_band_stage_counts()
 
     results: List[PageExtraction] = []
     pages_seen = 0
+    resolver = BandResolver()
     for page in pages:
         pages_seen += 1
-        extraction = _extract_single_page(page, audit_date, hall)
+        decision = resolver.resolve(page, audit_date)
+        _record_band_stage(decision.stage)
+        if decision.band is None:
+            continue
+        extraction = _extract_single_page(
+            page,
+            audit_date,
+            hall,
+            column_band=decision.band,
+            band_stage=decision.stage,
+        )
         if extraction:
             results.append(extraction)
     try:
@@ -317,11 +393,10 @@ def _extract_single_page(
     page: CanonPage,
     audit_date: date,
     hall: str,
+    *,
+    column_band: Tuple[float, float],
+    band_stage: str,
 ) -> Optional[PageExtraction]:
-    column_band = band_for_date(page, audit_date)
-    if not column_band:
-        return None
-
     x0, x1 = column_zot(page, *column_band)
     audit_band: Rect = (x0, 0.0, x1, page.height)
     tracks = find_time_rows(page)
@@ -330,7 +405,12 @@ def _extract_single_page(
 
     med_blocks = extract_med_blocks(page)
     for block in med_blocks:
-        block.rules = parse_rules(block.text)
+        parsed_rules = parse_rules(block.text)
+        if not getattr(parsed_rules, "strict", False):
+            strict_rules = parse_strict_rules(block.text)
+            if strict_rules:
+                parsed_rules = RuleSet.from_rules(strict_rules)
+        block.rules = parsed_rules
 
     header_text = _header_text(page)
     labeled_room = parse_room_and_bed_from_text(header_text)
@@ -346,9 +426,11 @@ def _extract_single_page(
     ]
 
     column_words = clip_tokens(page.words, x0, x1, 0.0, page.height)
-    block_scope_cache: Dict[int, Tuple[Tuple[float, float], List[CanonWord], bool]] = {}
+    block_scope_cache: Dict[int, Tuple[Tuple[float, float], List[CanonWord], bool, Optional[SpatialWordIndex]]] = {}
 
-    def _block_scope(block_obj: MedBlock) -> Tuple[Tuple[float, float], List[CanonWord], bool]:
+    def _block_scope(
+        block_obj: MedBlock,
+    ) -> Tuple[Tuple[float, float], List[CanonWord], bool, Optional[SpatialWordIndex]]:
         cache_key = id(block_obj)
         cached = block_scope_cache.get(cache_key)
         if cached is not None:
@@ -356,7 +438,8 @@ def _extract_single_page(
         band = block_zot(block_obj, page.height)
         scoped_words = clip_tokens(column_words, x0, x1, band[0], band[1])
         column_mask = _has_column_cross(page, (x0, band[0], x1, band[1]))
-        block_scope_cache[cache_key] = (band, scoped_words, column_mask)
+        index = SpatialWordIndex.build(scoped_words)
+        block_scope_cache[cache_key] = (band, scoped_words, column_mask, index)
         if column_mask:
             _record_dc_column_hit()
         return block_scope_cache[cache_key]
@@ -373,14 +456,15 @@ def _extract_single_page(
     for spec, block in zip(tracks, matched_blocks):
         block_id = block_ids.get(id(block)) if block is not None else None
         if block is not None:
-            block_band, scoped_words, block_column_mask = _block_scope(block)
+            block_band, scoped_words, block_column_mask, block_index = _block_scope(block)
         else:
-            block_band, scoped_words, block_column_mask = (None, (), False)
+            block_band, scoped_words, block_column_mask, block_index = (None, (), False, None)
         _collect_due_evidence_if_strict(
             spec,
             block,
             page=page,
             block_words=scoped_words,
+            block_index=block_index,
             block_band=block_band,
             x0=x0,
             x1=x1,
@@ -405,7 +489,13 @@ def _extract_single_page(
     if not records:
         return None
 
-    return PageExtraction(page=page, blocks=med_blocks, records=records, highlights=highlights)
+    return PageExtraction(
+        page=page,
+        blocks=med_blocks,
+        records=records,
+        highlights=highlights,
+        band_stage=band_stage,
+    )
 
 
 def _header_text(page: CanonPage) -> str:
@@ -450,6 +540,80 @@ def _words_bbox(words: Sequence[CanonWord], default: Optional[Rect] = None) -> O
         float(max(xs1)),
         float(max(ys1)),
     )
+
+
+def _norm_label(text: str) -> str:
+    token = (text or "").strip().upper()
+    token = token.replace("\u00A0", " ")
+    token = token.replace(" ", "")
+    token = token.replace("B/P", "BP")
+    token = token.replace(":", "")
+    token = token.replace("-", "")
+    token = token.replace(".", "")
+    return token
+
+
+def _is_bp_label(text: str) -> bool:
+    normalized = _norm_label(text)
+    return normalized in {"BP", "SBP", "BPS"}
+
+
+def _is_hr_label(text: str) -> bool:
+    normalized = _norm_label(text)
+    return normalized in {"HR", "PULSE", "P", "PUL"}
+
+
+def _looks_numeric(text: str) -> bool:
+    return any(ch.isdigit() for ch in text or "")
+
+
+def _augment_words_with_labels(
+    words: Sequence[CanonWord],
+    *,
+    block_words: Sequence[CanonWord],
+    band: Tuple[float, float],
+    index: Optional[SpatialWordIndex],
+    predicate: Callable[[str], bool],
+    max_dy: float = 2.0,
+    max_dx: float = 110.0,
+) -> List[CanonWord]:
+    if index is None:
+        return list(words)
+
+    y0, y1 = band
+    anchors = [
+        word
+        for word in block_words
+        if predicate(word.text) and (y0 - 4.0) <= word.center[1] <= (y1 + 4.0)
+    ]
+    if not anchors:
+        anchors = [word for word in words if predicate(word.text)]
+    if not anchors:
+        return list(words)
+
+    seen = {id(word) for word in words}
+    expanded = list(words)
+    for anchor in anchors:
+        neighbors = index.neighbors(
+            anchor.center[0],
+            anchor.center[1],
+            max_dy=max_dy,
+            max_dx=max_dx,
+        )
+        for neighbor in neighbors:
+            if predicate(neighbor.text):
+                continue
+            if not _looks_numeric(neighbor.text):
+                continue
+            key = id(neighbor)
+            if key in seen:
+                continue
+            expanded.append(neighbor)
+            seen.add(key)
+
+    if expanded and len(expanded) != len(words):
+        expanded.sort(key=lambda word: (round(word.center[1], 3), word.center[0]))
+    return expanded
 
 
 def _match_block_to_track(
@@ -567,6 +731,7 @@ def _collect_due_evidence_if_strict(
     *,
     page: CanonPage,
     block_words: Sequence[CanonWord],
+    block_index: Optional[SpatialWordIndex],
     block_band: Optional[Tuple[float, float]],
     x0: float,
     x1: float,
@@ -610,11 +775,30 @@ def _collect_due_evidence_if_strict(
     due_words = list(_words_in_band(block_words, x0, x1, track.track_y0, track.track_y1))
     pulse_words = list(_words_in_band(block_words, x0, x1, track.pulse_y0, track.pulse_y1))
 
+    bp_words = _augment_words_with_labels(
+        bp_words,
+        block_words=block_words,
+        band=(track.bp_y0, track.bp_y1),
+        index=block_index,
+        predicate=_is_bp_label,
+    )
+    pulse_words = _augment_words_with_labels(
+        pulse_words,
+        block_words=block_words,
+        band=(track.pulse_y0, track.pulse_y1),
+        index=block_index,
+        predicate=_is_hr_label,
+    )
+
     sbp = bp_values(bp_words)
     if sbp is None:
         sbp = bp_values(due_words)
-
     hr = pulse_value(pulse_words)
+
+    raw_sbp = sbp
+    raw_hr = hr
+    sbp = _apply_sbp_gate(raw_sbp)
+    hr = _apply_hr_gate(raw_hr)
 
     cell_bounds = (x0, cell_y0, x1, cell_y1)
     roi_pixels, page_pixels = _preview_roi_for_bounds(page, cell_bounds)
@@ -802,4 +986,5 @@ __all__ = [
     "telemetry_suppressed",
     "dedup_totals",
     "dc_column_totals",
+    "band_stage_totals",
 ]
