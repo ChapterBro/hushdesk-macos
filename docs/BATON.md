@@ -251,6 +251,15 @@
 - tracer_assert: {"ok": true, "bands": 117, "vitals": 236, "gated_total": 19, "gated_ratio": 0.081, "parsed": 43, "baseline_parsed": 4, "reasons": []}
 - cache_stats: {"items": 0, "bytes": 0, "cap": 188743680}
 - DO_COMMIT=0 (receipt only; no push)
+### 2025-11-11T06:24:54Z — Phase-2/3 PUBLISH RECEIPT (tracer/floors; headless, no APIs)
+- head: b4214a6 on branch=fix/phase2-strict-wirein; env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- RUN_TRACER=1; RUN_PERF=0; real MAR path_sha256=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 (path only hashed)
+- verify: python -m compileall -q src ✅
+- tracer(final): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 565}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 43, "default": 115}, "band_stage_counts": {"header": 92, "page": 25, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 115, "0.25-0.5": 0, "0.5-0.75": 43, "0.75-1.0": 0}, "decisions_unique": 158, "error": null}
+- floors(summary): {"bands": 117, "vitals": 236, "parsed": 43, "gated_ratio": 0.081}
+- tracer_assert: {"ok": true, "bands": 117, "vitals": 236, "gated_total": 19, "gated_ratio": 0.081, "parsed": 43, "baseline_parsed": 4, "reasons": []}
+- cache_stats: {"items": 0, "bytes": 0, "cap": 188743680}
+- DO_COMMIT=1 (baton-only); DO_PUSH=0/DO_TAG=0
 
 41. 2025-11-11T06:05:48Z — audit tracer
    - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
@@ -277,5 +286,21 @@
    - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
 
 47. 2025-11-11T06:17:02Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+48. 2025-11-11T06:25:08Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+49. 2025-11-11T06:25:19Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+50. 2025-11-11T06:25:32Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+51. 2025-11-11T06:25:41Z — audit tracer
    - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
    - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
