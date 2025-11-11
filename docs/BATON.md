@@ -260,6 +260,18 @@
 - tracer_assert: {"ok": true, "bands": 117, "vitals": 236, "gated_total": 19, "gated_ratio": 0.081, "parsed": 43, "baseline_parsed": 4, "reasons": []}
 - cache_stats: {"items": 0, "bytes": 0, "cap": 188743680}
 - DO_COMMIT=1 (baton-only); DO_PUSH=0/DO_TAG=0
+### 2025-11-11T06:46:07Z — Phase-3 CLOSEOUT (perf verify • prefetch presence • baton seal)
+- head: 750a184 on branch=fix/phase2-strict-wirein; env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- presence: cache=yes prefetch=yes perf_probe=yes ci=yes
+- RUN_PERF=1; RUN_TRACER=1; real MAR path_sha256=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 (path only hashed)
+- verify: python -m compileall -q src ✅
+- perf_probe(cold): {"pdf_sha": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "dpi": 144, "pages": 117, "samples": 12, "per_page_ms": [33.636959007708356, 21.644167019985616, 29.486458020983264, 28.61174999270588, 30.825583002297208, 18.551125016529113, 24.88145901588723, 32.12995801004581, 31.756874988786876, 31.539082992821932, 28.89070799574256, 23.28333299374208], "mean_ms": 27.936454838102993, "median_ms": 29.18858300836291, "total_s": 0.33524920800118707}
+- perf_probe(warm): {"pdf_sha": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "dpi": 144, "pages": 117, "samples": 12, "per_page_ms": [32.55037497729063, 21.62087499164045, 29.31933299987577, 28.724584000883624, 30.706334015121683, 18.585916986921802, 24.468082992825657, 31.885249976767227, 31.482541002333164, 31.461541017051786, 28.734874998917803, 23.455374990589917], "mean_ms": 27.749590245851625, "median_ms": 29.027103999396786, "total_s": 0.33300666700233705} (≤ PERF_MEDIAN_MAX=35ms)
+- tracer(final): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 565}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 43, "default": 115}, "band_stage_counts": {"header": 92, "page": 25, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 115, "0.25-0.5": 0, "0.5-0.75": 43, "0.75-1.0": 0}, "decisions_unique": 158, "error": null}
+- floors(summary): {"bands": 117, "vitals": 236, "parsed": 43, "gated_ratio": 0.081}
+- tracer_assert: {"ok": true, "bands": 117, "vitals": 236, "gated_total": 19, "gated_ratio": 0.081, "parsed": 43, "baseline_parsed": 4, "reasons": []}
+- cache_stats: {"items": 0, "bytes": 0, "cap": 188743680}
+- DO_COMMIT=1 (baton-only); DO_PUSH=1; DO_TAG=0
 
 41. 2025-11-11T06:05:48Z — audit tracer
    - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
@@ -302,5 +314,17 @@
    - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
 
 51. 2025-11-11T06:25:41Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+52. 2025-11-11T06:45:04Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+53. 2025-11-11T06:45:13Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+54. 2025-11-11T06:46:01Z — audit tracer
    - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
    - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
