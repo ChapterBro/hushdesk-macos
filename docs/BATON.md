@@ -143,3 +143,139 @@
    - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
    - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 620}
 - tracer(after rules-master): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 620}, "gated": {"sbp": 0, "hr": 19}}
+- push_status: 0
+  * [new branch]      fix/phase2-rules-master -> fix/phase2-rules-master
+  branch 'fix/phase2-rules-master' set up to track 'origin/fix/phase2-rules-master'.
+
+27. 2025-11-11T02:40:14Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 620}
+
+28. 2025-11-11T02:43:04Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 620}
+
+29. 2025-11-11T02:48:40Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 619}
+
+30. 2025-11-11T02:48:52Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 619}
+31. 2025-11-11T02:49:18Z — phase2 strict band parse tracer
+   - branch fix/phase2-strict-wirein @ 9ae5596; python -m compileall -q src ✅
+   - tracer(strict-band): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 619}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 4, "default": 188}, "band_stage_counts": {"header": 92, "page": 25, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 188, "0.25-0.5": 0, "0.5-0.75": 4, "0.75-1.0": 0}, "decisions_unique": 192}
+   - parsed_ct=4 (>0 floor), bands=117 (>=112), gated_ratio=0.08 (19 gated / 236 vitals)
+
+32. 2025-11-11T03:23:04Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=8c4f49737491c24dfe920ec2a2a2471ef9d827c212f7cddbfe5baf69ea585af1 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+33. 2025-11-11T03:24:31Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 619}
+
+34. 2025-11-11T03:26:36Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 619}
+
+35. 2025-11-11T03:27:41Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 619}
+
+36. 2025-11-11T03:47:47Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+### 2025-11-11T03:48:05Z — Phase-2 STRICT PARSE TUNE (band-span + regex)
+- head: 9ae5596; branch fix/phase2-strict-tune; env: PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- tracer(baseline): {"counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 619}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 4, "default": 188}}
+- tracer(strict-tuned): {"counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 565}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 43, "default": 115}}
+- parsed_improved: 4 → 43; bands=117; gated_ratio=0.08
+- notes: block summaries now pull the entire band span (left panel + column) and strict regex covers chained comparators/synonyms; `python -m compileall -q src` ✅
+### 2025-11-11T04:02:52Z — Phase-2 STRICT PARSE SAFETY TUNE (span+regex only)
+- head: 9ae5596 on branch=fix/phase2-strict-wirein; env: Python 3.9.6 (PYTHONNOUSERSITE=1); QT_QPA_PLATFORM=offscreen
+- RUN_TRACER=0 — skipped real MAR access; tracer verification pending via tools/audit_tracer.py once RUN_TRACER=1
+- span: _block_text_summary now clamps to full page width with light vertical padding and merges CanonPage tokens safely
+- regex: parse_strict_rules normalizes ≥/≤/unicode, unifies SBP/HR synonyms, handles chained OR strict predicates, tags rules as strict
+- verify: python3 -m compileall -q src ✅
+- next: run PYTHONNOUSERSITE=1 PYTHONPATH=src python3 tools/audit_tracer.py "$MAR" | tail -n 1; expect bands ≥112, gated_ratio ≤0.15, parsed_after > parsed_before
+### 2025-11-11T05:34:32Z — Phase-2/3 CLOSEOUT (span+regex tune, floors helper)
+- head: 9ae5596 on branch=fix/phase2-strict-wirein; env: Python 3.9.6; PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- RUN_TRACER=0 — real MAR not accessible in sandbox; defer floors validation to local run (see below)
+- span: _block_text_summary now tagged [PHASE2_STRICT_SPAN_TUNED_SAFE] with full-width clamp + merged CanonPage text
+- regex: parse_strict_rules normalizes ≥/≤ + SBP/HR synonyms, scans chained comparators, dedups, tags rules.strict
+- tracer_assert: added min/baseline parsed floors so parsed_after must exceed baseline when RUN_TRACER=1
+- verify: python3 -m compileall -q src ✅
+- next: export RUN_TRACER=1 MAR="$HOME/Downloads/Administration Record Report 2025-11-10.pdf"; run PYTHONNOUSERSITE=1 PYTHONPATH=src python3 tools/audit_tracer.py "$MAR" | tail -n 1 and ensure bands ≥ 112 (ideally 117), gated_ratio ≤ 0.15, parsed_after > parsed_before
+
+37. 2025-11-11T05:43:22Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+38. 2025-11-11T05:43:40Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+39. 2025-11-11T05:45:33Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+40. 2025-11-11T05:45:46Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+### 2025-11-11T05:46:21Z — Phase-2/3 FINALIZE (strict span+regex, floors on real MAR)
+- head: 9ae5596 on branch=fix/phase2-strict-wirein; env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- RUN_TRACER=1; real MAR hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 (path only hashed)
+- span: _block_text_summary now clamps to page width with light vertical pad and merges CanonWord + CanonTextBlock text, single-spacing output
+- regex: parse_strict_rules aggressively normalizes ≥/≤, SBP/HR synonyms, GT/LT text, chained comparators; safe strict tagging even when Rule dataclass is frozen
+- tracer(after): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 565}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 43, "default": 115}, "band_stage_counts": {"header": 92, "page": 25, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 115, "0.25-0.5": 0, "0.5-0.75": 43, "0.75-1.0": 0}, "decisions_unique": 158, "error": null}
+- tracer_assert: {"ok": true, "bands": 117, "vitals": 236, "gated_total": 19, "gated_ratio": 0.081, "parsed": 43, "baseline_parsed": 4, "reasons": []}
+- floors: bands 117 ≥ 112, gated_ratio 0.081 ≤ 0.15, parsed improved 4 → 43 (baseline from baton entry #31)
+- cache_stats: {'items': 0, 'bytes': 0, 'cap': 188743680}
+- verify: python3 -m compileall -q src ✅
+### 2025-11-11T06:06:01Z — Phase-2/3 CLOSEOUT EXECUTION (strict span+regex verified; floors rechecked)
+- head: 9ae5596 on branch=fix/phase2-strict-wirein; env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- RUN_TRACER=1; real MAR path_sha256=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 (path only hashed)
+- tracer(baseline-json from Phase-2 strict tune): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 619}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 4, "default": 188}}
+- tracer(after): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 565}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 43, "default": 115}, "band_stage_counts": {"header": 92, "page": 25, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 115, "0.25-0.5": 0, "0.5-0.75": 43, "0.75-1.0": 0}, "decisions_unique": 158, "error": null}
+- tracer_assert: {"ok": true, "bands": 117, "vitals": 236, "gated_total": 19, "gated_ratio": 0.081, "parsed": 43, "baseline_parsed": 4, "reasons": []}
+- floors: bands=117 ≥ 112, parsed 4→43, gated_ratio=0.081 ≤ 0.15 (baseline provided via /tmp/mar_baseline.json)
+- cache_stats: {"items": 0, "bytes": 0, "cap": 188743680}
+- verify: python -m compileall -q src ✅
+### 2025-11-11T06:17:16Z — Phase-2/3 VERIFY & SEAL (final floors on real MAR; baton receipt)
+- head: 9ae5596 on branch=fix/phase2-strict-wirein; env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- RUN_TRACER=1; real MAR path_sha256=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 (path only hashed)
+- verify: python -m compileall -q src ✅
+- tracer(final): {"path_hash": "a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34", "status": "OK", "counts": {"pages": 117, "bands": 117, "vitals": 236, "rules": 236, "decisions": 565}, "gated": {"sbp": 0, "hr": 19}, "rules_source_breakdown": {"parsed": 43, "default": 115}, "band_stage_counts": {"header": 92, "page": 25, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 115, "0.25-0.5": 0, "0.5-0.75": 43, "0.75-1.0": 0}, "decisions_unique": 158, "error": null}
+- floors(summary): {"bands": 117, "vitals": 236, "parsed": 43, "gated_ratio": 0.081}
+- tracer_assert: {"ok": true, "bands": 117, "vitals": 236, "gated_total": 19, "gated_ratio": 0.081, "parsed": 43, "baseline_parsed": 4, "reasons": []}
+- cache_stats: {"items": 0, "bytes": 0, "cap": 188743680}
+- DO_COMMIT=0 (receipt only; no push)
+
+41. 2025-11-11T06:05:48Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+42. 2025-11-11T06:05:58Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+43. 2025-11-11T06:16:23Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+44. 2025-11-11T06:16:36Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+45. 2025-11-11T06:16:45Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+46. 2025-11-11T06:16:54Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
+
+47. 2025-11-11T06:17:02Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=201242892951
+   - path_hash=a4cd42ded6f60bd952a278c2740ffc48f89cc316404c33a2eef07242e09d1f34 status=OK counts={'pages': 117, 'bands': 117, 'vitals': 236, 'rules': 236, 'decisions': 565}
