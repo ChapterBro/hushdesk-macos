@@ -9,7 +9,7 @@ from datetime import date
 from typing import Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
 from hushdesk.pdf.dates import format_mmddyyyy
-from .band_resolver import BandResolver
+from .band_resolver import Band, BandResolver
 from .mar_blocks import MedBlock, block_zot, extract_med_blocks
 from .mar_header import column_zot
 from .mar_tracks import TrackSpec, find_time_rows
@@ -42,6 +42,13 @@ _band_stage_counts: Dict[str, int] = {"header": 0, "page": 0, "borrow": 0, "miss
 _TIME_TOKEN_RE = re.compile(r"\b(?:[0-1]?\d|2[0-3]):?[0-5]\d\b")
 _CHECKMARK_RE = re.compile(r"[\u221A\u2713\u2714]")
 _X_TOKEN_RE = re.compile(r"(?i)\bx+\b")
+_NOISE_BANNER_TOKENS = {
+    "MEDICAL",
+    "CONDITIONS",
+    "MEDICALCONDITIONS",
+    "ALLERGIES",
+}  # PHASE6_NOISE_PLUS
+_LABEL_DX_STEPS = (110.0, 150.0)  # PHASE6_LABEL_SPACE_TOL
 
 DueKey = Tuple[int, str, str, str]  # (page_idx, block_id, date_disp, slot_id)
 
@@ -357,18 +364,21 @@ def extract_pages(
     results: List[PageExtraction] = []
     pages_seen = 0
     resolver = BandResolver()
+    prev_band: Optional[Band] = None
     for page in pages:
         pages_seen += 1
-        decision = resolver.resolve(page, audit_date)
-        _record_band_stage(decision.stage)
-        if decision.band is None:
+        band = resolver.resolve(page, prev_band)
+        if not band:
+            _record_band_stage("miss")
             continue
+        prev_band = band
+        _record_band_stage(band.stage)
         extraction = _extract_single_page(
             page,
             audit_date,
             hall,
-            column_band=decision.band,
-            band_stage=decision.stage,
+            column_band=(band.y0, band.y1),
+            band_stage=band.stage,
         )
         if extraction:
             results.append(extraction)
@@ -437,6 +447,7 @@ def _extract_single_page(
             return cached
         band = block_zot(block_obj, page.height)
         scoped_words = clip_tokens(column_words, x0, x1, band[0], band[1])
+        scoped_words = [word for word in scoped_words if not _is_noise_banner(word.text)]
         column_mask = _has_column_cross(page, (x0, band[0], x1, band[1]))
         index = SpatialWordIndex.build(scoped_words)
         block_scope_cache[cache_key] = (band, scoped_words, column_mask, index)
@@ -553,6 +564,23 @@ def _norm_label(text: str) -> str:
     return token
 
 
+def _is_noise_banner(text: str) -> bool:
+    normalized = (text or "").strip().upper()
+    if not normalized:
+        return False
+    condensed = normalized.replace(" ", "")
+    return normalized in _NOISE_BANNER_TOKENS or condensed in _NOISE_BANNER_TOKENS
+
+
+def _scrub_noise_text(text: str) -> str:
+    if not text:
+        return ""
+    cleaned = text
+    for phrase in ("MEDICAL CONDITIONS", "ALLERGIES"):
+        cleaned = re.sub(phrase, " ", cleaned, flags=re.IGNORECASE)
+    return " ".join(cleaned.split())
+
+
 def _is_bp_label(text: str) -> bool:
     normalized = _norm_label(text)
     return normalized in {"BP", "SBP", "BPS"}
@@ -575,7 +603,7 @@ def _augment_words_with_labels(
     index: Optional[SpatialWordIndex],
     predicate: Callable[[str], bool],
     max_dy: float = 2.0,
-    max_dx: float = 110.0,
+    dx_steps: Tuple[float, ...] = (110.0,),
 ) -> List[CanonWord]:
     if index is None:
         return list(words)
@@ -594,22 +622,30 @@ def _augment_words_with_labels(
     seen = {id(word) for word in words}
     expanded = list(words)
     for anchor in anchors:
-        neighbors = index.neighbors(
-            anchor.center[0],
-            anchor.center[1],
-            max_dy=max_dy,
-            max_dx=max_dx,
-        )
-        for neighbor in neighbors:
-            if predicate(neighbor.text):
-                continue
-            if not _looks_numeric(neighbor.text):
-                continue
-            key = id(neighbor)
-            if key in seen:
-                continue
-            expanded.append(neighbor)
-            seen.add(key)
+        anchor_center = anchor.center
+        if not anchor_center:
+            continue
+        for max_dx in dx_steps or (110.0,):
+            neighbors = index.neighbors(
+                anchor_center[0],
+                anchor_center[1],
+                max_dy=max_dy,
+                max_dx=max_dx,
+            )
+            appended = False
+            for neighbor in neighbors:
+                if predicate(neighbor.text):
+                    continue
+                if not _looks_numeric(neighbor.text):
+                    continue
+                key = id(neighbor)
+                if key in seen:
+                    continue
+                expanded.append(neighbor)
+                seen.add(key)
+                appended = True
+            if appended:
+                break
 
     if expanded and len(expanded) != len(words):
         expanded.sort(key=lambda word: (round(word.center[1], 3), word.center[0]))
@@ -781,6 +817,7 @@ def _collect_due_evidence_if_strict(
         band=(track.bp_y0, track.bp_y1),
         index=block_index,
         predicate=_is_bp_label,
+        dx_steps=_LABEL_DX_STEPS,
     )
     pulse_words = _augment_words_with_labels(
         pulse_words,
@@ -788,6 +825,7 @@ def _collect_due_evidence_if_strict(
         band=(track.pulse_y0, track.pulse_y1),
         index=block_index,
         predicate=_is_hr_label,
+        dx_steps=_LABEL_DX_STEPS,
     )
 
     sbp = bp_values(bp_words)
@@ -806,9 +844,9 @@ def _collect_due_evidence_if_strict(
     due_bbox = _words_bbox(due_words, default=cell_bounds)
     bp_bbox = _words_bbox(bp_words)
     hr_bbox = _words_bbox(pulse_words)
-    bp_text = " ".join(word.text.strip() for word in bp_words if word.text.strip())
-    due_text = " ".join(word.text.strip() for word in due_words if word.text.strip())
-    hr_text = " ".join(word.text.strip() for word in pulse_words if word.text.strip())
+    bp_text = _scrub_noise_text(" ".join(word.text.strip() for word in bp_words if word.text.strip()))
+    due_text = _scrub_noise_text(" ".join(word.text.strip() for word in due_words if word.text.strip()))
+    hr_text = _scrub_noise_text(" ".join(word.text.strip() for word in pulse_words if word.text.strip()))
 
     if sbp is not None and bp_bbox and highlights is not None:
         highlights.vitals.append(VitalMark(bbox=bp_bbox, label=f"SBP {sbp}"))

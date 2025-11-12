@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import os
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Iterable, Pattern
@@ -69,3 +70,14 @@ def resolve_audit_date(filename: Path) -> date:
     today_central = datetime.now(tz=CENTRAL_TZ).date()
     return central_prev_day(today_central)
 
+
+def dev_override_date() -> date | None:
+    """Return a developer-specified audit date via HUSHDESK_DEV_DATE (YYYY-MM-DD)."""
+
+    value = os.environ.get("HUSHDESK_DEV_DATE")
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None

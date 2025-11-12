@@ -88,6 +88,23 @@ def _append_baton_entry(results: List[Dict[str, Any]]) -> None:
         handle.write("\n".join(lines) + "\n")
 
 
+def _run_engine_first(pdf_path: str, *, hall: str) -> Dict[str, Any] | None:
+    try:
+        from hushdesk.engine.audit import AuditContext, run_mar_audit as engine_run
+    except Exception:
+        return None
+    try:
+        context = AuditContext(pdf_path=pdf_path, hall=hall)
+        engine_result = engine_run(context)
+    except Exception as exc:  # pragma: no cover - defensive fall back
+        return {"ok": False, "counts": {}, "error": f"{exc.__class__.__name__}: {exc}"}
+    return {
+        "ok": bool(getattr(engine_result, "ok", False)),
+        "counts": dict(getattr(engine_result, "counts", {}) or {}),
+        "error": getattr(engine_result, "error", None),
+    }
+
+
 def trace_pdf(pdf_path: str, *, hall: str) -> Dict[str, Any]:
     result: Dict[str, Any] = {
         "path_hash": hashlib.sha256(str(Path(pdf_path).expanduser().resolve()).encode("utf-8")).hexdigest(),
@@ -100,6 +117,15 @@ def trace_pdf(pdf_path: str, *, hall: str) -> Dict[str, Any]:
     except FileNotFoundError as exc:
         result["error"] = f"{exc.__class__.__name__}: {exc}"
         return result
+
+    engine_summary = _run_engine_first(str(source), hall=hall)
+    if engine_summary:
+        result["counts"] = engine_summary.get("counts", result["counts"])
+        if engine_summary.get("ok"):
+            result["status"] = "OK"
+            return result
+        if engine_summary.get("error"):
+            result["error"] = engine_summary["error"]
 
     try:
         audit_date = _resolve_audit_date(source)
