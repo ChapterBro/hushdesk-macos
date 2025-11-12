@@ -13,6 +13,7 @@ from hushdesk.pdf.mar_blocks import draw_med_blocks_debug
 from hushdesk.pdf import mar_grid_extract as grid_extract
 from hushdesk.pdf.mar_grid_extract import DueRecord, PageExtraction, extract_pages
 from hushdesk.pdf.mar_header import band_for_date
+from hushdesk.pdf.band_resolver import BandResolver
 from hushdesk.pdf.mupdf_canon import CanonPage, iter_canon_pages
 from hushdesk.pdf.qa_overlay import QAHighlights, draw_overlay
 from hushdesk.report.model import DecisionRecord
@@ -316,10 +317,18 @@ def _coverage_from_pages(
     pages: Sequence[CanonPage],
     audit_date: date,
     *,
-    band_resolver: Callable[[CanonPage, date], Optional[Tuple[float, float]]] = band_for_date,
+    band_resolver: Optional[Callable[[CanonPage, date], Optional[Tuple[float, float]]]] = None,
 ) -> tuple[int, int]:
     total = len(pages)
     with_band = 0
+    if band_resolver is None:
+        resolver = BandResolver()
+
+        def _resolve(page: CanonPage, when: date) -> Optional[Tuple[float, float]]:
+            decision = resolver.resolve(page, when)
+            return decision.band
+
+        band_resolver = _resolve
     for page in pages:
         try:
             band = band_resolver(page, audit_date)
