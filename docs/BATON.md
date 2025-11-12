@@ -372,3 +372,84 @@
 - budgets enforced: AUDIT_TOTAL_MAX_S=120 (->46.8s @117pp), PAGE_RENDER_MEDIAN_MS_MAX=35, RSS_MAX_MB=900
 - budgets_verdict: PASS
 - DO_COMMIT=0/DO_PUSH=0/DO_TAG=0 (receipt only; baton sealed)
+### 2025-11-11T23:05:13Z — Phase-5 PREP (import-smoke fix on feat/phase5-rules-master; base=fix/phase2-strict-wirein)
+- head: 0891ab9  env: Python 3.11.14; PYTHONNOUSERSITE=1
+- compile: .venv311/bin/python -m compileall -q src ✅
+- import_smoke: tools/import_smoke.py missing; manual `import hushdesk.pdf.mar_grid_extract` ✅
+- DO_COMMIT=0; changes not committed by design
+
+55. 2025-11-11T23:28:22Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+56. 2025-11-11T23:29:19Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=8c4f49737491c24dfe920ec2a2a2471ef9d827c212f7cddbfe5baf69ea585af1 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+57. 2025-11-11T23:29:42Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+58. 2025-11-11T23:29:53Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+59. 2025-11-11T23:31:08Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+60. 2025-11-11T23:31:59Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+61. 2025-11-11T23:32:33Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 538}
+
+62. 2025-11-11T23:43:29Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 538}
+### 2025-11-11T23:46:22Z — Phase-5 RULES MASTER V2 (strict parse on real MAR) — feat/phase5-rules-master
+- head: 0891ab9 on branch=feat/phase5-rules-master; env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- import_smoke: IMPORT_OK
+- MAR path_sha256=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683
+- tracer(baseline): {"path_hash": "5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683", "status": "OK", "counts": {"pages": 106, "bands": 106, "vitals": 216, "rules": 216, "decisions": 538}, "gated": {"sbp": 0, "hr": 44}, "rules_source_breakdown": {"parsed": 27, "default": 48}, "band_stage_counts": {"header": 106, "page": 0, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 48, "0.25-0.5": 0, "0.5-0.75": 27, "0.75-1.0": 0}, "decisions_unique": 75, "error": null}
+- tracer(after): {"path_hash": "5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683", "status": "OK", "counts": {"pages": 106, "bands": 106, "vitals": 216, "rules": 216, "decisions": 538}, "gated": {"sbp": 0, "hr": 44}, "rules_source_breakdown": {"parsed": 27, "default": 48}, "band_stage_counts": {"header": 106, "page": 0, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 48, "0.25-0.5": 0, "0.5-0.75": 27, "0.75-1.0": 0}, "decisions_unique": 75, "error": null}
+- parsed_delta: 27 → 27
+- floors(summary): {"bands": 106, "gated_ratio": 0.204}
+- DO_COMMIT=0; changes left uncommitted by design
+### 2025-11-12T00:31:42Z — Phase-5 HOTFIX (bands/gated on Administration Record Report 2025-11-11.pdf) — feat/phase5-rules-master
+- head: 0891ab9 on branch=feat/phase5-rules-master; env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- import_smoke: IMPORT_OK
+- MAR path_sha256=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683
+- tracer(after): {"path_hash": "5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683", "status": "OK", "counts": {"pages": 106, "bands": 106, "vitals": 216, "rules": 216, "decisions": 538}, "gated": {"sbp": 0, "hr": 0}, "rules_source_breakdown": {"parsed": 27, "default": 48}, "band_stage_counts": {"header": 0, "page": 106, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 48, "0.25-0.5": 0, "0.5-0.75": 27, "0.75-1.0": 0}, "decisions_unique": 75, "error": null}
+- floors(summary): {"bands": 106, "gated_ratio": 0.0}
+- DO_COMMIT=0; changes left uncommitted by design
+
+63. 2025-11-12T00:28:36Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 538}
+
+64. 2025-11-12T00:44:03Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 538}
+
+65. 2025-11-12T00:44:10Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 538}
+
+66. 2025-11-12T00:44:27Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 538}
+
+67. 2025-11-12T00:44:35Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=afe64d704918
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 538}
+### 2025-11-12T00:44:37Z — Phase-5 SEAL (dynamic floors) — feat/phase5-rules-master
+- head: 0891ab9 on branch=feat/phase5-rules-master; env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1
+- verify: python -m compileall -q src ✅
+- import_smoke: IMPORT_OK
+- MAR filename=Administration Record Report 2025-11-11.pdf  path_sha256=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 (path only hashed)
+- tracer(final): {"path_hash": "5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683", "status": "OK", "counts": {"pages": 106, "bands": 106, "vitals": 216, "rules": 216, "decisions": 538}, "gated": {"sbp": 0, "hr": 0}, "rules_source_breakdown": {"parsed": 27, "default": 48}, "band_stage_counts": {"header": 0, "page": 106, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 48, "0.25-0.5": 0, "0.5-0.75": 27, "0.75-1.0": 0}, "decisions_unique": 75, "error": null}
+- tracer_assert(strict-only, --use-pages-as-min-bands, --max-gated-ratio 0.15): {"ok": true, "bands": 106, "pages": 106, "vitals": 216, "gated_total": 0, "gated_ratio": 0.0, "min_bands": 106, "parsed": 27, "baseline_parsed": null, "reasons": []}
+- DO_COMMIT=0; changes left uncommitted by design
