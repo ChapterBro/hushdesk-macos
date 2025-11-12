@@ -453,3 +453,8 @@
 - tracer(final): {"path_hash": "5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683", "status": "OK", "counts": {"pages": 106, "bands": 106, "vitals": 216, "rules": 216, "decisions": 538}, "gated": {"sbp": 0, "hr": 0}, "rules_source_breakdown": {"parsed": 27, "default": 48}, "band_stage_counts": {"header": 0, "page": 106, "borrow": 0, "miss": 0}, "conf_hist": {"0.0-0.25": 48, "0.25-0.5": 0, "0.5-0.75": 27, "0.75-1.0": 0}, "decisions_unique": 75, "error": null}
 - tracer_assert(strict-only, --use-pages-as-min-bands, --max-gated-ratio 0.15): {"ok": true, "bands": 106, "pages": 106, "vitals": 216, "gated_total": 0, "gated_ratio": 0.0, "min_bands": 106, "parsed": 27, "baseline_parsed": null, "reasons": []}
 - DO_COMMIT=0; changes left uncommitted by design
+### 2025-11-12T01:13:09Z — Phase-5 MERGE & RELEASE (PII-safe) — merged feat/phase5-rules-master → main
+- head(main): 79d145c   head(work): 79d145c
+- sanity: compileall ✅, import_smoke ✅ (RUN_TESTS=0)
+- release_note: docs/releases/phase5_seal.md
+- tag: seal-phase5-20251112T005134Z (existing anchor)
