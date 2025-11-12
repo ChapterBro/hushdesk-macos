@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+if git diff --cached --name-only | grep -E '\\.(pdf|docx?|xlsx?)$' >/dev/null; then
+  echo 'Refusing to commit Office/PDF artifacts.'
+  exit 1
+fi
+if git diff --cached --name-only | grep -q '^docs/BATON\.md$'; then
+  if git diff --cached docs/BATON.md | grep -E '/Users/|\\:' >/dev/null; then
+    echo 'Baton contains raw file paths. Use SHA-256 only.'
+    exit 1
+  fi
+fi
+exit 0

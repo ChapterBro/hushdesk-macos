@@ -1,0 +1,30 @@
+ACTION	BRANCH	NOTE
+KEEP	chore/housekeeping-20251112T060658Z	current
+ARCHIVE_LOCAL	codex/work	
+ARCHIVE_LOCAL	docs/dev-setup-311	
+KEEP	feat/phase5-rules-master	protected
+KEEP	feat/phase6-template-ocr	protected
+ARCHIVE_LOCAL	feat/preview-rotation-normalize	
+ARCHIVE_LOCAL	fix/audit-downloads-permission-and-headless	
+ARCHIVE_LOCAL	fix/canon-matrix	
+ARCHIVE_LOCAL	fix/cleanroom-imports	
+ARCHIVE_LOCAL	fix/e2e-tracer	
+ARCHIVE_LOCAL	fix/everything	
+ARCHIVE_LOCAL	fix/mac-launch	
+ARCHIVE_LOCAL	fix/mar-canon-final	
+ARCHIVE_LOCAL	fix/mar-canon-parser	
+ARCHIVE_LOCAL	fix/phase1-foundation	
+ARCHIVE_LOCAL	fix/phase2-rules-master	
+ARCHIVE_LOCAL	fix/phase2-strict-wirein	
+ARCHIVE_LOCAL	fix/phase2-vitals-to-decisions	
+ARCHIVE_LOCAL	fix/phase3-perf-cache	
+ARCHIVE_LOCAL	fix/phase3-wireup-ci	
+ARCHIVE_LOCAL	fix/preview-fit-clip	
+ARCHIVE_LOCAL	fix/preview-orientation-fit	
+ARCHIVE_LOCAL	fix/reproducible-env	
+ARCHIVE_LOCAL	fix/tests-pytest-quick	
+KEEP	main	protected
+ARCHIVE_LOCAL	pr5	
+ARCHIVE_LOCAL	pr6	
+ARCHIVE_LOCAL	test/preview-rotation-coverage	
+ARCHIVE_LOCAL	wip/afk-20251107-111320	
