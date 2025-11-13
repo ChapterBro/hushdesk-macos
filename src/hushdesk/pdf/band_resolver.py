@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional, Tuple
 
 from .mar_header import band_for_date
+from .mupdf_canon import CanonPage
+
+_HEADER_SLICE_RATIO = 0.18  # PHASE6_TOLERANCE
+_MIN_HEADER_WORDS = 4
 
 
 @dataclass(slots=True)
@@ -13,7 +17,7 @@ class BandDecision:
     """Resolved column band paired with the detection stage."""
 
     band: Optional[Tuple[float, float]]
-    stage: str  # 'header' | 'borrow' | 'miss'
+    stage: str  # 'header' | 'page' | 'borrow' | 'miss'
 
 
 class BandResolver:
@@ -25,8 +29,9 @@ class BandResolver:
     outright.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, header_slice_ratio: float = _HEADER_SLICE_RATIO) -> None:
         self._prev: Optional[BandDecision] = None
+        self._header_slice_ratio = max(0.0, min(header_slice_ratio, 1.0)) or _HEADER_SLICE_RATIO
 
     def resolve(self, page, audit_date) -> BandDecision:
         """
@@ -39,16 +44,21 @@ class BandResolver:
         band_tuple: Optional[Tuple[float, float]] = None
         stage = "miss"
 
-        try:
-            detected = band_for_date(page, audit_date)
-        except Exception:
-            detected = None
+        detected = self._band_from_page(page, audit_date)
 
         if detected:
             # Normalize to floats to keep overlaps predictable for later tracing.
             band_tuple = (float(detected[0]), float(detected[1]))
             stage = "header"
-        elif self._prev and self._prev.band:
+        else:
+            sliced = self._slice_header_page(page)
+            if sliced is not None:
+                detected = self._band_from_page(sliced, audit_date)
+                if detected:
+                    band_tuple = (float(detected[0]), float(detected[1]))
+                    stage = "page"
+
+        if not band_tuple and self._prev and self._prev.band:
             band_tuple = self._prev.band
             stage = "borrow"
 
@@ -56,6 +66,23 @@ class BandResolver:
         if band_tuple:
             self._prev = decision
         return decision
+
+    def _band_from_page(self, page: CanonPage, audit_date) -> Optional[Tuple[float, float]]:
+        try:
+            return band_for_date(page, audit_date)
+        except Exception:
+            return None
+
+    def _slice_header_page(self, page: CanonPage) -> Optional[CanonPage]:
+        if not isinstance(page, CanonPage):
+            return None
+        limit = float(page.height or 0.0) * self._header_slice_ratio
+        if limit <= 0.0:
+            return None
+        header_words = [word for word in page.words if word.center[1] <= limit]
+        if len(header_words) < _MIN_HEADER_WORDS:
+            return None
+        return replace(page, words=header_words)
 
 
 __all__ = ["BandDecision", "BandResolver"]
