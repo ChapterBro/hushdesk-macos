@@ -106,7 +106,9 @@ def main() -> None:
     gated = payload.get("gated", {})
     gated_total = int(gated.get("sbp", 0)) + int(gated.get("hr", 0))
     ratio = (gated_total / vitals) if vitals > 0 else 0.0
-    parsed = int((payload.get("rules_source_breakdown") or {}).get("parsed", 0))
+    breakdown = payload.get("rules_source_breakdown") or {}
+    parsed = int(breakdown.get("parsed", 0))
+    default = int(breakdown.get("default", 0))
 
     ok = True
     reasons: list[str] = []
@@ -145,6 +147,7 @@ def main() -> None:
         "min_bands": min_bands,
         "min_bands_source": min_bands_source,
         "parsed": parsed,
+        "default": default,
         "baseline_parsed": baseline_parsed,
         "reasons": reasons,
     }
