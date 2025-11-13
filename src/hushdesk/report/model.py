@@ -23,6 +23,8 @@ class DecisionRecord:
     code: Optional[int]
     dcd_reason: Optional[str]
     notes: Optional[str] = None
+    chip: bool = False
+    preview: Optional[Dict[str, object]] = None
     extras: Dict[str, object] = field(default_factory=dict)
 
 

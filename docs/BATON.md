@@ -458,3 +458,136 @@
 - sanity: compileall ✅, import_smoke ✅ (RUN_TESTS=0)
 - release_note: docs/releases/phase5_seal.md
 - tag: seal-phase5-20251112T005134Z (existing anchor)
+### 2025-11-12T01:18:26Z — Phase-6 TEMPLATE & OCR RESILIENCE (bands≥pages; gated≤0.15) — feat/phase6-template-ocr
+- head: f484877  env: Python 3.11.14; PYTHONNOUSERSITE=1
+- import_smoke: IMPORT_OK
+- tests: pytest tests/test_band_resolver_fuzz.py tests/test_label_proximity_fuzz.py ✅
+
+68. 2025-11-12T01:31:21Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 83, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+69. 2025-11-12T01:33:01Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 83, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+70. 2025-11-12T01:33:26Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 83, 'vitals': 0, 'rules': 0, 'decisions': 0}
+- MAR path_sha256=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 (path only hashed)
+- tracer(final): {"path_hash": "5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683", "status": "OK", "counts": {"pages": 106, "bands": 83, "vitals": 0, "rules": 0, "decisions": 0}, "error": null}
+- tracer_assert(dynamic floors): {"ok": false, "bands": 83, "pages": 106, "vitals": 0, "gated_total": 0, "gated_ratio": 0.0, "min_bands": 106, "parsed": 0, "baseline_parsed": null, "reasons": ["bands<106 (got 83)"]}
+- DO_COMMIT=0; changes left uncommitted by design
+
+71. 2025-11-12T01:47:00Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=FAIL counts={}
+
+72. 2025-11-12T01:48:29Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 83, 'vitals': 0, 'rules': 0, 'decisions': 0, 'reviewed': 0, 'parametered': 0, 'no_rule': 0, 'no_sbp': 0, 'no_hr': 0, 'hold_miss': 0, 'held_appropriate': 0, 'compliant': 0, 'dcd': 0}
+
+73. 2025-11-12T01:56:00Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49}
+
+74. 2025-11-12T01:56:13Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49}
+
+75. 2025-11-12T01:57:19Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49}
+
+76. 2025-11-12T01:57:28Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49}
+### 2025-11-12T01:57:45Z — Phase-6 SETUP CORRECTION (compat + engine-first tracer) — feat/phase6-template-ocr
+- head: f484877 env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- import_smoke(after): IMPORT_OK
+- tests: pytest tests/test_band_resolver_fuzz.py tests/test_label_proximity_fuzz.py ✅
+- MAR path_sha256=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683
+- tracer(final): {"path_hash": "5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683", "status": "OK", "counts": {"pages": 106, "bands": 106, "vitals": 216, "rules": 216, "decisions": 550, "reviewed": 538, "parametered": 216, "no_rule": 0, "no_sbp": 205, "no_hr": 188, "hold_miss": 3, "held_appropriate": 24, "compliant": 462, "dcd": 49, "held_ok": 24}, "error": null}
+- tracer_assert(--use-pages-as-min-bands --max-gated-ratio 0.15): {"ok": true, "bands": 106, "pages": 106, "vitals": 216, "gated_total": 0, "gated_ratio": 0.0, "min_bands": 106, "parsed": 0, "baseline_parsed": null, "reasons": []}
+- DO_COMMIT=0; changes left uncommitted by design
+
+77. 2025-11-12T01:59:59Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49, 'held_ok': 24}
+
+78. 2025-11-12T02:00:09Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49, 'held_ok': 24}
+
+79. 2025-11-12T02:24:12Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=08b2e7d51ce89c78e0d985f413a966483e8c821292788ad1d5644405ec003563 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+80. 2025-11-12T02:24:28Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=08b2e7d51ce89c78e0d985f413a966483e8c821292788ad1d5644405ec003563 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+81. 2025-11-12T02:24:38Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49, 'held_ok': 24}
+
+82. 2025-11-12T02:24:57Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49, 'held_ok': 24}
+
+83. 2025-11-12T02:30:43Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49, 'held_ok': 24}
+
+84. 2025-11-12T02:30:59Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550, 'reviewed': 538, 'parametered': 216, 'no_rule': 0, 'no_sbp': 205, 'no_hr': 188, 'hold_miss': 3, 'held_appropriate': 24, 'compliant': 462, 'dcd': 49, 'held_ok': 24}
+### 2025-11-12T02:31:30Z — Phase-5 SEAL (dynamic floors re-verify) — feat/phase6-template-ocr
+- head: f484877 on branch=feat/phase6-template-ocr; env: Python 3.11.14 (.venv311); PYTHONNOUSERSITE=1; QT_QPA_PLATFORM=offscreen
+- verify: python -m compileall -q src ✅
+- verify: python -m compileall -q tools ✅
+- import_smoke: IMPORT_OK
+- MAR path_sha256=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 (path only hashed)
+- tracer(final): {"path_hash": "5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683", "status": "OK", "counts": {"pages": 106, "bands": 106, "vitals": 216, "rules": 216, "decisions": 550, "reviewed": 538, "parametered": 216, "no_rule": 0, "no_sbp": 205, "no_hr": 188, "hold_miss": 3, "held_appropriate": 24, "compliant": 462, "dcd": 49, "held_ok": 24}, "error": null}
+- tracer_assert(--use-pages-as-min-bands --max-gated-ratio 0.15): {"ok": true, "bands": 106, "pages": 106, "vitals": 216, "gated_total": 0, "gated_ratio": 0.0, "min_bands": 106, "min_bands_source": "pages", "parsed": 0, "baseline_parsed": null, "reasons": []}
+- DO_COMMIT=1; scope constrained to tools/tracer_assert.py + docs/BATON.md (no push/tag yet)
+
+85. 2025-11-12T03:22:34Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 550}
+
+86. 2025-11-12T04:11:08Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+87. 2025-11-12T04:11:23Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+88. 2025-11-12T04:18:00Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+89. 2025-11-12T04:18:08Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+90. 2025-11-12T04:18:41Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=FAIL counts={'pages': 0, 'bands': 0, 'vitals': 0, 'rules': 0, 'decisions': 0}
+
+91. 2025-11-12T04:19:01Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 83, 'vitals': 216, 'rules': 216, 'decisions': 596}
+
+92. 2025-11-12T04:19:13Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 83, 'vitals': 216, 'rules': 216, 'decisions': 596}
+
+93. 2025-11-12T04:20:57Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 596}
+
+94. 2025-11-12T04:21:18Z — audit tracer
+   - worker_sha=2bfa1dd0f245 renderer_sha=db1950e6f80d
+   - path_hash=5e0bd408999ce713e0009dac53373869e670adf22ffdf64c10f059c0a0c36683 status=OK counts={'pages': 106, 'bands': 106, 'vitals': 216, 'rules': 216, 'decisions': 596}

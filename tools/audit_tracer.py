@@ -48,6 +48,56 @@ def _counts_from_result(result) -> Dict[str, int]:
     }
 
 
+def _breakdown_from_result(result) -> Dict[str, int]:
+    """Return rules_source_breakdown even when worker omits it."""
+
+    def _dict_or_none(value):
+        try:
+            return dict(value)
+        except Exception:
+            return None
+
+    existing = getattr(result, "rules_source_breakdown", None)
+    if existing is None and isinstance(result, dict):
+        existing = result.get("rules_source_breakdown")
+    existing_dict = _dict_or_none(existing)
+    if existing_dict:
+        return existing_dict
+
+    parsed_total = 0
+    default_total = 0
+    for name in ("due_records", "records", "results", "items"):
+        records = getattr(result, name, None)
+        if records is None and isinstance(result, dict):
+            records = result.get(name)
+        if not records:
+            continue
+        for record in records:
+            is_dict = isinstance(record, dict)
+            src = None
+            for key in ("rule_source", "source", "rules_source", "strict_source"):
+                value = record.get(key) if is_dict else getattr(record, key, None)
+                if value:
+                    src = value
+                    break
+            strict_flag = False
+            for key in ("strict", "is_strict", "strict_parsed"):
+                value = record.get(key) if is_dict else getattr(record, key, None)
+                if value:
+                    strict_flag = bool(value)
+                    break
+            if not strict_flag:
+                text = record.get("rule_text") if is_dict else getattr(record, "rule_text", None)
+                if isinstance(text, str) and "Hold if" in text:
+                    strict_flag = True
+            if (isinstance(src, str) and src.lower() == "parsed") or strict_flag:
+                parsed_total += 1
+            else:
+                default_total += 1
+        break
+    return {"parsed": parsed_total, "default": default_total}
+
+
 def _module_digest(module) -> str:
     path = Path(getattr(module, "__file__", "") or "")
     try:
@@ -93,6 +143,7 @@ def trace_pdf(pdf_path: str, *, hall: str) -> Dict[str, Any]:
         "path_hash": hashlib.sha256(str(Path(pdf_path).expanduser().resolve()).encode("utf-8")).hexdigest(),
         "status": "FAIL",
         "counts": {"pages": 0, "bands": 0, "vitals": 0, "rules": 0, "decisions": 0},
+        "rules_source_breakdown": {"parsed": 0, "default": 0},
         "error": None,
     }
     try:
@@ -110,6 +161,7 @@ def trace_pdf(pdf_path: str, *, hall: str) -> Dict[str, Any]:
             qa_prefix=False,
         )
         result["counts"] = _counts_from_result(audit_result)
+        result["rules_source_breakdown"] = _breakdown_from_result(audit_result)
         result["status"] = "OK"
     except Exception as exc:  # pragma: no cover - defensive trace capture
         result["error"] = f"{exc.__class__.__name__}: {exc}"
