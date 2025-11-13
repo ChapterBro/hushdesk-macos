@@ -40,6 +40,9 @@ class MarAuditResult:
     pages_total: int = 0
     pages_with_band: int = 0
     suppressed: int = 0
+    rules_source_breakdown: Dict[str, int] = field(
+        default_factory=lambda: {"parsed": 0, "default": 0}
+    )
 
 
 @dataclass(slots=True)
@@ -52,6 +55,46 @@ class RuleEntry:
     value: Optional[int]
     value_text: str
     rule_text: str
+
+
+def _attach_rules_source_breakdown(result: MarAuditResult) -> None:
+    """Ensure audit results expose strict vs default rule provenance."""
+
+    def _source_token(value: object) -> str:
+        if isinstance(value, str):
+            return value.lower()
+        enum_value = getattr(value, "value", None)
+        if isinstance(enum_value, str):
+            return enum_value.lower()
+        return ""
+
+    parsed = 0
+    default = 0
+    due_records = getattr(result, "due_records", None) or []
+    if due_records:
+        for due in due_records:
+            rules = getattr(due, "rules", None)
+            source = _source_token(getattr(rules, "source", None))
+            if source == "parsed":
+                parsed += 1
+            else:
+                default += 1
+    else:
+        records = getattr(result, "records", None) or []
+        for record in records:
+            extras = getattr(record, "extras", None)
+            rule_source = None
+            if isinstance(extras, dict):
+                rules_meta = extras.get("rules")
+                if isinstance(rules_meta, dict):
+                    rule_source = rules_meta.get("source") or rules_meta.get("rule_source")
+            source = _source_token(rule_source)
+            if source == "parsed":
+                parsed += 1
+            else:
+                default += 1
+
+    result.rules_source_breakdown = {"parsed": parsed, "default": default}
 
 
 def run_mar_audit(
@@ -257,6 +300,7 @@ def run_mar_audit(
         pages_with_band=pages_with_band,
         suppressed=suppressed,
     )
+    _attach_rules_source_breakdown(result)
     return result
 
 
