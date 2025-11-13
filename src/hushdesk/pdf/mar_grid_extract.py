@@ -404,13 +404,6 @@ def _extract_single_page(
         return None
 
     med_blocks = extract_med_blocks(page)
-    for block in med_blocks:
-        parsed_rules = parse_rules(block.text)
-        if not getattr(parsed_rules, "strict", False):
-            strict_rules = parse_strict_rules(block.text)
-            if strict_rules:
-                parsed_rules = RuleSet.from_rules(strict_rules)
-        block.rules = parsed_rules
 
     header_text = _header_text(page)
     labeled_room = parse_room_and_bed_from_text(header_text)
@@ -426,7 +419,22 @@ def _extract_single_page(
     ]
 
     column_words = clip_tokens(page.words, x0, x1, 0.0, page.height)
+    summary_scope_cache: Dict[int, List[CanonWord]] = {}
     block_scope_cache: Dict[int, Tuple[Tuple[float, float], List[CanonWord], bool, Optional[SpatialWordIndex]]] = {}
+
+    def _block_summary_words(block_obj: MedBlock) -> List[CanonWord]:
+        cache_key = id(block_obj)
+        cached = summary_scope_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        band = block_zot(block_obj, page.height)
+        words = [
+            word
+            for word in page.words
+            if not (word.bbox[3] < band[0] or word.bbox[1] > band[1])
+        ]
+        summary_scope_cache[cache_key] = words
+        return words
 
     def _block_scope(
         block_obj: MedBlock,
@@ -443,6 +451,18 @@ def _extract_single_page(
         if column_mask:
             _record_dc_column_hit()
         return block_scope_cache[cache_key]
+
+    for block in med_blocks:
+        summary_words = _block_summary_words(block)
+        summary_text = " ".join(word.text.strip() for word in summary_words if word.text.strip())
+        strict_rules = parse_strict_rules(block.text)
+        if not strict_rules and summary_text:
+            strict_rules = parse_strict_rules(summary_text)
+        if strict_rules:
+            block.rules = RuleSet.from_rules(strict_rules)
+            continue
+        block.rules = parse_rules(block.text)
+
     agg: Dict[DueKey, Evidence] = {}
     contexts: Dict[DueKey, _DueContext] = {}
     duplicate_keys: List[DueKey] = []
