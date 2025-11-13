@@ -22,3 +22,14 @@ hushdesk/logs/
 .venv_build/
 .local_samples/
 rust/**/target/
+# Housekeeping (generated)
+*.pdf
+*.doc*
+*.xls*
+.DS_Store
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv*/

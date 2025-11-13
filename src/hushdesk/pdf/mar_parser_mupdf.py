@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from hushdesk.fs.exports import resolve_qa_prefix
+from hushdesk.pdf.band_resolver import BandResolver
 from hushdesk.pdf.dates import format_mmddyyyy
 from hushdesk.pdf.mar_blocks import draw_med_blocks_debug
 from hushdesk.pdf import mar_grid_extract as grid_extract
@@ -89,7 +90,19 @@ def run_mar_audit(
             qa_file = None
 
     pages = list(iter_canon_pages(source_path))
-    pages_total, pages_with_band = _coverage_from_pages(pages, audit_date)
+    coverage_resolver = BandResolver()
+
+    def _coverage_band(page, _date):
+        band = coverage_resolver.resolve(page)
+        if band:
+            return (band.y0, band.y1)
+        return None
+
+    pages_total, pages_with_band = _coverage_from_pages(
+        pages,
+        audit_date,
+        band_resolver=_coverage_band,
+    )
     extractions = extract_pages(pages, audit_date, hall_value)
     suppressed = getattr(grid_extract, "telemetry_suppressed", 0)
 
@@ -147,6 +160,7 @@ def run_mar_audit(
         + counts["compliant"]
         + counts["dcd"]
     )
+    counts["held_ok"] = counts.get("held_appropriate", 0)
 
     parametered_total = int(instrumentation.get("parametered", counts["parametered"]))
     other_code = int(nonchip_breakdown.get("other_code", 0))

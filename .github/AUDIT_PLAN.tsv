@@ -1,0 +1,5 @@
+ACTION	BRANCH	NOTE
+KEEP	chore/housekeeping-20251112T060658Z	current
+KEEP	feat/phase5-rules-master	protected
+KEEP	feat/phase6-template-ocr	protected
+KEEP	main	protected

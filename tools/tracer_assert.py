@@ -111,8 +111,10 @@ def main() -> None:
     ok = True
     reasons: list[str] = []
     min_bands = args.min_bands
+    min_bands_source = "argument"
     if args.use_pages_as_min_bands and pages > 0:
         min_bands = pages
+        min_bands_source = "pages"
 
     if bands < min_bands:
         ok = False
@@ -141,6 +143,7 @@ def main() -> None:
         "gated_total": gated_total,
         "gated_ratio": round(ratio, 3),
         "min_bands": min_bands,
+        "min_bands_source": min_bands_source,
         "parsed": parsed,
         "baseline_parsed": baseline_parsed,
         "reasons": reasons,
