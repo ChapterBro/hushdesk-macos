@@ -20,11 +20,23 @@ jobs:
         run: PYTHONNOUSERSITE=1 PYTHONPATH=src python tools/import_smoke.py
       - name: Strict-only tests (if present)
         run: |
-          set -e
-          T1="tests/test_rules_master_strict_only.py"
-          T2="tests/test_hr_false_positive.py"
-          if [ -f "$T1" ] || [ -f "$T2" ]; then
-            PYTHONNOUSERSITE=1 PYTHONPATH=src pytest -q $T1 $T2
-          else
+          set -euo pipefail
+
+          strict_tests=(
+            "tests/test_rules_master_strict_only.py"
+            "tests/test_hr_false_positive.py"
+          )
+
+          existing_tests=()
+          for test_path in "${strict_tests[@]}"; do
+            if [ -f "$test_path" ]; then
+              existing_tests+=("$test_path")
+            fi
+          done
+
+          if [ "${#existing_tests[@]}" -eq 0 ]; then
             echo "No strict-only tests present; skipping."
+            exit 0
           fi
+
+          PYTHONNOUSERSITE=1 PYTHONPATH=src pytest -q "${existing_tests[@]}"
