@@ -26,6 +26,16 @@ Rect = Tuple[float, float, float, float]
 
 _HEADER_TOP_RATIO = 0.75
 ALLOWED_CODES = {4, 6, 11, 12, 15}
+_LABEL_NEIGHBOR_MAX_DY = 4.0  # PHASE6_LABEL_SLACK
+_LABEL_NEIGHBOR_MAX_DX = 140.0  # PHASE6_LABEL_SLACK
+_SUMMARY_NOISE_BANNERS = (
+    "CHART CODES",
+    "FOLLOW UP CODES",
+    "SCHEDULE FOR",
+    "ADVANCE DIRECTIVE",
+    "PHARMACY",
+    "PHYSICIAN",
+)  # PHASE6_NOISE_MASK
 
 telemetry_suppressed = 0
 _dedup_before_total = 0
@@ -455,6 +465,7 @@ def _extract_single_page(
     for block in med_blocks:
         summary_words = _block_summary_words(block)
         summary_text = " ".join(word.text.strip() for word in summary_words if word.text.strip())
+        summary_text = _mask_summary_noise(summary_text)
         strict_rules = parse_strict_rules(block.text)
         if not strict_rules and summary_text:
             strict_rules = parse_strict_rules(summary_text)
@@ -587,6 +598,20 @@ def _looks_numeric(text: str) -> bool:
     return any(ch.isdigit() for ch in text or "")
 
 
+def _mask_summary_noise(text: str) -> str:
+    if not text:
+        return ""
+    masked = text
+    upper = masked.upper()
+    for banner in _SUMMARY_NOISE_BANNERS:
+        if banner not in upper:
+            continue
+        pattern = re.compile(re.escape(banner), re.IGNORECASE)
+        masked = pattern.sub(" ", masked)
+        upper = masked.upper()
+    return re.sub(r"\s+", " ", masked).strip()
+
+
 def _augment_words_with_labels(
     words: Sequence[CanonWord],
     *,
@@ -594,8 +619,8 @@ def _augment_words_with_labels(
     band: Tuple[float, float],
     index: Optional[SpatialWordIndex],
     predicate: Callable[[str], bool],
-    max_dy: float = 2.0,
-    max_dx: float = 110.0,
+    max_dy: float = _LABEL_NEIGHBOR_MAX_DY,
+    max_dx: float = _LABEL_NEIGHBOR_MAX_DX,
 ) -> List[CanonWord]:
     if index is None:
         return list(words)
@@ -619,7 +644,7 @@ def _augment_words_with_labels(
             anchor.center[1],
             max_dy=max_dy,
             max_dx=max_dx,
-        )
+        )  # PHASE6_LABEL_SLACK
         for neighbor in neighbors:
             if predicate(neighbor.text):
                 continue
